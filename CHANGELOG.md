@@ -42,6 +42,7 @@ Recorded the HeroForge `heroforge08.1.9.74` investigation, feature contracts, bu
 - Syntax-checks the transformed bundle before execution.
 - Loads untouched HeroForge `creationkit.js` when fetch, match, postcondition, or syntax validation fails before modified execution.
 - Adds independent controls that write existing `forceProjectedScript` and `enableUnequalScaling` fields through `CK.activeTweak()`.
+- Stores and disconnects its owned `MutationObserver` when the standalone UI/module is disposed.
 - Requires a page reload to enable or disable the renderer patch.
 - Remains experimental and is verified only against `heroforge08.1.9.74` pending live testing.
 
@@ -71,6 +72,7 @@ Passed:
 - Projected-decal fixture expected-match checks.
 - Projected-decal postcondition checks.
 - Transformed fixture syntax check.
+- Static lifecycle review confirming the projected observer is retained and disconnected by `dispose()`.
 
 Not yet performed:
 
