@@ -1,6 +1,6 @@
 # Architecture
 
-This document defines the intended technical direction for HeroForge.Compatibility. It describes target boundaries, not completed implementation.
+This document defines the intended technical direction for HeroForge.Compatibility. It describes target boundaries and records temporary implementation constraints.
 
 ## System Goal
 
@@ -209,6 +209,69 @@ on failure
 → report incompatibility
 ```
 
+## Stage 1 Implementation Note
+
+The first three standalone entrypoints intentionally prioritize testability and failure isolation over final source decomposition.
+
+### Runtime-only modules
+
+Character file I/O and Photo Booth settings file I/O:
+
+- render independent Shadow DOM controls,
+- use named runtime capabilities,
+- avoid private HeroForge React components,
+- avoid bundle transformation,
+- expose configurable diagnostic globals,
+- support live UI/timer disposal.
+
+Their repeated readiness, file, status, and UI logic should be extracted only after behavior is validated. Premature extraction would make failures harder to attribute during first live tests.
+
+### Temporary projected-decal interceptor
+
+The projected decal standalone entrypoint contains a feature-local `creationkit.js` interceptor because no shared patch engine existed before Stage 1.
+
+This is a **temporary experimental exception**, not the final architecture.
+
+Its required safeguards are:
+
+1. Intercept only before original execution.
+2. Fetch untouched source.
+3. Require exact expected match counts for both coupled patches.
+4. Verify postconditions.
+5. Parse transformed source before execution.
+6. Execute untouched source if validation fails before modified execution.
+7. Never attempt late double execution of a core bundle after modified execution begins.
+8. Report build and patch status.
+9. Require reload for enable/disable.
+
+Before any second maintained core-bundle patch feature is added, shared interception and patch registration must be implemented. The temporary feature-local interceptor is not eligible for Witch Dock integration.
+
+## Current Capability Adapters
+
+Stage 1 has identified these provisional adapter boundaries:
+
+```text
+character.export
+  → CK.UndoQueue current entry
+  → fallback CK.character.data.getJson()
+
+character.import
+  → CK.tryLoadCharacter()
+
+photoBooth.settings.export
+  → BT.maker.effectState.save()
+  → legacy fallback TN.tokenizer.effectState.toJson()
+
+photoBooth.settings.import
+  → BT.maker.effectState.load()
+  → legacy fallback TN.tokenizer.effectState.fromJson()
+
+decals.writeTransformCompatibilityState
+  → CK.activeTweak({ decals: ... })
+```
+
+These are not yet a shared bridge API. Their signatures and behavior must be live-tested first.
+
 ## Witch Dock Boundary
 
 Witch Dock is an external consumer, not the laboratory.
@@ -223,3 +286,5 @@ standalone validated module
 ```
 
 Public Witch Dock must not load the unstable development head of this repository.
+
+Persistent Booth View and Black Canvas Background are known Witch Dock consumers affected by the Booth rewrite. Their repair belongs in the Witch Dock project after the current Booth compatibility surfaces are validated. No Stage 1 entrypoint modifies them.
