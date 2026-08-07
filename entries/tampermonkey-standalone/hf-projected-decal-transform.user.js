@@ -33,6 +33,7 @@
         host: null,
         shadow: null,
         pollTimer: null,
+        observer: null,
         disposed: false,
         reloadRequired: false,
     };
@@ -327,7 +328,7 @@
         node.dataset.kind = kind;
     }
 
-    function refreshDecalUi() {
+    function refreshDecahUi() {
         if (!state.shadow || state.disposed) return;
         const select = state.shadow.querySelector('.decal');
         const prior = select.value;
@@ -490,6 +491,8 @@
         state.disposed = true;
         if (state.pollTimer) clearInterval(state.pollTimer);
         state.pollTimer = null;
+        state.observer?.disconnect();
+        state.observer = null;
         state.host?.remove();
         state.host = null;
         state.shadow = null;
@@ -529,7 +532,7 @@
     });
 
     if (state.enabled) {
-        observeCreationKit();
+        state.observer = observeCreationKit();
     } else {
         state.bundleStatus = 'disabled';
     }
