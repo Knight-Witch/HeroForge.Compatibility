@@ -2,6 +2,25 @@
 
 All committed repository updates must be recorded here.
 
+## HFC-2026-09-03-006 — Correct September ADP investigation source
+
+**Date:** 2026-09-03
+
+### Summary
+
+Amanda supplied the current 9/2/26 Tampermonkey export after the first breakage note was written. The active Advanced Decal Posing reference is v0.99.23, superseding the provisional v0.99.20 File Library copy.
+
+### Recorded commits
+
+- `42e692e3f41aac6d745a4f006796760db511d8a7` — initial documentation-only breakage scope written before the newer export was supplied.
+- `cce4b9df1733a93be46c64684fad2c009c7d3463` — documentation-only correction identifying v0.99.23 and the 9/2/26 export as canonical for this investigation.
+
+### Runtime impact
+
+Documentation only. No HeroForge runtime behavior, maintained JavaScript, or Witch Dock production code changed.
+
+---
+
 ## HFC-2026-09-03-004 — Record first live runtime capability investigation
 
 **Date:** 2026-09-03  
