@@ -14,6 +14,7 @@ This project must not silently make Amanda responsible for every imported featur
 | Area | Primary maintainer | Reviewer | Status |
 |---|---|---|---|
 | Repository contract and architecture | Amanda | Amanda | Active |
+| HF-Chat-Bridge diagnostic transport | TBD | Amanda | External private infrastructure; v0.1 unvalidated |
 | Shared compatibility bridge | TBD | Amanda | Not implemented |
 | Shared patch engine | TBD | Amanda | Not implemented |
 | Lob-derived feature modules | TBD; expected collaboration with Lob | Amanda | Ownership not assigned |
@@ -23,6 +24,7 @@ This project must not silently make Amanda responsible for every imported featur
 ## Rules
 
 - A feature without a maintainer is not automatically eligible for stable integration.
+- HF-Chat-Bridge being useful to this project does not make it a Witch Dock production dependency or silently assign its long-term maintenance to Amanda.
 - Lob may maintain feature modules or patch definitions without receiving unrestricted authority over Witch Dock production code.
 - Ownership must be recorded before stable promotion.
 - Last verified HeroForge build should be tracked for maintained features and patches.

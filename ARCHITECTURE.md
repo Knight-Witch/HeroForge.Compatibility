@@ -20,6 +20,34 @@ Capability Detection / Adapters / Patch Engine
 HeroForge
 ```
 
+## External Live Diagnostic Transport
+
+`Knight-Witch/HF-Chat-Bridge` is a separate private diagnostic/control-plane repository used during development to request bounded live observations from Amanda's authenticated HeroForge browser session.
+
+It is **not** the shared HeroForge Compatibility Bridge in the feature architecture above.
+
+Relationship:
+
+```text
+Authorized ChatGPT chat/project
+    ↓
+HF-Chat-Bridge diagnostic transport
+    ↓
+live HeroForge observation
+    ↓
+validated compatibility finding
+    ↓
+HeroForge.Compatibility capability/adapter design
+```
+
+Rules:
+
+- HF-Chat-Bridge must remain chat/project independent.
+- Its initial command set is read-only and allowlisted; arbitrary remote `eval` is not part of the approved design.
+- Diagnostic observations do not become stable capability contracts automatically.
+- Public Witch Dock and reconstructed feature modules must not depend on the GitHub mailbox or local diagnostic relay at runtime.
+- A future transport change such as MCP should not require rewriting HeroForge probe semantics or maintained feature modules.
+
 ## Core Boundaries
 
 ### Feature modules
@@ -222,4 +250,4 @@ standalone validated module
 → explicit stable promotion
 ```
 
-Public Witch Dock must not load the unstable development head of this repository.
+Public Witch Dock must not load the unstable development head of this repository or depend on HF-Chat-Bridge at runtime.
