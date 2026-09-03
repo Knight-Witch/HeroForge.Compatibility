@@ -2,6 +2,20 @@
 
 This project uses standalone-first testing before Witch Dock integration.
 
+## Current Diagnostic Test Status
+
+The external private `Knight-Witch/HF-Chat-Bridge` diagnostic transport has passed the tested live request path against Amanda's authenticated HeroForge page.
+
+Confirmed on 2026-09-03:
+
+- `bridge.ping` end-to-end transport passed;
+- relay v0.1.0 exposed a duplicate-processing race after GitHub stale-open propagation;
+- relay v0.1.2 passed a fresh single-result retest beyond the full lease interval;
+- `runtime.listScripts` passed and returned a bounded live resource inventory;
+- `runtime.capabilityProbe` is the next diagnostic gate.
+
+Diagnostic transport success does not itself validate a maintained compatibility capability or reconstructed feature.
+
 ## Test Order
 
 1. Audit legacy behavior.
@@ -52,7 +66,7 @@ Fixture success does not replace live runtime testing.
 
 ## Initial Planned Standalone Sequence
 
-1. Read-only HeroForge bridge/capability probe.
+1. Read-only HeroForge bridge/capability probe — **diagnostic transport validated; capability probe active**.
 2. Camera bounds.
 3. Extra mini slots.
 4. Character local file I/O.

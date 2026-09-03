@@ -2,6 +2,54 @@
 
 Use this file before committed repository updates to record what was checked, what can conflict, and what action is recommended.
 
+## PFC-2026-09-03-003 — Record validated live diagnostic transport
+
+**Date:** 2026-09-03  
+**Time:** approximately 00:50 PDT
+
+### Target files
+
+- `MASTER.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+- `COMPATIBILITY.md`
+- `TESTING.md`
+
+### Relevant history checked
+
+- `PROJECT_CONTRACT.md`
+- current `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, and `TESTING.md`
+- HF-Chat-Bridge Issue #1 first live round-trip and duplicate-result defect
+- HF-Chat-Bridge Issue #2 fresh relay v0.1.2 single-result retest beyond the lease interval
+- HF-Chat-Bridge Issue #3 successful `runtime.listScripts` result
+- current HF-Chat-Bridge project contract/status
+- public `Knight-Witch/KnightWitch.Heroforge` boundary; no production file change is part of this update
+
+### Connected modules reviewed
+
+- No reconstructed runtime module exists yet in HeroForge.Compatibility.
+- HF-Chat-Bridge remains external diagnostic transport, not the maintained feature compatibility bridge.
+- Public Witch Dock remains unchanged and has no runtime dependency on the diagnostic transport.
+
+### Confirmed findings
+
+- HF-Chat-Bridge end-to-end read-only transport is live-validated in the tested setup.
+- Relay v0.1.2 passed the stale-open duplicate-request regression test.
+- The first non-ping read-only probe successfully returned bounded live script-resource data.
+- Maintained named runtime capabilities are still unproven and must not be inferred from transport success alone.
+
+### Conflict risks
+
+- Documentation could overstate live diagnostic evidence as maintained compatibility certification. Mitigation: status explicitly separates transport validation from capability validation.
+- Current HeroForge build ID/fingerprint has not yet been captured, so build-specific compatibility claims remain blocked.
+- No runtime code, feature module, patch, or Witch Dock integration is changed by this documentation update.
+
+### Recommended action
+
+Record the validated diagnostic transport state, then run the bounded `runtime.capabilityProbe`. Review results before formalizing any maintained compatibility capability.
+
+---
+
 ## PFC-2026-09-02-002 — External HF-Chat-Bridge diagnostic scaffold status
 
 **Date:** 2026-09-02  
@@ -29,18 +77,18 @@ Use this file before committed repository updates to record what was checked, wh
 
 - No reconstructed runtime module exists yet in HeroForge.Compatibility.
 - HF-Chat-Bridge is external diagnostic transport, not the maintained feature compatibility bridge.
-- HF-Chat-Bridge v0.1 is read-only and unvalidated; its userscript passed JavaScript syntax/static safety checks, while its PowerShell relay has not yet been executed on Amanda's Windows machine.
-- Public Witch Dock remains unchanged and has no dependency on either development repository.
+- HF-Chat-Bridge v0.1 was read-only and unvalidated at that stage.
+- Public Witch Dock remained unchanged and had no dependency on either development repository.
 
 ### Conflict risks
 
-- Documentation could incorrectly mark the maintained compatibility bridge as implemented merely because the diagnostic bridge now exists. Mitigation: all active docs explicitly distinguish the two systems.
-- Static scaffold status could be mistaken for HeroForge compatibility certification. Mitigation: compatibility and master status explicitly say no live round-trip or capability probe has been validated.
-- External diagnostics could accidentally become a production dependency. Mitigation: architecture and ADR prohibit Witch Dock/feature runtime dependence on the GitHub mailbox or local diagnostic relay.
+- Documentation could incorrectly mark the maintained compatibility bridge as implemented merely because the diagnostic bridge exists.
+- Static scaffold status could be mistaken for HeroForge compatibility certification.
+- External diagnostics could accidentally become a production dependency.
 
 ### Recommended action
 
-Proceed with one documentation/status commit recording the external diagnostic scaffold and next validation gate. No runtime module, Witch Dock file, or HeroForge behavior changes in this repository.
+Proceed with one documentation/status commit recording the external diagnostic scaffold and next validation gate.
 
 ---
 

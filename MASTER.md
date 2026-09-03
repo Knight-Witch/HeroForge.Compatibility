@@ -4,18 +4,18 @@ This is the canonical high-level source for current project state. Keep it curre
 
 ## Current Phase
 
-**Repository bootstrap, legacy audit normalization, and live diagnostic bridge bring-up.**
+**Repository bootstrap, legacy audit normalization, and live runtime capability investigation.**
 
-The project contract and foundational tracking structure are established. The separate private `Knight-Witch/HF-Chat-Bridge` diagnostic transport now has a v0.1 read-only scaffold, but no live HeroForge round-trip has been validated yet.
+The project contract and foundational tracking structure are established. The separate private `Knight-Witch/HF-Chat-Bridge` diagnostic transport has now passed its first live HeroForge round-trip, duplicate-request regression retest, and first non-ping read-only resource probe.
 
 ## Current Repository Role
 
 - Repository: `Knight-Witch/HeroForge.Compatibility`
 - Production Witch Dock repository: `Knight-Witch/KnightWitch.Heroforge`
-- External diagnostic transport repository: `Knight-Witch/HF-Chat-Bridge` (private; v0.1 scaffold; unvalidated)
+- External diagnostic transport repository: `Knight-Witch/HF-Chat-Bridge` (private; v0.1 transport validated; read-only probes active)
 - Public runtime dependency from Witch Dock Stable: **none**
 - Current code status: **no reconstructed runtime modules committed yet**
-- Current testing status: **documentation/bootstrap plus external diagnostic scaffold static checks only**
+- Current testing status: **documentation/bootstrap plus validated external live diagnostic transport; maintained compatibility capabilities not yet implemented**
 
 ## Confirmed Project Direction
 
@@ -35,7 +35,7 @@ The project contract and foundational tracking structure are established. The se
 
 Its purpose is to let authorized ChatGPT conversations request bounded observations from Amanda's live HeroForge browser session through a private GitHub request/result transport and local loopback relay.
 
-It must not become a hidden Witch Dock runtime dependency. Findings obtained through it still require normal compatibility validation before they become maintained bridge capabilities or feature assumptions.
+The transport path is now live-validated. Findings obtained through it still require normal compatibility review before they become maintained bridge capabilities or feature assumptions.
 
 ## Initial Legacy Collection Reviewed
 
@@ -50,7 +50,7 @@ An initial bulk Tampermonkey export supplied by Amanda was inspected before repo
 - Shader Fix for Photo Booth
 - ReCK for Hero Forge (third-party reference, not Lob-authored)
 
-The actual source files have **not yet been archived into `/legacy/` in this repository**. Until they are imported and provenance is recorded, the inventory below is provisional and based on the completed initial audit.
+The actual source files have **not yet been archived into `/legacy/` in this repository**. Until they are imported and provenance is recorded, the inventory remains provisional and based on the completed initial audit.
 
 ## High-Priority Confirmed Architecture Problems From Initial Audit
 
@@ -63,20 +63,30 @@ The actual source files have **not yet been archived into `/legacy/` in this rep
 - Two scripts contain account-specific page-blanking/redirect kill-switch behavior that must not be migrated into maintained code.
 - Advanced Decal Posing combines many unrelated domains and should not remain one feature module.
 
+## Live Diagnostic Evidence
+
+Confirmed on 2026-09-03 through `HF-Chat-Bridge`:
+
+- authenticated HeroForge page context is reachable from the read-only userscript;
+- the complete ChatGPT -> GitHub -> local relay -> HeroForge -> GitHub -> ChatGPT round-trip works;
+- relay v0.1.2 prevents the confirmed stale-open duplicate-request race in the tested scenario;
+- `runtime.listScripts` returned a bounded live resource inventory including current HeroForge scripts such as `ckvendor.js`, `renderkit.js`, `shaderkit.js`, `hfuivendor.js`, `extras.js`, `materialui.js`, `accounts.js`, and `community.js`.
+
+These are diagnostic observations, not yet maintained API/capability guarantees.
+
 ## Active Work
 
-- Establish durable project documentation and directory rules.
 - Import the original bulk script collection into immutable `/legacy/` paths.
 - Create normalized per-script audits from the initial review.
 - Finalize stable feature IDs and dependency relationships.
-- Bring up and validate the separate `HF-Chat-Bridge` v0.1 read-only diagnostic round-trip.
-- Use the validated diagnostic transport to inspect currently accessible named runtime surfaces and readiness timing before formalizing maintained compatibility capabilities.
+- Use the validated `HF-Chat-Bridge` to inspect currently accessible named runtime surfaces and readiness timing.
+- Record confirmed capability evidence before implementing the maintained compatibility bridge.
 
 ## Next Planned Development Stage
 
-1. Locally configure the HF-Chat-Bridge relay and HeroForge Tampermonkey probe.
-2. Validate one complete `bridge.ping` round-trip through GitHub -> local relay -> live HeroForge -> GitHub.
-3. Run the first bounded `runtime.capabilityProbe` and record confirmed current runtime surfaces/readiness behavior.
+1. Run bounded `runtime.capabilityProbe` against the live HeroForge session.
+2. Follow confirmed candidates with `runtime.describePath` / `runtime.searchGlobals` probes without invoking functions or mutating state.
+3. Record confirmed current runtime surfaces and readiness behavior.
 4. Continue legacy import and audit normalization.
 5. Reconstruct lower-risk runtime features as standalone Tampermonkey tests.
 6. Begin with candidates such as camera bounds and extra mini slots before invasive bundle-patch features.
@@ -84,8 +94,7 @@ The actual source files have **not yet been archived into `/legacy/` in this rep
 ## Current Blockers
 
 - Legacy source files are not yet present in the repository.
-- Current HeroForge build capabilities have not yet been live-probed by this project.
-- `HF-Chat-Bridge` v0.1 is committed but not yet locally configured or runtime validated.
+- Maintained current-build capability definitions have not yet been formalized from the live diagnostic evidence.
 - Feature ownership with Lob has not yet been formally assigned.
 - No maintained shared compatibility bridge or patch engine exists yet.
 
@@ -95,8 +104,8 @@ The actual source files have **not yet been archived into `/legacy/` in this rep
 |---|---|---|
 | Legacy script collection | Audited outside repo; not yet archived | Import immutable originals |
 | Feature inventory | Provisional | Confirm against archived source |
-| HF-Chat-Bridge diagnostic transport | v0.1 scaffold committed externally; unvalidated | Local setup + `bridge.ping` round-trip |
-| Maintained compatibility bridge | Planned | Current runtime capability evidence |
+| HF-Chat-Bridge diagnostic transport | v0.1 transport validated; read-only probes active | Capability probe + cross-chat validation |
+| Maintained compatibility bridge | Planned | Confirmed current runtime capability evidence |
 | Standalone modules | Not started | Audit/spec first |
 | Witch Dock Dev integration | Not started | Standalone validation first |
 | Witch Dock Stable | No dependency | Separate future promotion review |
