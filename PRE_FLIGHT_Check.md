@@ -2,6 +2,64 @@
 
 Use this file before committed repository updates to record what was checked, what can conflict, and what action is recommended.
 
+## PFC-2026-09-03-006 — Projected decal standalone reconstruction
+
+**Date:** 2026-09-03
+
+### Target files
+
+- `entries/tampermonkey-standalone/projected-decal-toggle.user.js`
+- `docs/feature-specs/projected-decal-toggle.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+
+### Required material reviewed
+
+- `PROJECT_CONTRACT.md`
+- `MASTER.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+- `ARCHITECTURE.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `OWNERSHIP.md`
+- `TESTING.md`
+- current standalone character JSON reconstruction
+- canonical user-supplied 2026-09-02 script export, including Advanced Decal Posing v0.99.23 and Full Res Decals/Textures
+- current projected-decal renderer investigation evidence
+- current HeroForge native Mirror `CK.activeTweak` update pattern from the August targeted compatibility capture
+- Amanda's live projected Slot F state and uploaded local JSON save
+
+### Confirmed findings
+
+- Local JSON Save and Load core behavior passed Amanda's live test before this reconstruction proceeds.
+- Advanced Decal Posing's missing Project control is a UI injection failure; its persisted field remains present.
+- The legacy control writes `forceProjectedScript` on `decals.splatter[...]`.
+- Current Full Res renderer logic consumes that field as a tri-state override: undefined/native, true/projected, false/unprojected.
+- Live `CK.character.data.decals` exposes `bodyLower`, `bodyUpper`, `face`, and `splatter` on the loaded test figure.
+- The uploaded figure JSON contains 35 splatter records, 34 with `forceProjectedScript: false`, one without the field, and none with `true`.
+- The Slot F test candidate uses numeric key `6`; its saved record has decal ID `20990` and current Project state `false`.
+- Current HeroForge's native Mirror action still updates the selected decal through `CK.activeTweak({decals: ...})`, preserving the surrounding bucket and record state.
+
+### Supported inference
+
+- Alphabetic Slot F is mapped to numeric splatter key `6` by the standalone test harness. That mapping is highly consistent with the UI/data layout but the exact human-readable `Four Rune Spell Column` -> ID `20990` relationship is not promoted to confirmed until the live test affects the expected Slot F decal.
+
+### Material conflict risks
+
+- The standalone test must not repair or reintroduce the old `heroforgeui.js` compiled-string injection.
+- The test must preserve all other decal buckets and records when changing one `forceProjectedScript` field.
+- The Full Res renderer dependency remains external to this feature; if its renderer patch is absent, changing the field may persist without affecting rendering.
+- Automatic synchronization with HeroForge's currently selected native decal slot is not yet proven, so v0.1.0 requires explicit slot selection.
+- Existing figure data must not be silently changed on initialization. Mutation occurs only after explicit ON/OFF/Native button use.
+- No Witch Dock production file is touched.
+
+### Recommended action
+
+Commit standalone v0.1.0 using the named `CK.activeTweak` runtime path and independent UI. Validate Slot F ON/OFF/Native behavior, re-pose behavior, JSON persistence, undo/redo, and disposal before considering native selected-slot detection or Witch Dock Dev integration.
+
+---
+
 ## PFC-2026-09-03-005 — Character local JSON standalone reconstruction
 
 **Date:** 2026-09-03

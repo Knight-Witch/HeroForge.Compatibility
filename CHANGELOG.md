@@ -2,6 +2,57 @@
 
 All committed repository updates must be recorded here.
 
+## HFC-2026-09-03-008 — Record JSON live pass and add projected-decal standalone test
+
+**Date:** 2026-09-03
+
+### Summary
+
+Recorded Amanda's successful live local JSON Save/Load test and added the first standalone reconstruction test for the missing Advanced Decal Posing v0.99.23 Project control.
+
+### JSON validation
+
+- Standalone local JSON Save: **passed live**.
+- Standalone local JSON Load: **passed live**.
+- The loaded JSON preserved the figure's decal data and could be reloaded successfully.
+- Full repeated-use / reload / dispose acceptance remains pending; the broken core Save/Load behavior is restored.
+
+### Added
+
+- `entries/tampermonkey-standalone/projected-decal-toggle.user.js` — standalone Project state test v0.1.0.
+- `docs/feature-specs/projected-decal-toggle.md` — projected-decal behavior, capability, lifecycle, and acceptance contract.
+
+### Confirmed projected-decal evidence
+
+- Advanced Decal Posing v0.99.23 writes `forceProjectedScript` on splatter decal records.
+- Supplied Full Res renderer support treats `undefined` as native behavior, `true` as force projected, and `false` as force unprojected.
+- Live `CK.character.data.decals` exposes current decal buckets.
+- Amanda's uploaded JSON contains 35 splatter records; 34 explicitly contain `forceProjectedScript: false`, one leaves the field undefined, and none currently contain `true`.
+- The Slot F test candidate maps to splatter key `6`, decal ID `20990`, current state `false`.
+- Current HeroForge's native Mirror handler still uses `CK.activeTweak({decals: ...})` to update one decal record while preserving the surrounding decal state.
+
+### Behavior
+
+- Test UI is independent of HeroForge React and does not patch `heroforgeui.js`.
+- Manual slot selector is used for v0.1.0 because automatic native selected-slot discovery is not yet proven.
+- `ON` writes `forceProjectedScript: true`.
+- `OFF` writes `forceProjectedScript: false`.
+- `Native` writes `forceProjectedScript: undefined`.
+- No HeroForge function is replaced and no Witch Dock code changed.
+
+### Test status
+
+- JavaScript syntax check with Node: **passed**.
+- Live projected-decal state inspection: **passed**.
+- Live Project ON/OFF/Native behavior: **pending Amanda test**.
+- Re-pose persistence / JSON persistence / undo-redo / dispose: **pending**.
+
+### Rollback
+
+Disable/remove the standalone projected-decal test or revert this commit. Existing decal data changes made by explicit test button presses must be reversed with OFF/Native, HeroForge undo, or a prior saved state as appropriate.
+
+---
+
 ## HFC-2026-09-03-007 — Add standalone character local JSON test
 
 **Date:** 2026-09-03
