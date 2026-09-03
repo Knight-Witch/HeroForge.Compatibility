@@ -2,6 +2,46 @@
 
 All committed repository updates must be recorded here.
 
+## HFC-2026-09-03-007 — Add standalone character local JSON test
+
+**Date:** 2026-09-03
+
+### Summary
+
+Added the first standalone reconstruction for the currently broken Advanced Decal Posing v0.99.23 local character JSON Save/Load feature. The test uses confirmed named `CK` runtime surfaces and independent UI rather than repairing brittle `heroforgeui.js` native React injection.
+
+### Added
+
+- `entries/tampermonkey-standalone/character-local-json.user.js` — standalone v0.1.0 test.
+- `docs/feature-specs/character-local-json.md` — feature behavior, capability, lifecycle, and acceptance contract.
+
+### Confirmed evidence used
+
+HF-Chat-Bridge Issues #19, #20, #22, #26, #27, #30, and #31 confirmed the legacy feature's required runtime surfaces remain present, including the live UndoQueue snapshot array/index and `CK.tryLoadCharacter`.
+
+### Behavior
+
+- Save uses `CK.UndoQueue.queue[CK.UndoQueue.currentIndex]`, matching Advanced Decal Posing v0.99.23.
+- Load parses a user-selected JSON file and calls `CK.tryLoadCharacter` with the legacy message/callback pattern.
+- UI is an independent temporary test panel plus Tampermonkey menu commands.
+- No HeroForge bundle is intercepted or modified.
+- No HeroForge runtime function is replaced.
+- No Witch Dock code changed.
+
+### Test status
+
+- JavaScript syntax check with Node: **passed**.
+- Live capability discovery: **passed**.
+- Live Save JSON behavior: **pending Amanda test**.
+- Live Load JSON behavior: **pending Amanda test**.
+- Repeated-use / reload / dispose tests: **pending**.
+
+### Rollback
+
+Disable/remove the standalone Tampermonkey test or revert this commit. Advanced Decal Posing and unmodified HeroForge behavior are otherwise untouched.
+
+---
+
 ## HFC-2026-09-03-006 — Correct September ADP investigation source
 
 **Date:** 2026-09-03

@@ -2,6 +2,52 @@
 
 Use this file before committed repository updates to record what was checked, what can conflict, and what action is recommended.
 
+## PFC-2026-09-03-005 — Character local JSON standalone reconstruction
+
+**Date:** 2026-09-03
+
+### Target files
+
+- `entries/tampermonkey-standalone/character-local-json.user.js`
+- `docs/feature-specs/character-local-json.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+
+### Canonical reference reviewed
+
+- User-supplied 2026-09-02 Tampermonkey export.
+- `Advanced Decal Posing.user.js` v0.99.23, SHA-256 `08dfb5bf7e75c2e4d92b0e0d856d49b04f3ee28a04836fa014a327312573f039`.
+- Relevant v0.99.23 local Save/Load implementation and its `heroforgeui.js` injection anchor.
+- Current project contract, master state, architecture, feature inventory, compatibility, ownership, testing, and investigation notes.
+
+### Confirmed live runtime evidence
+
+- `CK.UndoQueue` exists and exposes `queue` / `currentIndex` (HF-Chat-Bridge #19).
+- `CK.tryLoadCharacter` exists (#20).
+- `CK.character.data` exists (#22).
+- `CK.toJson` / `CK.fromJson` exist (#26 / #27).
+- `CK.UndoQueue.queue` is currently an array (#30).
+- `CK.UndoQueue.currentIndex` is currently numeric (#31).
+
+### Diagnosis
+
+The direct local Save/Load feature's required named runtime surfaces still exist. The missing local controls therefore do not justify repairing the old native React / compiled `heroforgeui.js` injection. The lower-risk reconstruction is independent UI calling the still-present named runtime behavior.
+
+### Material conflict risks
+
+- Export must use the current UndoQueue index so it does not save a stale snapshot.
+- Import intentionally mutates the active character only after explicit user file selection, matching legacy behavior.
+- The standalone test must not intercept or replace `heroforgeui.js`.
+- The standalone test must not override HeroForge runtime methods.
+- Advanced Decal Posing v0.99.23 may remain enabled; its missing native Save/Load injection should not conflict with the independent panel.
+- No Witch Dock production file is touched.
+
+### Recommended action
+
+Commit standalone test v0.1.0, install it separately in Tampermonkey, validate save/load/repeated use, and only then update durable feature status or begin the projected-decal repair.
+
+---
+
 ## PFC-2026-09-03-004 — Record first live runtime capability evidence
 
 **Date:** 2026-09-03  
