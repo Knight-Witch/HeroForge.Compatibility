@@ -12,7 +12,8 @@ Confirmed on 2026-09-03:
 - relay v0.1.0 exposed a duplicate-processing race after GitHub stale-open propagation;
 - relay v0.1.2 passed a fresh single-result retest beyond the full lease interval;
 - `runtime.listScripts` passed and returned a bounded live resource inventory;
-- `runtime.capabilityProbe` is the next diagnostic gate.
+- `runtime.capabilityProbe` passed and confirmed top-level `HF`, `CK`, `React`, and `ReactDOM` while `TN`, `BT`, and `THREE` were not top-level globals in the tested state;
+- `runtime.describePath` for `CK.display` correctly returned `getter_blocked` without invoking the accessor.
 
 Diagnostic transport success does not itself validate a maintained compatibility capability or reconstructed feature.
 
@@ -66,7 +67,7 @@ Fixture success does not replace live runtime testing.
 
 ## Initial Planned Standalone Sequence
 
-1. Read-only HeroForge bridge/capability probe — **diagnostic transport validated; capability probe active**.
+1. Read-only HeroForge bridge/capability probe — **transport and first capability probe validated; follow-up path/accessor investigation active**.
 2. Camera bounds.
 3. Extra mini slots.
 4. Character local file I/O.
@@ -79,4 +80,4 @@ Fixture success does not replace live runtime testing.
 11. Kitbash visibility/joint behavior.
 12. High-risk capture/texture/bundle-patch features.
 
-This order may change when normalized audits reveal tighter dependencies.
+This order may change when normalized audits reveal tighter dependencies or live capability evidence identifies safer runtime paths.

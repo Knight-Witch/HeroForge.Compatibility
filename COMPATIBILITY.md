@@ -8,12 +8,12 @@ No reconstructed feature has been validated by this repository yet.
 
 The initial legacy audit identified likely compatibility hazards, but that audit does not constitute current HeroForge build certification.
 
-The separate private `Knight-Witch/HF-Chat-Bridge` v0.1 diagnostic transport is now live-validated for the tested read-only request path. Current-build runtime capability probing is active, but no diagnostic observation has yet been promoted into a maintained compatibility capability contract.
+The separate private `Knight-Witch/HF-Chat-Bridge` v0.1 diagnostic transport is live-validated for the tested read-only request path. The first bounded capability probe is complete, but diagnostic observations have not yet been promoted into maintained compatibility capability contracts.
 
 | Component | Current status | Last verified HeroForge build | Notes |
 |---|---|---|---|
-| HF-Chat-Bridge diagnostic transport | Read-only transport validated | Current live page on 2026-09-03; build ID not yet captured | `bridge.ping` and `runtime.listScripts` passed; relay v0.1.2 duplicate guard passed retest. |
-| Shared compatibility bridge | Not implemented | — | Maintained runtime abstraction remains separate; live capability evidence will inform its first implementation. |
+| HF-Chat-Bridge diagnostic transport | Read-only transport validated | Current live page on 2026-09-03; build ID not yet captured | `bridge.ping`, duplicate-request regression, `runtime.listScripts`, and first `runtime.capabilityProbe` passed. |
+| Shared compatibility bridge | Not implemented | — | Named `HF` / `CK` runtime surfaces are promising diagnostic candidates, but semantics/stability remain unproven. |
 | Shared patch engine | Not implemented | — | Required before maintained bundle patching. |
 | Reconstructed standalone features | None yet | — | Legacy behavior audit precedes reconstruction. |
 | Witch Dock Dev integration | Not started | — | Requires standalone validation first. |
@@ -24,14 +24,22 @@ The separate private `Knight-Witch/HF-Chat-Bridge` v0.1 diagnostic transport is 
 Confirmed through the live read-only bridge on 2026-09-03:
 
 - HeroForge page context is accessible.
-- Current external HeroForge resources include `ckvendor.js`, `renderkit.js`, `shaderkit.js`, `hfuivendor.js`, `extras.js`, `materialui.js`, `accounts.js`, and `community.js`.
-- `runtime.listScripts` returned 27 external script URLs without truncation.
+- Top-level `HF` is available as a function object with named properties including `settings`, `loadedData`, `finishedLoading`, `Data`, `ThreeCharacters`, and `CustomFace`.
+- Top-level `CK` is available as a function object with a large bounded named surface including `toJson`, `fromJson`, `addUndoPoint`, `undo`, `redo`, `freeCamera`, `display`, `data`, `tweak`, and related operations.
+- `TN`, `BT`, and `THREE` were unavailable as top-level globals in the tested page state.
+- `React` and `ReactDOM` were available.
+- `CK.display` is an accessor/getter; generic `runtime.describePath` correctly blocked traversal rather than invoking it.
+- Current external HeroForge resources include `ckvendor.js`, `renderkit.js`, `shaderkit.js`, `hfuivendor.js`, `extras.js`, `materialui.js`, `accounts.js`, `community.js`, and `gated/advimport.js`.
 
-Not yet confirmed:
+Detailed evidence: `docs/investigations/INV-0001-live-runtime-capability-probe-2026-09-03.md`.
 
-- stable named runtime API surfaces suitable for the maintained bridge;
-- readiness timing for those capabilities;
-- a HeroForge build identifier/fingerprint suitable for durable compatibility tracking.
+## Not Yet Confirmed
+
+- Stability of the observed `HF` / `CK` names across builds.
+- Semantics and side effects of the observed methods/accessors.
+- Readiness timing for maintained capability use.
+- A durable HeroForge build identifier/fingerprint.
+- Whether specific legacy bundle patches can be replaced by runtime access without behavior loss.
 
 ## Capability Status Terms
 
