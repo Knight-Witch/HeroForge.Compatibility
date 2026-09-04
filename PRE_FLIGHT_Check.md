@@ -2,6 +2,71 @@
 
 Use this file before committed repository updates to record what was checked, what can conflict, and what action is recommended.
 
+## PFC-2026-09-04-007 — ADP v0.99.30 decal posing subsystem audit
+
+**Date:** 2026-09-04
+
+### Target files
+
+- `docs/script-audits/advanced-decal-posing-v0.99.30-decal-posing-subsystem.md`
+- `MASTER.md`
+- `FEATURE_INVENTORY.md`
+- `MIGRATION_PLAN.md`
+- `COMPATIBILITY.md`
+- `TESTING.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+
+### Required material reviewed
+
+- `PROJECT_CONTRACT.md`
+- `MASTER.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+- `ARCHITECTURE.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `OWNERSHIP.md`
+- `MIGRATION_PLAN.md`
+- `TESTING.md`
+- `docs/script-audits/README.md`
+- `docs/feature-specs/projected-decal-toggle.md`
+- `docs/investigations/INV-0002-september-2026-adp-breakage-scope-v09923-correction.md`
+- `docs/decisions/ADR-0002-immutable-legacy-sources.md`
+- `docs/decisions/ADR-0003-standalone-first-promotion.md`
+- committed `entries/tampermonkey-standalone/projected-decal-toggle.user.js`
+- user-supplied `Advanced_Decal_Posing_KW_9-3-26_TEST_PATCH.js` v0.99.30, SHA-256 `659a84d1a4b01db4143d713618a216dd46dcc5dbed7bd6e668fe61290276170d`
+- prior Lob architecture audit for dependency/history comparison
+- current 2026-09-04 bound-gizmo runtime investigation and validation results
+
+### Confirmed findings
+
+- v0.99.30 is the current ADP reference for this work and is reported as the copy Lob is running.
+- The current source has a newer runtime/DOM Project compatibility service using `UIState`, ordered decal metadata, and `CK.activeTweak`.
+- The current source still retains the older compiled React Project/Unequal Scaling injection, creating duplicate ownership risk.
+- Full List has a separate DOM control but the expanded catalog/filter behavior still depends on `heroforgeui.js` source transformation.
+- Transform range expansion is still exact compiled-string UI patching.
+- Project/Unequal renderer semantics are external to ADP and remain dependent on current Full Res behavior.
+- Explicit decal slot-schema expansion is not confirmed in v0.99.30; current HF Core Tweaks must be audited before claiming first-pass slot parity.
+- The corrected bound gizmo is not present in v0.99.30; the validated v0.4.1 gizmo is a new Knight Witch reconstruction.
+- Repository status files were stale: committed standalone JSON/Project tests existed while `MASTER.md`/`COMPATIBILITY.md` still described no reconstructed features.
+
+### Material conflict risks
+
+- Do not port the v0.99.30 `heroforgeui.js` interceptor wholesale.
+- Do not allow Witch Dock and Lob to mount duplicate Project/Full List controllers or independently drive the same posing state.
+- Do not let Witch Dock independently patch `heroforgeui.js` while current Lob ADP owns that bundle.
+- Do not silently depend on Full Res for renderer semantics in a future standalone/Witch Dock feature; declare and gate the renderer capability.
+- Do not treat older ADP slot-expansion attribution as current v0.99.30 fact.
+- Do not migrate unresolved short compiled patches without behavioral proof.
+- The exact v0.99.30 source is not yet archived under `/legacy/`; archival is required before maintained reconstruction begins.
+
+### Recommended action
+
+Commit this documentation-only audit/status normalization. No JavaScript or runtime behavior changes. Next material stage must archive v0.99.30, audit current Full Res v0.80 projected renderer support, and audit HF Core Tweaks slot/schema behavior if slots remain first-pass scope before writing the consolidated production feature spec.
+
+---
+
 ## PFC-2026-09-03-006 — Projected decal standalone reconstruction
 
 **Date:** 2026-09-03
@@ -149,7 +214,7 @@ Commit standalone test v0.1.0, install it separately in Tampermonkey, validate s
 
 ### Recommended action
 
-Record the capability evidence as an active investigation. Collect the already queued bounded follow-up path/global probes. Do not weaken the generic getter block; if accessor inspection becomes necessary, design a narrowly allowlisted read-only probe with explicit side-effect review.
+Record the capability evidence as an active investigation. Collect the already queued bounded follow-up probes. Do not weaken the generic getter block; if accessor inspection becomes necessary, design a narrowly allowlisted read-only probe with explicit side-effect review.
 
 ---
 

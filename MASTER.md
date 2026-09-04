@@ -4,18 +4,21 @@ This is the canonical high-level source for current project state. Keep it curre
 
 ## Current Phase
 
-**Repository bootstrap, legacy audit normalization, and live runtime capability investigation.**
+**Legacy feature decomposition plus current-runtime decal capability reconstruction.**
 
-The separate private `Knight-Witch/HF-Chat-Bridge` diagnostic transport is live-validated. The first bounded current-runtime capability probe is complete and shows usable named top-level `HF` and `CK` surfaces worth investigating before bundle-level discovery.
+The private `Knight-Witch/HF-Chat-Bridge` diagnostic/workbench transport is live-validated and has been used to complete a substantial bound-decal gizmo investigation on current HeroForge. Character JSON and projected-decal standalone tests already exist in this repository. The next bounded development target is a clean Advanced Decal Posing subsystem reconstruction rather than further patching of the monolithic ADP userscript.
 
 ## Current Repository Role
 
 - Repository: `Knight-Witch/HeroForge.Compatibility`
 - Production Witch Dock repository: `Knight-Witch/KnightWitch.Heroforge`
-- External diagnostic transport repository: `Knight-Witch/HF-Chat-Bridge` (private; v0.1 transport validated; read-only probes active)
+- External diagnostic transport repository: `Knight-Witch/HF-Chat-Bridge` (private; workbench transport live-validated)
 - Public runtime dependency from Witch Dock Stable: **none**
-- Current code status: **no reconstructed runtime modules committed yet**
-- Current testing status: **validated external live diagnostic transport; first capability probe complete; maintained compatibility capabilities not yet implemented**
+- Current committed standalone code:
+  - `entries/tampermonkey-standalone/character-local-json.user.js`
+  - `entries/tampermonkey-standalone/projected-decal-toggle.user.js`
+- Current external validated experiment: corrected bound decal gizmo v0.4.1, not yet extracted into maintained repository source
+- Maintained shared compatibility bridge / patch engine: **not yet implemented**
 
 ## Confirmed Project Direction
 
@@ -33,96 +36,97 @@ The separate private `Knight-Witch/HF-Chat-Bridge` diagnostic transport is live-
 
 `HF-Chat-Bridge` is a separate development diagnostic/control-plane service, not the shared feature compatibility bridge defined by this repository.
 
-The transport path is live-validated. Findings obtained through it still require normal compatibility review before they become maintained bridge capabilities or feature assumptions.
+The transport has been used for bounded read/write runtime validation during the current decal investigation. Public Witch Dock and reconstructed modules must never depend on the GitHub mailbox/local relay at runtime.
 
-## Initial Legacy Collection Reviewed
+## Current Canonical ADP Reference
 
-An initial bulk Tampermonkey export supplied by Amanda was inspected before repository bootstrap. The reviewed collection included:
+Amanda supplied `Advanced_Decal_Posing_KW_9-3-26_TEST_PATCH.js` v0.99.30 and confirmed that Lob is running this patched version.
 
-- Advanced Decal Posing
-- HF Core Tweaks
-- Full Res Decals/Textures
-- 2000 kitbash parts
-- I love extra slots
-- Camera Control Modifier
-- Shader Fix for Photo Booth
-- ReCK for Hero Forge (third-party reference, not Lob-authored)
+For the current reconstruction, v0.99.30 supersedes v0.99.23 as the ADP-side reference for decal posing behavior.
 
-The actual source files have **not yet been archived into `/legacy/` in this repository**. Until they are imported and provenance is recorded, the inventory remains provisional and based on the completed initial audit.
+The source has been audited for the **decal posing subsystem only** in:
 
-## High-Priority Confirmed Architecture Problems From Initial Audit
+`docs/script-audits/advanced-decal-posing-v0.99.30-decal-posing-subsystem.md`
 
-- Multiple legacy scripts intercept and replace core HeroForge bundles independently.
-- Some bundle interception paths remove the original bundle before replacement validation and lack a safe untouched fallback.
-- HF Core Tweaks and Full Res Decals/Textures compete over HeroForge initialization through shared global coordination.
-- Advanced Decal Posing and Full Res contain an undeclared cross-script dependency for projected/unequal decal behavior.
-- The 2000 kitbash script re-executes a modified `extras.js` after the original has already run.
-- Several scripts use permanent non-configurable runtime overrides.
-- Two scripts contain account-specific page-blanking/redirect kill-switch behavior that must not be migrated into maintained code.
-- Advanced Decal Posing combines many unrelated domains and should not remain one feature module.
+The exact file is not yet archived under `/legacy/`; archive/provenance import is required before maintained reconstruction begins.
 
-## Live Diagnostic Evidence
+## Current Decal Posing Findings
 
-Confirmed on 2026-09-03 through `HF-Chat-Bridge`:
+### Confirmed
 
-- authenticated HeroForge page context is reachable from the read-only userscript;
-- the complete ChatGPT -> GitHub -> local relay -> HeroForge -> GitHub -> ChatGPT round-trip works;
-- relay v0.1.2 prevents the confirmed stale-open duplicate-request race in the tested scenario;
-- `runtime.listScripts` returned current HeroForge script resources including `ckvendor.js`, `renderkit.js`, `shaderkit.js`, `hfuivendor.js`, `extras.js`, `materialui.js`, `accounts.js`, `community.js`, and `gated/advimport.js`;
-- `runtime.capabilityProbe` found top-level named `HF` and `CK` function objects;
-- `TN`, `BT`, and `THREE` were not present as top-level globals in the tested page state;
-- `React` and `ReactDOM` were present;
-- `CK.display` is an accessor/getter, and the generic read-only path correctly refused to invoke it.
+- Current selected splatter decal resolution can use `UIState.editorMenu_color_decals_decals` plus `CK.character.display.modded.orderedDecals.splatter` and the entry mapping.
+- Project state can be written through `CK.activeTweak({ decals: ... })` without relying on minified React closure state.
+- `forceProjectedScript` remains the ADP/Full Res projection override field.
+- ADP v0.99.30 still depends on Full Res v0.80 for actual projected-decal renderer semantics.
+- ADP v0.99.30 still contains brittle `heroforgeui.js` source replacement for Project, Unequal Scaling, transform ranges, and Full List catalog behavior.
+- v0.99.30 contains both a newer runtime/DOM Project compatibility service and the older compiled Project injection, creating duplicate ownership risk.
+- The exact v0.99.30 file does not contain the corrected bound gizmo.
+- True decal slot-schema expansion is not confirmed in v0.99.30 and requires a targeted HF Core Tweaks audit.
 
-Detailed evidence: `docs/investigations/INV-0001-live-runtime-capability-probe-2026-09-03.md`.
+### Bound gizmo milestone
 
-These are diagnostic observations, not yet maintained API/capability guarantees.
+The external corrected bound decal gizmo v0.4.1 passed live current-build testing:
+
+- stable projector-volume center anchor;
+- per-frame camera tracking;
+- screen-space Move in both axes with renderer movement matching requested pixels to approximately 0.01 px in the tested setup;
+- Rotate propagation/restoration;
+- Scale propagation/restoration;
+- disable/re-enable cleanup;
+- final human Move/Rotate usability pass.
+
+Unequal Project-OFF visual scale remains deferred and is not a release blocker.
 
 ## Active Work
 
-- Import the original bulk script collection into immutable `/legacy/` paths.
-- Create normalized per-script audits from the initial review.
-- Finalize stable feature IDs and dependency relationships.
-- Continue bounded follow-up probes of confirmed `HF` / `CK` candidates.
-- Distinguish plain data properties from accessors before designing adapters.
-- Identify a safe HeroForge build/fingerprint source.
-- Record confirmed capability evidence before implementing the maintained compatibility bridge.
+- Normalize the v0.99.30 ADP-side decal posing audit.
+- Archive current canonical legacy/reference sources with provenance.
+- Audit the exact current Full Res v0.80 projection renderer support.
+- Audit HF Core Tweaks decal slot/schema behavior if extra slots are in the first Advanced Decal Posing production scope.
+- Write a consolidated `decals.advanced-posing` feature specification.
+- Extract the validated bound gizmo into maintained feature/service/bridge boundaries.
+- Design safe coexistence with Lob v0.99.30 before Witch Dock integration.
 
 ## Next Planned Development Stage
 
-1. Collect the queued `runtime.describePath` / `runtime.searchGlobals` results.
-2. Determine which useful `HF` / `CK` paths are plain data properties and which require deliberate getter access.
-3. If getter access is required, design a narrowly allowlisted read-only probe rather than weakening generic traversal.
-4. Capture a build/fingerprint source suitable for compatibility tracking.
-5. Continue legacy import and audit normalization.
-6. Reconstruct lower-risk runtime features as standalone Tampermonkey tests once required capabilities are confirmed.
+1. Archive exact v0.99.30 ADP source under immutable `/legacy/`.
+2. Complete the Full Res v0.80 projected-renderer dependency audit.
+3. Complete the HF Core Tweaks decal-slot audit if slots remain first-pass scope.
+4. Define the production Advanced Decal Posing feature/capability contract.
+5. Build a production-style standalone implementation from maintained modules.
+6. Test with Lob absent.
+7. Test coexistence with exact Lob v0.99.30 present.
+8. Integrate only the validated module into Witch Dock Dev.
 
-## Current Blockers
+## Current Blockers / Open Gates
 
-- Legacy source files are not yet present in the repository.
-- Maintained current-build capability definitions have not yet been formalized from the live diagnostic evidence.
-- A durable HeroForge build identifier/fingerprint has not yet been captured.
+- The exact current v0.99.30 source is not yet archived under `/legacy/`.
+- Exact current Full Res v0.80 projected/unequal renderer source has not yet been normalized/audited in this repository.
+- True extra decal slot/schema behavior still needs current HF Core Tweaks source audit if included in first-pass scope.
+- Maintained shared compatibility bridge and patch engine are not yet implemented.
 - Feature ownership with Lob has not yet been formally assigned.
-- No maintained shared compatibility bridge or patch engine exists yet.
+- Unequal bound scaling renderer enhancement is intentionally deferred.
 
 ## Migration Queue
 
 | Area | Current State | Next Gate |
 |---|---|---|
-| Legacy script collection | Audited outside repo; not yet archived | Import immutable originals |
-| Feature inventory | Provisional | Confirm against archived source |
-| HF-Chat-Bridge diagnostic transport | v0.1 transport validated; capability probes active | Follow-up paths + cross-chat validation |
-| Maintained compatibility bridge | Planned | Confirmed named capability semantics/readiness |
-| Standalone modules | Not started | Audit/spec + capabilities first |
-| Witch Dock Dev integration | Not started | Standalone validation first |
+| ADP v0.99.30 decal posing | Current source audited; not yet archived | Archive exact source + dependent renderer/slot audits |
+| Character local JSON | Standalone reconstruction committed; core Save/Load passed live | Finish lifecycle/repeated-use acceptance before promotion |
+| Projected decal state/control | Standalone test committed; newer live compatibility path confirmed | Fold into consolidated posing service after renderer audit |
+| Corrected bound decal gizmo | External standalone v0.4.1 behavior validated | Extract into maintained module + coexistence test |
+| Unequal bound scaling | Deferred | Separate renderer enhancement later |
+| HF-Chat-Bridge diagnostic transport | Workbench transport validated | Remains development-only external infrastructure |
+| Maintained compatibility bridge | Planned | Define capabilities from validated decal work |
+| Witch Dock Dev integration | Not started | Maintained standalone Advanced Decal Posing validation |
 | Witch Dock Stable | No dependency | Separate future promotion review |
 
 ## Status Terms
 
-- **Legacy reference** — immutable original source used to understand behavior.
-- **Provisional inventory** — extracted from audit but not yet confirmed through normalized repo source and runtime testing.
+- **Legacy reference** — immutable original/reference source used to understand behavior.
+- **Provisional inventory** — extracted from audit but not yet confirmed through normalized repo source/runtime testing.
 - **Standalone candidate** — coherent feature suitable for independent reconstruction/testing.
-- **Standalone validated** — reconstructed module has passed its defined standalone acceptance tests.
+- **Standalone validated** — reconstructed module/experiment has passed its defined standalone acceptance tests.
 - **Witch Dock Dev candidate** — standalone validated and approved for integration testing.
 - **Stable candidate** — passed Witch Dock Dev testing and awaits explicit public promotion review.
 - **Experimental only** — intentionally not eligible for stable integration yet.

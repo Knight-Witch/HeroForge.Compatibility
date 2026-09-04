@@ -2,6 +2,83 @@
 
 All committed repository updates must be recorded here.
 
+## HFC-2026-09-04-009 — Audit current ADP v0.99.30 decal posing subsystem
+
+**Date:** 2026-09-04
+
+### Summary
+
+Audited the exact `Advanced_Decal_Posing_KW_9-3-26_TEST_PATCH.js` v0.99.30 source currently identified by Amanda as the patched ADP copy Lob is running, limited intentionally to the decal posing subsystem. Normalized repository status around the completed bound-gizmo investigation and the existing committed standalone reconstructions.
+
+### Added
+
+- `docs/script-audits/advanced-decal-posing-v0.99.30-decal-posing-subsystem.md`
+
+### Confirmed audit findings
+
+- Current v0.99.30 Project compatibility has a viable runtime/DOM path using `UIState`, ordered decal metadata, and `CK.activeTweak`.
+- The same source still retains the older compiled React Project/Unequal Scaling injection, creating duplicate ownership risk.
+- Full List UI/state is separate from the `heroforgeui.js` catalog/filter source transform.
+- Transform range expansion remains exact compiled-string UI patching.
+- Project and Unequal Scaling renderer behavior remains an external Full Res dependency.
+- Explicit slot-schema expansion is not confirmed in this v0.99.30 file; current HF Core Tweaks requires a targeted audit before first-pass slot parity can be claimed.
+- The corrected bound gizmo is not legacy v0.99.30 behavior; it is a new Knight Witch reconstruction.
+
+### Bound gizmo status recorded
+
+Recorded the external v0.4.1 current-build validation milestone:
+
+- stable projector-volume center;
+- per-frame camera tracking;
+- screen-space Move horizontal/vertical renderer regression passes;
+- Rotate and Scale state/restore passes;
+- disable/re-enable lifecycle pass;
+- human Move and Rotate usability pass;
+- uneven Project-OFF visual scale intentionally deferred.
+
+### Status corrections
+
+Updated `MASTER.md`, `FEATURE_INVENTORY.md`, `MIGRATION_PLAN.md`, `COMPATIBILITY.md`, and `TESTING.md` so they no longer claim that no reconstructed standalone work exists and so the next Advanced Decal Posing reconstruction gates are explicit.
+
+### Touched files
+
+- `docs/script-audits/advanced-decal-posing-v0.99.30-decal-posing-subsystem.md`
+- `MASTER.md`
+- `FEATURE_INVENTORY.md`
+- `MIGRATION_PLAN.md`
+- `COMPATIBILITY.md`
+- `TESTING.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+
+### Runtime impact
+
+Documentation only.
+
+- No JavaScript changed in `HeroForge.Compatibility`.
+- No HeroForge runtime behavior changed.
+- No public or Dev Witch Dock runtime behavior changed.
+- No legacy source under `/legacy/` was modified.
+
+### Test notes
+
+No new runtime test was performed by this commit. The audit records already completed live/runtime evidence and human validation from the current investigation.
+
+### Next gate
+
+Before maintained Advanced Decal Posing implementation begins:
+
+1. archive exact ADP v0.99.30 source under immutable `/legacy/`;
+2. audit current Full Res v0.80 projected/unequal renderer support;
+3. audit current HF Core Tweaks decal slot/schema behavior if slots remain in first-pass scope;
+4. write the consolidated feature specification.
+
+### Rollback
+
+Revert this documentation commit. External diagnostic issues and already completed live tests are unaffected.
+
+---
+
 ## HFC-2026-09-03-008 — Record JSON live pass and add projected-decal standalone test
 
 **Date:** 2026-09-03
@@ -140,7 +217,7 @@ Recorded the first bounded live runtime capability probe and the first confirmed
 - Top-level `TN`, `BT`, `THREE`: **unavailable in tested state**.
 - Top-level `React`, `ReactDOM`: **available**.
 - Issue #9 `runtime.describePath` on `CK.display`: probe completed and returned **`getter_blocked`** without invoking the accessor.
-- Live script resources included `gated/advimport.js` in addition to the previously observed core HeroForge scripts.
+- Live script resources included `gated/advimport.js` in addition to the previously observed HeroForge core scripts.
 
 ### Touched files
 
