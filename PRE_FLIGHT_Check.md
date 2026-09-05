@@ -2,7 +2,7 @@
 
 Use this file before committed repository updates to record what was checked, what can conflict, and what action is recommended.
 
-## PFC-2026-09-05-009 — Photo Booth true-resolution standalone repair
+## PFC-2026-09-05-010 — Adaptive Photo Booth true-4K repair
 
 **Date:** 2026-09-05
 
@@ -29,374 +29,43 @@ Use this file before committed repository updates to record what was checked, wh
 - `COMPATIBILITY.md`
 - `OWNERSHIP.md`
 - `TESTING.md`
-- `entries/README.md`
-- `docs/feature-specs/README.md`
-- current standalone `entries/tampermonkey-standalone/projected-decal-toggle.user.js` for entrypoint/lifecycle conventions
-- `docs/script-audits/advanced-decal-posing-v0.99.30-decal-posing-subsystem.md`
-- exact user-supplied `Advanced_Decal_Posing_KW_9-3-26_TEST_PATCH.js` v0.99.30, SHA-256 `659a84d1a4b01db4143d713618a216dd46dcc5dbed7bd6e668fe61290276170d`
-- August 2026 legacy patch audit evidence showing the Photo Booth screenshot resolution-loop anchor remained present after the August update
-- current live HF-Chat-Bridge Photo Booth probes on `heroforge07.1.9.98`, including `BT.maker.takeScreenshot`, `CK.Capture.renderToImage`, `CK.Capture.renderToImageTiled`, `CK.Capture.getDownloadableURL`, active camera equivalence, render-target dimensions, and renderer capabilities
-- Amanda's 100%-view comparison snippets from the current nominal 4K and 8K outputs
+- current Photo Booth feature specification and INV-0003
+- current standalone Photo Booth v0.2 source on repository `main`
+- exact user-supplied ADP v0.99.30 reference and current screenshot-menu behavior
+- current HF-Chat-Bridge render/readback/camera/pixel traces
+- authenticated current-build `booth.js` source slices used only for diagnosis
+- named `CK.Effects.renderToCanvas` source inspection
+- fixed 16-phase true-4096 reconstruction proof
+- adaptive topology bridge proof and Amanda's whole-image visual acceptance
 
 ### Confirmed findings
 
-- ADP v0.99.30 still sets `CK.Settings.screenshotSize = 2048` and expands the Photo Booth resolution loop from `<=2*CK.Settings.screenshotSize` to `<=4*CK.Settings.screenshotSize`, so its 4096px/8192px menu choices still appear.
-- Amanda confirmed those actions still download files with literal 4096px/8192px dimensions, but their visible detail is substantially softer than true output resolution should provide; the 8K output is softer still at 100% view.
-- After a normal Lob 4096px capture, live `CK.Capture.renderTarget` is 2048x2048, including its viewport/scissor. The nominal 4096 file therefore is not evidence of a 4096 scene render.
-- Temporarily changing `CK.Settings.screenshotSize` from 2048 to 4096 did not change the result: the existing 4096 action still left the real render target at 2048x2048. The setting was restored to 2048 immediately after the bounded test.
-- Current `CK.Capture.renderToImage` does not hard-clamp to 2048. It sizes the render target from requested width/height times antialias factor and only warns above 2048.
-- Current `CK.Capture.getDownloadableURL` converts the supplied canvas to a Blob URL without a resize step.
-- The active Photo Booth camera and `CK.renderManager.camera` resolved to the same camera object in the tested portrait scene.
-- Current renderer capability reports `maxTextureSize = 16384` on the tested machine/browser.
-- A direct named-runtime 4096x4096 render with AA factor 1 is a lower-fragility first repair experiment than patching the private Photo Booth helper or current compiled bundle.
-
-### Supported inference
-
-- The August Photo Booth rewrite introduced or moved the effective ~2048 scene-render constraint into the private Booth capture/compositing path between `BT.maker.takeScreenshot()` and `CK.Capture.renderToImage()`, after which a larger output canvas/file is produced.
-- The exact private helper branch/expression responsible is not yet proven and must not be treated as a stable API or patch target.
+- Repository `main` was reverified at `428f8bc64c52bd2c9485a5dd38c359eed661c02d` before this update.
+- The visible current 4096 model/color path is 16 x 1024 `CK.Effects.renderToCanvas` phases; the earlier 2048 `CK.Capture.renderTarget` belongs to a separate auxiliary/frame path in the tested capture.
+- A staged named 4096 Effects render contains materially more true detail than current native/Lob 4096.
+- Phase-feeding that full-resolution source through the native compositor preserves native Photo Booth composition while retaining the true source detail.
+- The adaptive bridge proof detected 1024 / 4x4 / 16 expected phases, supplied all 16 uniquely, returned 4096x4096, and downloaded a 9,823,790-byte PNG.
+- Amanda opened that adaptive proof output and reported it looked great.
+- Packaged standalone v0.4 then passed repeat capture, `CK.Effects.renderToCanvas` restoration, normal native 1024 capture afterward, and full `dispose()` cleanup; Amanda reported the installed v0.4 capture worked beautifully.
+- Private helper names and source offsets are not required by the maintained repair.
 
 ### Material conflict risks
 
-- Direct `CK.Capture.renderToImage` may not reproduce every Photo Booth-specific compositing/effect/overlay step performed by the private Booth helper; live visual/effect parity is a required gate before promotion.
-- Do not enable 8K before the 4K direct path proves real resolution and acceptable Photo Booth parity.
-- The current renderer defaults to 2x antialiasing; a 4096 request at 2x would allocate an 8192 target and an 8192 request at 2x would allocate 16384. The first proof therefore explicitly uses AA factor 1.
-- Reported `maxTextureSize = 16384` is machine/browser-specific capability evidence, not a promise that 8K is safe or performant on every system.
-- Restore the pre-existing `CK.Capture.renderTarget` dimensions after each direct proof so the test does not intentionally leave a larger GPU allocation in HeroForge.
-- Do not patch `boothui.js`, replace `BT.maker.takeScreenshot`, mutate `CK.Settings.screenshotSize`, alter native capture controls, or change Witch Dock during this standalone stage.
-- No current Lob/ADP source is modified by this repair.
-- The exact current v0.99.30 source is still not archived under repository `/legacy/`; that provenance gate remains open before final maintained parity status.
+- Do not freeze current 1024/512 private topology or minified helper names as maintained API contracts.
+- Constrain repair detection to coherent square-divisor Effects calls using HeroForge's temporary 4096 capture camera/view geometry.
+- Mixed, duplicate, incomplete, or unrecognized topology must fail closed and restore the named method.
+- If HeroForge begins providing a direct true-4096 Effects model render, pass it through unchanged.
+- One true 4096 canvas plus its pixel buffer is memory-heavy; prevent concurrent captures and release temporary references promptly.
+- Painterly and other effect profiles still require normal packaged regression coverage.
+- 8K remains gated; `maxTextureSize = 16384` alone does not prove safe 8K memory/performance.
+- No Witch Dock, Lob/ADP, `/legacy/`, or bundle patch changes in this update.
 
 ### Recommended action
 
-Commit the standalone 4K proof and durable diagnosis/spec/status tracking. Live-test a genuine 4096x4096 render and compare detail, framing, lighting, background, overlays/effects, color, and cleanup against the existing Lob output. Do not add 8192 or integrate into Witch Dock until the 4096 proof passes.
+Commit adaptive standalone v0.4 as the validated 4K repair and the corrected durable diagnosis/status. The packaged 4K visual, repeat-use, native-after, restoration, and dispose gates have passed on the current build. Keep 8K as a separate follow-up with explicit resource safeguards; do not integrate into Witch Dock Stable from this standalone checkpoint.
 
 ---
 
-## PFC-2026-09-05-008 — Synchronize stable corrected bound gizmo status
+## Historical records
 
-**Date:** 2026-09-05
-
-### Target files
-
-- `MASTER.md`
-- `FEATURE_INVENTORY.md`
-- `COMPATIBILITY.md`
-- `MIGRATION_PLAN.md`
-- `TESTING.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-
-### Required material reviewed
-
-- `PROJECT_CONTRACT.md`
-- `MASTER.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-- `ARCHITECTURE.md`
-- `FEATURE_INVENTORY.md`
-- `COMPATIBILITY.md`
-- `OWNERSHIP.md`
-- `MIGRATION_PLAN.md`
-- `TESTING.md`
-- current Witch Dock public `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, and `HISTORY/BULLSHIT/BOUND_DECAL_GIZMO.md`
-- current Witch Dock stable corrected-gizmo loader and accepted five source fragments
-- WITCH_DEV v0.4.0, v0.4.1, and v0.4.2 runtime test results
-- Witch Dock stable repair commit `1712b0ba24c8303d8d446d88cdf66199978045e7`
-
-### Confirmed findings
-
-- `decals.gizmo.bound-correction` has completed the intended standalone -> Witch Dock Dev -> Witch Dock Stable path.
-- Move, Rotate, and Scale Ctrl+Z / Ctrl+Shift+Z passed live testing.
-- The corrected Move undo problem was integration-specific: repeated `CK.activeTweak()` calls during pointer movement produced repeated intermediate history snapshots on the current runtime.
-- The validated repair uses live character data change/refresh during Move and retains the existing final `CK.passiveChangeFinish()` commit.
-- Existing sane Project ON/OFF state is preserved.
-- Changing decal artwork while Project OFF preserves the prior finite bound transform.
-- A brand-new Project-OFF slot with no genuine prior bound state can receive HeroForge's observed bad initializer near `v=1.503942117`, `s=1.768586891`, `sy=1.768586891`; the validated v0.4.2 repair normalizes only those three values to zero when the known signature is present.
-- WITCH_DEV v0.4.1 failed the fresh-slot scale case because projected scale values were incorrectly treated as an authoritative bound baseline; v0.4.2 corrected that model by caching only genuine Project-OFF state.
-- Public Witch Dock Stable does not depend on `HeroForge.Compatibility` runtime code or the HF-Chat-Bridge transport.
-- Compatibility repository status files were stale because they still described the bound gizmo as an external v0.4.1 experiment awaiting Witch Dock integration.
-
-### Material conflict risks
-
-- Documentation-only update in `HeroForge.Compatibility`; do not modify maintained JavaScript, `/legacy/`, Witch Dock runtime code, or the HF-Chat-Bridge repository.
-- Do not imply the entire `decals.advanced-posing` family is stable because the bound gizmo is stable.
-- Do not collapse the remaining Full Res renderer audit, HF Core Tweaks slot audit, provider arbitration, or ADP coexistence gates into the completed gizmo migration.
-- Preserve the explicit boundary that Witch Dock Stable consumes its own published module and does not load this repository's development head.
-- Keep unequal Project-OFF visible scaling, exact artwork-center polish, and projector wireframe correction marked deferred rather than silently solved.
-
-### Recommended action
-
-Commit a documentation-only status synchronization recording the completed gizmo promotion and v0.4.2 repair. No runtime behavior changes. After this checkpoint, the next material Advanced Decal Posing stage may return to the exact v0.99.30 archival/dependency audits without reopening the stable gizmo implementation.
-
----
-
-## PFC-2026-09-04-007 — ADP v0.99.30 decal posing subsystem audit
-
-**Date:** 2026-09-04
-
-### Target files
-
-- `docs/script-audits/advanced-decal-posing-v0.99.30-decal-posing-subsystem.md`
-- `MASTER.md`
-- `FEATURE_INVENTORY.md`
-- `MIGRATION_PLAN.md`
-- `COMPATIBILITY.md`
-- `TESTING.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-
-### Required material reviewed
-
-- `PROJECT_CONTRACT.md`
-- `MASTER.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-- `ARCHITECTURE.md`
-- `FEATURE_INVENTORY.md`
-- `COMPATIBILITY.md`
-- `OWNERSHIP.md`
-- `MIGRATION_PLAN.md`
-- `TESTING.md`
-- `docs/script-audits/README.md`
-- `docs/feature-specs/projected-decal-toggle.md`
-- `docs/investigations/INV-0002-september-2026-adp-breakage-scope-v09923-correction.md`
-- `docs/decisions/ADR-0002-immutable-legacy-sources.md`
-- `docs/decisions/ADR-0003-standalone-first-promotion.md`
-- committed `entries/tampermonkey-standalone/projected-decal-toggle.user.js`
-- user-supplied `Advanced_Decal_Posing_KW_9-3-26_TEST_PATCH.js` v0.99.30, SHA-256 `659a84d1a4b01db4143d713618a216dd46dcc5dbed7bd6e668fe61290276170d`
-- prior Lob architecture audit for dependency/history comparison
-- current 2026-09-04 bound-gizmo runtime investigation and validation results
-
-### Confirmed findings
-
-- v0.99.30 is the current ADP reference for this work and is reported as the copy Lob is running.
-- The current source has a newer runtime/DOM Project compatibility service using `UIState`, ordered decal metadata, and `CK.activeTweak`.
-- The current source still retains the older compiled React Project/Unequal Scaling injection, creating duplicate ownership risk.
-- Full List has a separate DOM control but the expanded catalog/filter behavior still depends on `heroforgeui.js` source transformation.
-- Transform range expansion is still exact compiled-string UI patching.
-- Project/Unequal renderer semantics are external to ADP and remain dependent on current Full Res behavior.
-- Explicit decal slot-schema expansion is not confirmed in v0.99.30; current HF Core Tweaks must be audited before claiming first-pass slot parity.
-- The corrected bound gizmo is not present in v0.99.30; the validated v0.4.1 gizmo is a new Knight Witch reconstruction.
-- Repository status files were stale: committed standalone JSON/Project tests existed while `MASTER.md`/`COMPATIBILITY.md` still described no reconstructed features.
-
-### Material conflict risks
-
-- Do not port the v0.99.30 `heroforgeui.js` interceptor wholesale.
-- Do not allow Witch Dock and Lob to mount duplicate Project/Full List controllers or independently drive the same posing state.
-- Do not let Witch Dock independently patch `heroforgeui.js` while current Lob ADP owns that bundle.
-- Do not silently depend on Full Res for renderer semantics in a future standalone/Witch Dock feature; declare and gate the renderer capability.
-- Do not treat older ADP slot-expansion attribution as current v0.99.30 fact.
-- Do not migrate unresolved short compiled patches without behavioral proof.
-- The exact v0.99.30 source is not yet archived under `/legacy/`; archival is required before maintained reconstruction begins.
-
-### Recommended action
-
-Commit this documentation-only audit/status normalization. No JavaScript or runtime behavior changes. Next material stage must archive v0.99.30, audit current Full Res v0.80 projected renderer support, and audit HF Core Tweaks slot/schema behavior if slots remain first-pass scope before writing the consolidated production feature spec.
-
----
-
-## PFC-2026-09-03-006 — Projected decal standalone reconstruction
-
-**Date:** 2026-09-03
-
-### Target files
-
-- `entries/tampermonkey-standalone/projected-decal-toggle.user.js`
-- `docs/feature-specs/projected-decal-toggle.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-
-### Required material reviewed
-
-- `PROJECT_CONTRACT.md`
-- `MASTER.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-- `ARCHITECTURE.md`
-- `FEATURE_INVENTORY.md`
-- `COMPATIBILITY.md`
-- `OWNERSHIP.md`
-- `TESTING.md`
-- current standalone character JSON reconstruction
-- canonical user-supplied 2026-09-02 script export, including Advanced Decal Posing v0.99.23 and Full Res Decals/Textures
-- current projected-decal renderer investigation evidence
-- current HeroForge native Mirror `CK.activeTweak` update pattern from the August targeted compatibility capture
-- Amanda's live projected Slot F state and uploaded local JSON save
-
-### Confirmed findings
-
-- Local JSON Save and Load core behavior passed Amanda's live test before this reconstruction proceeds.
-- Advanced Decal Posing's missing Project control is a UI injection failure; its persisted field remains present.
-- The legacy control writes `forceProjectedScript` on `decals.splatter[...]`.
-- Current Full Res renderer logic consumes that field as a tri-state override: undefined/native, true/projected, false/unprojected.
-- Live `CK.character.data.decals` exposes `bodyLower`, `bodyUpper`, `face`, and `splatter` on the loaded test figure.
-- The uploaded figure JSON contains 35 splatter records, 34 with `forceProjectedScript: false`, one without the field, and none with `true`.
-- The Slot F test candidate uses numeric key `6`; its saved record has decal ID `20990` and current state `false`.
-- Current HeroForge's native Mirror action still updates the selected decal through `CK.activeTweak({decals: ...})`, preserving the surrounding bucket and record state.
-
-### Supported inference
-
-- Alphabetic Slot F is mapped to numeric splatter key `6` by the standalone test harness. That mapping is highly consistent with the UI/data layout but the exact human-readable `Four Rune Spell Column` -> ID `20990` relationship is not promoted to confirmed until the live test affects the expected Slot F decal.
-
-### Material conflict risks
-
-- The standalone test must not repair or reintroduce the old `heroforgeui.js` compiled-string injection.
-- The test must preserve all other decal buckets and records when changing one `forceProjectedScript` field.
-- The Full Res renderer dependency remains external to this feature; if its renderer patch is absent, changing the field may persist without affecting rendering.
-- Automatic synchronization with HeroForge's currently selected native decal slot is not yet proven, so v0.1.0 requires explicit slot selection.
-- Existing figure data must not be silently changed on initialization. Mutation occurs only after explicit ON/OFF/Native button use.
-- No Witch Dock production file is touched.
-
-### Recommended action
-
-Commit standalone v0.1.0 using the named `CK.activeTweak` runtime path and independent UI. Validate Slot F ON/OFF/Native behavior, re-pose behavior, JSON persistence, undo/redo, and disposal before considering native selected-slot detection or Witch Dock Dev integration.
-
----
-
-## PFC-2026-09-03-005 — Character local JSON standalone reconstruction
-
-**Date:** 2026-09-03
-
-### Target files
-
-- `entries/tampermonkey-standalone/character-local-json.user.js`
-- `docs/feature-specs/character-local-json.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-
-### Canonical reference reviewed
-
-- User-supplied 2026-09-02 Tampermonkey export.
-- `Advanced Decal Posing.user.js` v0.99.23, SHA-256 `08dfb5bf7e75c2e4d92b0e0d856d49b04f3ee28a04836fa014a327312573f039`.
-- Relevant v0.99.23 local Save/Load implementation and its `heroforgeui.js` injection anchor.
-- Current project contract, master state, architecture, feature inventory, compatibility, ownership, testing, and investigation notes.
-
-### Confirmed live runtime evidence
-
-- `CK.UndoQueue` exists and exposes `queue` / `currentIndex` (HF-Chat-Bridge #19).
-- `CK.tryLoadCharacter` exists (#20).
-- `CK.character.data` exists (#22).
-- `CK.toJson` / `CK.fromJson` exist (#26 / #27).
-- `CK.UndoQueue.queue` is currently an array (#30).
-- `CK.UndoQueue.currentIndex` is currently numeric (#31).
-
-### Diagnosis
-
-The direct local Save/Load feature's required named runtime surfaces still exist. The missing local controls therefore do not justify repairing the old native React / compiled `heroforgeui.js` injection. The lower-risk reconstruction is independent UI calling the still-present named runtime behavior.
-
-### Material conflict risks
-
-- Export must use the current UndoQueue index so it does not save a stale snapshot.
-- Import intentionally mutates the active character only after explicit user file selection, matching legacy behavior.
-- The standalone test must not intercept or replace `heroforgeui.js`.
-- The standalone test must not override HeroForge runtime methods.
-- Advanced Decal Posing v0.99.23 may remain enabled; its missing native Save/Load injection should not conflict with the independent panel.
-- No Witch Dock production file is touched.
-
-### Recommended action
-
-Commit standalone test v0.1.0, install it separately in Tampermonkey, validate save/load/repeated use, and only then update durable feature status or begin the projected-decal repair.
-
----
-
-## PFC-2026-09-03-004 — Record first live runtime capability evidence
-
-**Date:** 2026-09-03  
-**Time:** approximately 00:58 PDT
-
-### Target files
-
-- `MASTER.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-- `COMPATIBILITY.md`
-- `TESTING.md`
-- `docs/investigations/INV-0001-live-runtime-capability-probe-2026-09-03.md`
-
-### Relevant history checked
-
-- `PROJECT_CONTRACT.md`
-- current `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, and `TESTING.md`
-- HF-Chat-Bridge project contract and current read-only safety boundary
-- Issue #8 successful `runtime.capabilityProbe`
-- Issue #9 successful `runtime.describePath` result for `CK.display` with `getter_blocked`
-- previously validated Issues #2 and #3 transport/resource evidence
-- public `Knight-Witch/KnightWitch.Heroforge` boundary
-
-### Confirmed findings
-
-- Top-level named `HF` and `CK` function objects are present in the tested live HeroForge page.
-- `HF` exposes named properties including `settings`, `loadedData`, `finishedLoading`, `Data`, `ThreeCharacters`, and `CustomFace`.
-- `CK` exposes a large bounded named surface including character I/O, undo/redo, camera/display, tweak, and state-facing names.
-- `TN`, `BT`, and `THREE` were not present as top-level globals in the tested page state.
-- `React` and `ReactDOM` were present.
-- `CK.display` is an accessor/getter and the generic read-only probe correctly refused to invoke it.
-- Current live resources include `gated/advimport.js` in addition to the previously observed HeroForge core scripts.
-
-### Conflict risks
-
-- Named runtime presence must not be treated as a stable API guarantee without semantics/readiness/build validation.
-- Accessor properties may execute HeroForge code on read; generic traversal must remain getter-blocked.
-- The current script-resource probe strips URL query strings and therefore does not supply a durable build fingerprint.
-- No feature code, patch, or Witch Dock production code is changed by this documentation update.
-
-### Recommended action
-
-Record the capability evidence as an active investigation. Collect the already queued bounded follow-up probes. Do not weaken the generic getter block; if accessor inspection becomes necessary, design a narrowly allowlisted read-only probe with explicit side-effect review.
-
----
-
-## PFC-2026-09-03-003 — Record validated live diagnostic transport
-
-**Date:** 2026-09-03  
-**Time:** approximately 00:50 PDT
-
-### Target files
-
-- `MASTER.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-- `COMPATIBILITY.md`
-- `TESTING.md`
-
-### Relevant history checked
-
-- `PROJECT_CONTRACT.md`
-- current `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, and `TESTING.md`
-- HF-Chat-Bridge Issue #1 first live round-trip and duplicate-result defect
-- HF-Chat-Bridge Issue #2 fresh relay v0.1.2 single-result retest beyond the lease interval
-- HF-Chat-Bridge Issue #3 successful `runtime.listScripts` result
-- public `Knight-Witch/KnightWitch.Heroforge` boundary
-
-### Confirmed findings
-
-- HF-Chat-Bridge end-to-end read-only transport is live-validated in the tested setup.
-- Relay v0.1.2 passed the stale-open duplicate-request regression test.
-- The first non-ping read-only probe successfully returned bounded live script-resource data.
-- Maintained named runtime capabilities were still unproven at that stage.
-
-### Recommended action
-
-Record the validated diagnostic transport state, then run the bounded `runtime.capabilityProbe`.
-
----
-
-## PFC-2026-09-02-002 — External HF-Chat-Bridge diagnostic scaffold status
-
-**Date:** 2026-09-02  
-**Time:** 23:51 PDT
-
-### Summary
-
-Recorded the external private diagnostic scaffold and its boundary from the maintained compatibility bridge before live validation.
-
----
-
-## PFC-2026-07-13-001 — Initial Documentation Bootstrap
-
-**Date:** 2026-07-13  
-**Time:** 18:44 PDT
-
-### Summary
-
-Established the initial repository documentation, architecture, inventory, compatibility, ownership, migration, testing, source/entry/test guidance, and decision-record structure before runtime reconstruction.
+Pre-flight records through `PFC-2026-09-05-009` remain preserved in Git history at and before commit `428f8bc64c52bd2c9485a5dd38c359eed661c02d`. This file was compacted at the validated 4K checkpoint; no runtime behavior changed because of the documentation compaction.

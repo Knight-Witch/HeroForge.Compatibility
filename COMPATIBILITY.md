@@ -4,7 +4,7 @@ Human-readable HeroForge compatibility status.
 
 ## Current State
 
-The repository contains early standalone reconstructions and current-runtime capability evidence. The corrected bound decal gizmo has completed standalone validation, Witch Dock Dev testing, and Witch Dock Stable promotion; it is no longer an external experiment awaiting extraction. A separate current-runtime Photo Booth investigation has confirmed that Lob's nominal 4096px still capture is backed by only a 2048x2048 scene render on the tested build; a true-4096 standalone proof is now committed for live validation.
+The repository contains early standalone reconstructions and current-runtime capability evidence. The corrected bound decal gizmo has completed standalone validation, Witch Dock Dev testing, and Witch Dock Stable promotion; it is no longer an external experiment awaiting extraction. The current Photo Booth investigation on `heroforge07.1.9.98` has now isolated the visible-color quality ceiling to HeroForge's private 1024-pixel model-phase tile cap. A named-runtime adaptive true-4096 Effects phase-feed repair has passed mechanical proof, adaptive topology validation, packaged 4096 download, whole-image human visual acceptance, repeat-use, native-after, restoration, and dispose lifecycle validation through the native compositor. 4K is standalone validated on the current build; 8K remains a separate gate.
 
 Current live investigation evidence spans the September 2026 HeroForge builds used during the v0.4.1 gizmo investigation, subsequent Witch Dock v0.4.2 repair validation, and Photo Booth build `heroforge07.1.9.98`. Exact cross-build stability still requires normal revalidation after HeroForge updates.
 
@@ -18,7 +18,7 @@ The private `Knight-Witch/HF-Chat-Bridge` workbench transport is development inf
 | Character local JSON standalone | Core Save/Load passed live | Current live page 2026-09-03 | Repeated-use/lifecycle acceptance still pending. |
 | Projected decal state/control | Runtime path confirmed; maintained consolidation pending | September 2026 | `CK.activeTweak` state path works; exact Full Res v0.80 renderer dependency still requires audit. |
 | `decals.gizmo.bound-correction` | Witch Dock Stable; runtime-validated | 2026-09-05 | WITCH_DEV v0.4.2 repair passed Move/Rotate/Scale undo-redo, sane Project state preservation, bound artwork-swap transform preservation, and fresh-slot bad-default normalization. |
-| `media.screenshot-resolution` | 2048 underlying-render failure confirmed; standalone true-4096 proof committed | `heroforge07.1.9.98` / 2026-09-05 | Lob 4K/8K file dimensions remain large but 4K scene target is 2048; direct named-render 4K parity test pending; 8K gated. |
+| `media.screenshot-resolution` | 4K standalone validated | `heroforge07.1.9.98` / 2026-09-05 | Adaptive phase-feed passed live topology/download/visual/repeat/native-after/restoration/dispose; native 4K uses 16x1024 Effects phases on this build; 8K gated for separate design. |
 | Witch Dock Dev integration | Bound gizmo completed; broader features not integrated | 2026-09-05 | Screenshot repair and remaining posing features require standalone validation first. |
 | Witch Dock Stable | Bound gizmo promoted; no dependency on Compatibility repo head | 2026-09-05 | Stable delivery remains insulated from this repository's unstable development head. |
 
@@ -44,16 +44,23 @@ On the tested current runtime:
 
 On `heroforge07.1.9.98` with Photo Booth open:
 
-- `BT.maker.takeScreenshot(width, height)` receives the selected resolution and forwards through a private Booth helper;
-- `CK.Capture.renderToImage(width, height, camera, aaFactor, refresh)` is available by name and contains no hard 2048 clamp;
-- `CK.Capture.getDownloadableURL` converts the supplied canvas to a Blob URL without resizing;
-- after Lob's existing 4096px action, `CK.Capture.renderTarget` is 2048x2048 even though the downloaded file is nominally 4096px;
-- changing `CK.Settings.screenshotSize` from 2048 to 4096 does not alter that 2048x2048 underlying target, so the old setting is not the controlling clamp; it was restored to 2048 after the bounded test;
-- active Photo Booth camera and `CK.renderManager.camera` resolved to the same camera object in the tested portrait scene;
+- `BT.maker.takeScreenshot(width, height)` receives the selected resolution and enters the current private Booth capture/compositing path;
+- the private helper clones the orbit camera, applies the Booth token view offset, and owns model/background staging, masks, frame handling, visibility, and final compositing;
+- authenticated current-page source retrieval of `gated/booth.js` identified the private tiled model path; its current phase cap is 1024 normally, or 512 for the identified Painterly special case;
+- the visible model/color phase renderer defaults to named `CK.Effects.renderToCanvas`;
+- a normal 4096 capture therefore reconstructs the model/color image from sixteen shifted 1024x1024 phase renders;
+- a separate later frame/auxiliary path uses tiled `CK.Capture.renderToImage`; the previously observed 2048x2048 `CK.Capture.renderTarget` belongs to that path in the tested capture rather than the main visible-color source;
+- `CK.Settings.screenshotSize = 4096` does not repair the visible-color phase cap and was restored to 2048 after the bounded test;
 - current renderer capability reports `maxTextureSize = 16384` on the tested machine/browser;
-- Amanda's 100%-view comparison shows nominal 4K and 8K outputs are increasingly soft, matching the observed lower-resolution scene-render behavior.
+- untouched native 4096 measured only about 7.2% more edge information than an upscaled native 2048 reference in the tested central region;
+- named `CK.Effects.renderToCanvas(4096,4096,nativeTempCamera,1)` succeeded while native Booth state was staged and measured about 27.4% more edge information than untouched native 4096;
+- a runtime phase-feed proof supplied the true-4096 source through all 16 expected native model phases and the native compositor reproduced that source exactly in the tested central region (MAE 0, RMSE 0, identical edge metric);
+- the later adaptive bridge proof derived the 1024 / 4x4 topology from live camera/Effects calls, supplied 16/16 unique phases, returned 4096x4096, encoded a 9,823,790-byte PNG, and Amanda reported the opened result looked great;
+- the rejected in-place 2x render-target resize experiment produced lower edge detail than baseline and is not a candidate repair.
 
-The current lower-fragility repair experiment bypasses the private helper and calls `CK.Capture.renderToImage(4096, 4096, activeCamera, 1, true)` from an independent standalone test. Live visual/effect parity is not yet confirmed.
+Current private helper names/offsets are build-specific diagnostic evidence only. Maintained code must not treat them as stable APIs.
+
+The selected lower-fragility repair keeps `BT.maker.takeScreenshot` as the owning native capture and temporarily wraps only named `CK.Effects.renderToCanvas` during one explicit action. One genuine 4096 Effects frame is phase-split into the native helper's detected square-divisor topology, with phase X/Y derived from live temporary-camera offsets rather than fixed call order; the untouched helper then performs normal mask/frame/final compositing. A future already-native 4096 Effects model path is passed through untouched. The named method is restored in `finally` cleanup.
 
 ## Current ADP Compatibility Hazards
 
@@ -62,7 +69,7 @@ The exact v0.99.30 ADP reference still:
 - removes/intercepts `heroforgeui.js` before transactional validation;
 - uses many exact compiled-source replacements;
 - has no untouched-original fallback for that bundle path;
-- contains duplicate Project ownership (new runtime/DOM compatibility plus old compiled React injection);
+- contains duplicate Project ownership (new runtime/DOM compatibility plus old compiled Project injection);
 - depends on external Full Res renderer behavior;
 - mixes unrelated features in the same bundle transform;
 - separately intercepts Photo Booth UI code for screenshot/spin/other unrelated adjustments.
@@ -71,8 +78,8 @@ These are reasons to reconstruct coherent features independently, not to port th
 
 ## Not Yet Confirmed / Required Follow-up
 
-- True 4096 direct-render Photo Booth visual/effect parity and lifecycle behavior.
-- True 8192 capture stability/performance; intentionally gated on the 4096 result.
+- Painterly/other effect-profile regression coverage for the packaged adaptive repair.
+- True 8192 capture stability/performance; intentionally gated on the packaged 4096 result.
 - Exact current Full Res v0.80 projected/unequal renderer patch behavior and best maintained replacement strategy.
 - Whether every legacy ±6 transform extreme is safe through runtime-only controls.
 - True extra decal slot/schema expansion behavior in current HF Core Tweaks.

@@ -6,7 +6,7 @@ This is the canonical high-level source for current project state. Keep it curre
 
 **Legacy feature decomposition plus current-runtime compatibility reconstruction, with targeted Photo Booth media repair.**
 
-The private `Knight-Witch/HF-Chat-Bridge` diagnostic/workbench transport is live-validated and has been used to complete the bound-decal gizmo investigation on current HeroForge. The corrected bound gizmo has now progressed through standalone validation, Witch Dock Dev testing, and explicit Witch Dock Stable promotion/repair. Character JSON and projected-decal standalone tests remain separate reconstruction work in this repository. Amanda has prioritized the currently broken 4K/8K Photo Booth still-image capture before returning to the remaining Advanced Decal Posing dependency/provider work; the first true-4096 standalone proof is now prepared for live validation.
+The private `Knight-Witch/HF-Chat-Bridge` diagnostic/workbench transport is live-validated and has been used to complete the bound-decal gizmo investigation on current HeroForge. The corrected bound gizmo has progressed through standalone validation, Witch Dock Dev testing, and explicit Witch Dock Stable promotion/repair. Character JSON and projected-decal standalone tests remain separate reconstruction work in this repository. Amanda has prioritized the broken 4K/8K Photo Booth still-image capture before returning to the remaining Advanced Decal Posing dependency/provider work. The current 4K color choke point is confirmed as HeroForge's low-resolution Effects phase reconstruction. A named-runtime adaptive true-4096 phase-feed repair has now passed mechanical proof, adaptive topology validation, packaged 4096 download, whole-image human visual acceptance, repeat-use, native-after, restoration, and dispose lifecycle checks through the native Booth compositor. The 4K standalone stage is validated; 8K is the next separate gate.
 
 ## Current Repository Role
 
@@ -89,25 +89,37 @@ Unequal Project-OFF visual scale, exact visible-artwork-center alignment, and co
 ### Confirmed
 
 - Lob/ADP v0.99.30 still exposes 4096px and 8192px choices by expanding the Photo Booth resolution-loop ceiling while keeping `CK.Settings.screenshotSize = 2048`.
-- The current 4096px action produces a literal 4096px output file, but live inspection after capture shows the underlying `CK.Capture.renderTarget` remains 2048x2048.
-- Amanda's 100%-view comparisons show the nominal 4K output is visibly soft and the nominal 8K output is softer still, consistent with lower-resolution rendered detail being enlarged into the larger output.
-- Temporarily changing `CK.Settings.screenshotSize` from 2048 to 4096 did not change the underlying 2048x2048 render target; the setting was restored to 2048 after the test.
-- Current `CK.Capture.renderToImage` has no hard 2048 clamp and can size its render target from requested dimensions and antialias factor.
+- Literal 4096/8192 output dimensions are not evidence of corresponding visible rendered detail; Amanda's 100%-view comparisons show the current outputs are soft, with 8K softer still.
+- The previously observed 2048x2048 `CK.Capture.renderTarget` belongs to the native frame/auxiliary path in the tested capture, not the main visible model/color render.
+- Current private Booth source on `heroforge07.1.9.98` shows the visible high-resolution model path using a tiled helper with `maxTile = 1024` normally, or 512 in the identified Painterly special case.
+- A normal 4096 model capture is therefore reconstructed from sixteen shifted 1024x1024 `CK.Effects.renderToCanvas` phases.
+- Browser-side same-scene comparison found native 4096 only about 7.2% higher in measured edge information than an upscaled native 2048 reference in the tested central region.
+- `CK.Effects.renderToCanvas` is available by name, has no 1024 hard clamp, and can render a genuine 4096x4096 visible-color frame while HeroForge's native Booth temporary camera/state is staged.
+- That direct staged true-4096 Effects render measured about 27.4% more edge information than the untouched native 4096 result in the tested central region.
+- A temporary runtime phase-feed proof split the true 4096 source into HeroForge's expected sixteen 1024 phases and let the untouched native helper perform its normal mask/frame/final compositing. The repaired final matched the true source pixel-for-pixel in the tested central region (MAE 0, RMSE 0, identical edge metric).
 - Current WebGL capability on the tested machine/browser reports `maxTextureSize = 16384`.
 
 ### Current repair experiment
 
-`media.screenshot-resolution` now has a standalone 4K proof that calls the named runtime renderer directly with the active Photo Booth camera:
+`media.screenshot-resolution` now uses the lower-fragility adaptive named-runtime phase-feed design rather than the superseded `CK.Capture.renderToImage` interception:
 
-`CK.Capture.renderToImage(4096, 4096, camera, 1, true)`
+1. keep `BT.maker.takeScreenshot(4096,4096)` as the owning native Booth capture;
+2. temporarily wrap only `CK.Effects.renderToCanvas` during that explicit action;
+3. render one true 4096x4096 Effects source through the original named method after native Booth state/camera staging is active;
+4. validate the native tile/grid/order and provide matching phase canvases to the existing native compositor;
+5. derive the native phase coordinates from the live temporary-camera offsets instead of assuming fixed call order;
+6. restore the named method and release the large temporary pixel buffer in `finally` cleanup.
 
-The proof verifies a genuine 4096x4096 render target and canvas before download, restores the previous render-target dimensions afterward, does not patch `boothui.js`, and intentionally leaves 8K disabled until 4K visual/effect parity passes.
+If HeroForge later exposes an already-native 4096 Effects model path, v0.4 detects it and passes it through without injecting the tiled repair. The adaptive bridge proof on the current build detected 1024px tiles, a 4x4 grid, 16/16 unique phases, returned 4096x4096, and produced a 9,823,790-byte PNG that Amanda opened and reported looked great.
+
+The maintained standalone does not call the private tiled helper by minified name, does not patch `booth.js`/`boothui.js`, does not mutate `CK.Settings.screenshotSize`, and leaves 8K disabled pending a separate resource-safe design.
 
 ## Active Work
 
-- Live-test the standalone `media.screenshot-resolution` true-4096 proof against the same scene that demonstrated the current blurry Lob output.
-- Verify camera framing, lighting, background, overlays/effects, PNG output, and native/Lob capture behavior after the direct-render test.
-- Enable/test 8192 only after the 4096 path passes; keep the first 8K attempt at 1x render sampling unless separate evidence supports a safer supersample path.
+- Keep packaged standalone `media.screenshot-resolution` v0.4 as the validated 4K regression baseline on `heroforge07.1.9.98`.
+- Design/test 8192 separately with explicit memory/performance safeguards; do not assume the 16384 texture limit alone makes a one-shot 8K Effects render safe.
+- Re-run the complete v0.4 4K topology/download/visual/native-after/dispose suite after any shared 8K changes.
+- Decide after 8K validation whether the high-resolution still feature remains standalone or becomes a Witch Dock Dev candidate.
 - Archive current canonical legacy/reference sources with provenance, including exact ADP v0.99.30.
 - Audit the exact current Full Res v0.80 projection renderer support after the screenshot repair stage.
 - Audit HF Core Tweaks decal slot/schema behavior if extra slots are in the first Advanced Decal Posing production scope.
@@ -117,8 +129,8 @@ The proof verifies a genuine 4096x4096 render target and canvas before download,
 
 ## Next Planned Development Stage
 
-1. Validate the standalone true-4096 Photo Booth proof on the current live build.
-2. If 4K passes, add and validate true 8192 capture with explicit GPU/memory safeguards.
+1. Design and validate true 8192 capture with explicit GPU/memory safeguards, using validated v0.4 4K as the regression baseline.
+2. Reconfirm v0.4 4K remains unaffected by the 8K experiment.
 3. Decide whether the validated high-resolution capture remains standalone or becomes a Witch Dock Dev candidate; do not modify Stable during the experiment.
 4. Archive exact v0.99.30 ADP source under immutable `/legacy/`.
 5. Complete the Full Res v0.80 projected-renderer dependency audit.
@@ -128,8 +140,8 @@ The proof verifies a genuine 4096x4096 render target and canvas before download,
 
 ## Current Blockers / Open Gates
 
-- Standalone true-4096 capture still needs live render/detail/effect parity validation.
-- True 8192 capture is intentionally gated on the 4096 result.
+- Packaged standalone adaptive 4K has passed true-4096 mechanical proof, whole-image visual acceptance, repeat-use, native-after, Effects restoration, and dispose cleanup on `heroforge07.1.9.98`.
+- True 8192 capture remains a separate unvalidated gate requiring explicit resource-safe design.
 - The exact current v0.99.30 source is not yet archived under `/legacy/`.
 - Exact current Full Res v0.80 projected/unequal renderer source has not yet been normalized/audited in this repository.
 - True extra decal slot/schema behavior still needs current HF Core Tweaks source audit if included in first-pass scope.
@@ -141,7 +153,7 @@ The proof verifies a genuine 4096x4096 render target and canvas before download,
 
 | Area | Current State | Next Gate |
 |---|---|---|
-| Photo Booth high-resolution still capture | 2048 underlying-render failure diagnosed; standalone true-4096 proof committed | Live 4096 render/detail/effect parity test; 8K remains gated |
+| Photo Booth high-resolution still capture | 4K standalone validated: adaptive true-4096 Effects phase-feed passed topology/download/visual/repeat/native-after/dispose | Design/test resource-safe 8K; then decide standalone vs Witch Dock Dev candidacy |
 | ADP v0.99.30 decal posing | Current source audited; not yet archived | Archive exact source + dependent renderer/slot audits |
 | Character local JSON | Standalone reconstruction committed; core Save/Load passed live | Finish lifecycle/repeated-use acceptance before promotion |
 | Projected decal state/control | Standalone test committed; newer live compatibility path confirmed | Fold into consolidated posing service after renderer audit |
