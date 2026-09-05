@@ -4,72 +4,51 @@ This is the canonical high-level source for current project state. Historical de
 
 ## Current Phase
 
-**Legacy feature decomposition plus current-runtime compatibility reconstruction, with Photo Booth high-resolution still capture now standalone validated at both 4K and 8K.**
+**Legacy feature decomposition plus current-runtime compatibility reconstruction, with `media.screenshot-resolution` now standalone validated and promoted through Witch Dock Dev into Witch Dock Stable.**
 
-The corrected bound decal gizmo is already promoted through Witch Dock Dev into Witch Dock Stable. Character JSON and projected-decal standalone work remain separate reconstruction tracks. The current Photo Booth investigation on `heroforge07.1.9.98` has now completed its standalone repair stage for genuine 4096px and 8192px still capture.
+The corrected bound decal gizmo is also Witch Dock Stable. Character JSON and projected-decal work remain separate reconstruction tracks.
 
-## Current Repository Role
+## Repository Roles
 
-- Repository: `Knight-Witch/HeroForge.Compatibility`
-- Production Witch Dock repository: `Knight-Witch/KnightWitch.Heroforge`
-- External diagnostic transport: private `Knight-Witch/HF-Chat-Bridge`; development-only, never a production dependency
-- Public Witch Dock runtime dependency on this repository: **none**
-- Maintained standalone Photo Booth entry: `entries/tampermonkey-standalone/photo-booth-true-resolution.user.js`
-- Maintained shared compatibility bridge / patch engine: **not yet implemented**
+- Compatibility / reconstruction: `Knight-Witch/HeroForge.Compatibility`
+- Public Witch Dock consumer: `Knight-Witch/KnightWitch.Heroforge`
+- Development-only live transport: private `Knight-Witch/HF-Chat-Bridge`
+- Public Witch Dock runtime dependency on Compatibility `main`: **none**
+- Maintained standalone Photo Booth baseline: `entries/tampermonkey-standalone/photo-booth-true-resolution.user.js` v0.6
 
-## Confirmed Photo Booth Findings
+## Photo Booth True Resolution
 
-On HeroForge `heroforge07.1.9.98`:
+Feature ID: `media.screenshot-resolution`.
 
-- Lob/ADP still exposes nominal 4096px and 8192px choices, but current native visible-color detail is constrained by a private tiled Effects path.
-- The normal high-resolution visible model path uses named `CK.Effects.renderToCanvas` through a private helper capped at 1024px phases in the tested normal case; 4096 therefore uses 4x4 / 16 phases and 8192 uses 8x8 / 64 phases.
-- The previously observed 2048 `CK.Capture.renderTarget` belongs to a separate frame/auxiliary path in the tested scene and is not the principal visible-color source.
-- `CK.Effects.renderToCanvas` itself can render a genuine 4096x4096 staged Booth color source and does not contain the 1024 cap.
-- A true 4096 staged source measured materially more real edge information than untouched native/Lob 4096 and passed whole-image user visual acceptance.
-- One-shot true 8192 Effects rendering can produce a correct result when it survives, but repeated packaged tests pushed the renderer into the familiar white/reset failure mode on the tested machine.
-- Export method, Tampermonkey sandbox/page-context choice, minimal packaging, and custom streaming PNG export did not eliminate that 8192 renderer-reset cliff.
-- The accepted 8K architecture uses **four shifted 4096 Effects sources**. Each source supplies one parity group of the native 8x8 phase lattice, covering all 64 final phase classes without creating an 8192 WebGL Effects target.
-- Amanda reported the grouped 8K result worked perfectly and was dramatically easier on the GPU. The final combined v0.6 package then passed both 4K and 8K visual acceptance.
+Validated on HeroForge `heroforge07.1.9.98`:
 
-## Maintained Repair
+- TRUE 4K uses one genuine 4096 Effects source through the native Booth compositor.
+- TRUE 8K uses four shifted 4096 Effects sources covering all 64 native 8K phase classes without an 8192 Effects target.
+- One-shot 8192, sandbox/page-context changes, minimal packaging, and export-stage workarounds are rejected maintained paths.
+- Standalone v0.6 passed both 4K and 8K visual acceptance.
+- WITCH_DEV_PHOTO provider build `0.7.0-witch-dock-dev-provider` passed Lob-present integration: Lob-injected HeroForge 4096 and 8192 choices both produced correct repaired captures.
+- Witch Dock direct TRUE 4K/8K capture also passed after cycling the provider toggle; the remaining initial disabled-button state was diagnosed as UI readiness, not capture failure.
+- Public Witch Dock commit `e155f2c2f961463b4a0e26f7c88f21f603ce1b95` promoted the exact Dev-tested provider plus a narrow readiness adapter to Stable.
+- Public Stable remains self-contained on `Witch_Scripts`; it does not load Compatibility `main` or HF-Chat-Bridge.
 
-Feature ID: `media.screenshot-resolution`
+## Current Gates
 
-Current standalone v0.6 behavior:
-
-- **TRUE 4K:** one genuine 4096 Effects source is phase-fed through HeroForge's untouched native Booth compositor.
-- **TRUE 8K:** four shifted 4096 Effects sources are phase-fed through the native 8192 compositor; no 8192 Effects target is allocated.
-- Native square-divisor tile/grid topology is detected from live named Effects calls and temporary capture-camera offsets.
-- If HeroForge later exposes an already-native full-resolution Effects path, the compatibility repair passes it through unchanged.
-- `BT.maker.takeScreenshot(...)` remains the owning native Booth capture path.
-- No `booth.js` / `boothui.js` patch, no `CK.Settings.screenshotSize` mutation, and no `CK.Capture.renderToImage` replacement.
-- The temporary `CK.Effects.renderToCanvas` wrapper and large source buffers are restored/released after capture.
-
-## Active Work
-
-1. Keep `media.screenshot-resolution` v0.6 as the validated standalone regression baseline.
-2. Decide separately whether it should become a Witch Dock Dev candidate; do not modify Witch Dock Stable merely because standalone validation passed.
-3. Archive exact canonical ADP v0.99.30 under immutable `/legacy/` with provenance.
-4. Resume Full Res v0.80 projected-renderer dependency audit.
-5. Resume HF Core Tweaks decal slot/schema audit if extra slots remain first-pass scope.
-6. Define the remaining `decals.advanced-posing` feature/capability contract and test Lob-present/Lob-absent coexistence.
-
-## Current Gates / Blockers
-
-- Photo Booth 4K/8K standalone: **validated on `heroforge07.1.9.98`**.
-- Witch Dock integration for Photo Booth: **not yet approved/tested**.
-- Exact ADP v0.99.30 archive/provenance import: pending.
-- Exact Full Res v0.80 renderer audit: pending.
-- HF Core Tweaks slot/schema audit: pending if in scope.
-- Shared compatibility bridge / patch engine: not implemented.
+- `media.screenshot-resolution` standalone: **validated**.
+- `media.screenshot-resolution` Witch Dock Dev: **validated with Lob present**.
+- `media.screenshot-resolution` Witch Dock Stable: **promoted; clean public-refresh smoke test pending**.
+- Lob-absent injection of 4096/8192 into HeroForge's own resolution selector: **separate future UI-adapter gate**. Witch Dock direct buttons already provide Lob-free capture.
+- Feature primary-maintainer assignment: **unresolved**. Stable promotion was explicitly requested by Amanda; this does not silently assign her primary maintenance of the Lob-derived feature.
 
 ## Migration Queue
 
-| Area | Current State | Next Gate |
+| Area | Current state | Next gate |
 |---|---|---|
-| Photo Booth high-resolution still capture | 4K + 8K standalone validated in v0.6; 8K uses grouped 4x4096 source design | Decide standalone vs Witch Dock Dev candidacy; integration testing before any Stable promotion |
+| Photo Booth high-resolution still capture | Standalone validated; Witch Dock Stable promoted | Clean public smoke; later Lob-absent HF UI adapter; future Foundation extraction |
 | Character local JSON | Standalone reconstruction committed; core Save/Load passed live | Finish lifecycle/repeated-use acceptance |
-| Projected decal state/control | Runtime state/control path confirmed | Complete Full Res renderer audit then consolidate |
+| Projected decal state/control | Runtime state/control path confirmed | Complete renderer dependency audit then consolidate |
 | Corrected bound decal gizmo | Witch Dock Stable | Keep regression coverage current |
-| HF-Chat-Bridge diagnostic transport | Workbench transport validated | Remains development-only external infrastructure |
-| Shared compatibility bridge | Planned | Extract repeated named-runtime access from validated features |
+| Shared compatibility bridge/Foundation | Planned | Extract repeated named-runtime access from validated features into versioned stable infrastructure |
+
+## Public Integration Rule
+
+Current Stable consumer code is copied/promoted from validated feature behavior. When Foundation exists, public Witch Dock should consume a pinned/versioned stable Foundation release rather than an unstable development head.

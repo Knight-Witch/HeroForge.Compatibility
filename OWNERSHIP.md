@@ -2,37 +2,30 @@
 
 This project must not silently make Amanda responsible for every imported feature.
 
-## Ownership Roles
+## Roles
 
-- **Primary maintainer** — expected first responder for feature-specific breakage.
-- **Reviewer** — approves architecture-sensitive or integration-sensitive changes.
-- **Backup maintainer** — optional secondary maintainer.
-- **External owner** — source remains externally maintained; this project may reference or integrate without claiming ownership.
+- Primary maintainer: first responder for feature-specific breakage.
+- Reviewer: architecture/integration review.
+- Backup maintainer: optional secondary maintainer.
+- External owner: source remains externally maintained/reference-only.
 
-## Current Project-Level Ownership
+## Project-level ownership
 
 | Area | Primary maintainer | Reviewer | Status |
 |---|---|---|---|
-| Repository contract and architecture | Amanda | Amanda | Active |
-| HF-Chat-Bridge diagnostic transport | TBD | Amanda | External private infrastructure; v0.1 unvalidated |
-| Shared compatibility bridge | TBD | Amanda | Not implemented |
-| Shared patch engine | TBD | Amanda | Not implemented |
-| Lob-derived feature modules | TBD; expected collaboration with Lob | Amanda | Ownership not assigned |
-| Witch Dock production integration | Amanda | Amanda | External to this repository |
-| ReCK for Hero Forge | arm32x / external | N/A | External reference only |
+| Repository contract/architecture | Amanda | Amanda | Active |
+| HF-Chat-Bridge diagnostic transport | TBD | Amanda | External development infrastructure |
+| Shared compatibility bridge/Foundation | TBD | Amanda | Not implemented |
+| Lob-derived reconstructed features | TBD; expected collaboration with Lob | Amanda | Ownership not automatically assigned |
+| Witch Dock production integration | Amanda | Amanda | External consumer integration |
 
-## Rules
-
-- A feature without a maintainer is not automatically eligible for stable integration.
-- HF-Chat-Bridge being useful to this project does not make it a Witch Dock production dependency or silently assign its long-term maintenance to Amanda.
-- Lob may maintain feature modules or patch definitions without receiving unrestricted authority over Witch Dock production code.
-- Ownership must be recorded before stable promotion.
-- Last verified HeroForge build should be tracked for maintained features and patches.
-
-## Feature Ownership Table
-
-Populate after legacy import and feature-boundary confirmation.
+## Feature ownership
 
 | Feature ID | Primary maintainer | Reviewer | Backup | Maintenance status | Last verified HF build |
 |---|---|---|---|---|---|
-| _pending_ | — | — | — | Unassigned | — |
+| `media.screenshot-resolution` | **TBD — Lob-derived feature maintenance agreement not assigned** | Amanda | — | Standalone validated; Witch Dock Stable consumer promoted by explicit current-chat instruction; ownership exception remains open | `heroforge07.1.9.98` |
+| `decals.gizmo.bound-correction` | TBD | Amanda | — | Witch Dock Stable | 2026-09-05 |
+
+## Explicit Photo Booth ownership note
+
+Amanda explicitly requested public Witch Dock promotion after Dev validation. That approval authorizes the consumer integration; it does **not** silently make Amanda the primary maintainer of the imported/reconstructed Lob feature. A long-term maintainer remains to be assigned before Foundation ownership/support policy is considered settled.

@@ -1,72 +1,46 @@
 # Changelog
 
-All committed repository updates must be recorded here.
+## HFC-2026-09-05-015 — Record Photo Booth Witch Dock Stable promotion
 
-## HFC-2026-09-05-014 — Validate grouped true-8K and combined 4K/8K Photo Booth v0.6
-
-**Date:** 2026-09-05
+Date: 2026-09-05
 
 ### Summary
 
-Promotes `media.screenshot-resolution` from 4K-only standalone validation to combined 4K+8K standalone validation. The maintained 8K path no longer uses one giant 8192 Effects render. Instead, it renders four shifted 4096 Effects sources, each covering one parity group of HeroForge's native 8x8 phase lattice, and phase-feeds all 64 classes through the untouched native 8192 Booth compositor.
+Documentation-only status update recording promotion of validated `media.screenshot-resolution` into public Witch Dock Stable after WITCH_DEV_PHOTO integration testing.
 
-### Maintained v0.6 behavior
+### Confirmed integration result
 
-- TRUE 4K: one 4096x4096 Effects source.
-- TRUE 8K: four shifted 4096x4096 Effects sources.
-- Native `BT.maker.takeScreenshot` remains the owning Booth capture/compositor.
-- Native square-divisor tile/grid topology is detected from live named Effects calls.
-- Phase coordinates derive from temporary capture-camera view offsets.
-- A future already-native full-resolution Effects path is passed through unchanged.
-- No `booth.js` / `boothui.js` patch, no `CK.Settings.screenshotSize` mutation, no `CK.Capture.renderToImage` replacement.
-- Temporary `CK.Effects.renderToCanvas` wrapper is restored after capture; source canvases/pixel groups are released after use.
+- Current Lob/ADP remained installed unchanged.
+- Lob's existing 4096 and 8192 choices in HeroForge's own Photo Booth UI both routed through the Witch Dock Dev provider and produced correct repaired captures.
+- Amanda reported both native-HeroForge-UI paths worked perfectly.
+- Witch Dock direct TRUE 4K/8K capture also worked after cycling the provider toggle.
+- The direct-button initial disabled state was diagnosed as UI readiness after pre-Booth provider installation; capture math/provider behavior remained valid.
+- Public Witch Dock commit `e155f2c2f961463b4a0e26f7c88f21f603ce1b95` promotes the exact Dev-tested provider plus a narrow public readiness adapter.
 
-### 8K investigation outcome
+### Status
 
-Rejected maintained approaches:
-
-- one-shot 8192 Effects source: correct when it survives, but repeatedly triggers white renderer-reset / blank output behavior in packaged use on the tested machine;
-- Tampermonkey sandbox/page-context theory: rejected by reproduction in both execution modes;
-- generalized packaging overhead theory: rejected by minimal 8K-only reproduction;
-- PNG `toBlob()` tail-spike theory: rejected by custom streaming PNG reproduction of the same failure.
-
-Accepted approach:
-
-- grouped 4x4096 source design;
-- 64 native 8K phase classes covered without any 8192 WebGL Effects target;
-- grouped v0.5.4 completed successfully and Amanda reported it was very easy on the GPU and visually perfect;
-- final combined v0.6 package passed both TRUE 4K and TRUE 8K visual acceptance.
-
-### Test status
-
-- JavaScript syntax: passed.
-- Synthetic grouped reconstruction math: exact pass.
-- 4K one-source topology: passed.
-- 8K four-source topology: passed.
-- Alternate smaller native-tile topology synthetic coverage: passed.
-- Combined packaged TRUE 4096 visual regression: passed.
-- Combined packaged TRUE 8192 visual regression: passed.
-
-### Touched files
-
-- `entries/tampermonkey-standalone/photo-booth-true-resolution.user.js`
-- `docs/feature-specs/photo-booth-screenshot-resolution.md`
-- `docs/investigations/INV-0003-photo-booth-high-res-capture-2026-09-05.md`
-- `MASTER.md`
-- `FEATURE_INVENTORY.md`
-- `COMPATIBILITY.md`
-- `TESTING.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
+- standalone: validated;
+- Witch Dock Dev: validated with Lob present;
+- Witch Dock Stable: promoted; clean public refresh smoke pending;
+- Lob-absent native HeroForge resolution-menu adapter: pending separately;
+- primary feature maintainer: unresolved; Amanda is not silently assigned feature maintenance by this promotion.
 
 ### Runtime impact
 
-Standalone-only update. No Witch Dock Dev/Stable code, Lob/ADP source, `/legacy/`, or HeroForge bundle is modified.
+**No Compatibility runtime behavior changed.** `entries/tampermonkey-standalone/photo-booth-true-resolution.user.js` remains the validated v0.6 regression baseline. This commit updates durable documentation only.
 
-### Next gate
+### Touched files
 
-Decide separately whether validated `media.screenshot-resolution` should remain standalone or enter Witch Dock Dev. Any Witch Dock integration must reuse the validated v0.6 capture service behavior and undergo separate integration testing before Stable promotion.
+- `MASTER.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `OWNERSHIP.md`
+- `TESTING.md`
+- `docs/feature-specs/photo-booth-screenshot-resolution.md`
+- `docs/investigations/INV-0003-photo-booth-high-res-capture-2026-09-05.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
 
 ---
 
-Historical changelog entries remain preserved in Git history through the preceding validated 4K checkpoint.
+Historical changelog entries through HFC-2026-09-05-014 remain preserved in Git history at/before `dfd1b7cca5a9c8a281b6a61216a7173918448360`.
