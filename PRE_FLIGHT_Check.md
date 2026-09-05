@@ -2,6 +2,76 @@
 
 Use this file before committed repository updates to record what was checked, what can conflict, and what action is recommended.
 
+## PFC-2026-09-05-009 — Photo Booth true-resolution standalone repair
+
+**Date:** 2026-09-05
+
+### Target files
+
+- `entries/tampermonkey-standalone/photo-booth-true-resolution.user.js`
+- `docs/feature-specs/photo-booth-screenshot-resolution.md`
+- `docs/investigations/INV-0003-photo-booth-high-res-capture-2026-09-05.md`
+- `MASTER.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `TESTING.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+
+### Required material reviewed
+
+- `PROJECT_CONTRACT.md`
+- `MASTER.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+- `ARCHITECTURE.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `OWNERSHIP.md`
+- `TESTING.md`
+- `entries/README.md`
+- `docs/feature-specs/README.md`
+- current standalone `entries/tampermonkey-standalone/projected-decal-toggle.user.js` for entrypoint/lifecycle conventions
+- `docs/script-audits/advanced-decal-posing-v0.99.30-decal-posing-subsystem.md`
+- exact user-supplied `Advanced_Decal_Posing_KW_9-3-26_TEST_PATCH.js` v0.99.30, SHA-256 `659a84d1a4b01db4143d713618a216dd46dcc5dbed7bd6e668fe61290276170d`
+- August 2026 legacy patch audit evidence showing the Photo Booth screenshot resolution-loop anchor remained present after the August update
+- current live HF-Chat-Bridge Photo Booth probes on `heroforge07.1.9.98`, including `BT.maker.takeScreenshot`, `CK.Capture.renderToImage`, `CK.Capture.renderToImageTiled`, `CK.Capture.getDownloadableURL`, active camera equivalence, render-target dimensions, and renderer capabilities
+- Amanda's 100%-view comparison snippets from the current nominal 4K and 8K outputs
+
+### Confirmed findings
+
+- ADP v0.99.30 still sets `CK.Settings.screenshotSize = 2048` and expands the Photo Booth resolution loop from `<=2*CK.Settings.screenshotSize` to `<=4*CK.Settings.screenshotSize`, so its 4096px/8192px menu choices still appear.
+- Amanda confirmed those actions still download files with literal 4096px/8192px dimensions, but their visible detail is substantially softer than true output resolution should provide; the 8K output is softer still at 100% view.
+- After a normal Lob 4096px capture, live `CK.Capture.renderTarget` is 2048x2048, including its viewport/scissor. The nominal 4096 file therefore is not evidence of a 4096 scene render.
+- Temporarily changing `CK.Settings.screenshotSize` from 2048 to 4096 did not change the result: the existing 4096 action still left the real render target at 2048x2048. The setting was restored to 2048 immediately after the bounded test.
+- Current `CK.Capture.renderToImage` does not hard-clamp to 2048. It sizes the render target from requested width/height times antialias factor and only warns above 2048.
+- Current `CK.Capture.getDownloadableURL` converts the supplied canvas to a Blob URL without a resize step.
+- The active Photo Booth camera and `CK.renderManager.camera` resolved to the same camera object in the tested portrait scene.
+- Current renderer capability reports `maxTextureSize = 16384` on the tested machine/browser.
+- A direct named-runtime 4096x4096 render with AA factor 1 is a lower-fragility first repair experiment than patching the private Photo Booth helper or current compiled bundle.
+
+### Supported inference
+
+- The August Photo Booth rewrite introduced or moved the effective ~2048 scene-render constraint into the private Booth capture/compositing path between `BT.maker.takeScreenshot()` and `CK.Capture.renderToImage()`, after which a larger output canvas/file is produced.
+- The exact private helper branch/expression responsible is not yet proven and must not be treated as a stable API or patch target.
+
+### Material conflict risks
+
+- Direct `CK.Capture.renderToImage` may not reproduce every Photo Booth-specific compositing/effect/overlay step performed by the private Booth helper; live visual/effect parity is a required gate before promotion.
+- Do not enable 8K before the 4K direct path proves real resolution and acceptable Photo Booth parity.
+- The current renderer defaults to 2x antialiasing; a 4096 request at 2x would allocate an 8192 target and an 8192 request at 2x would allocate 16384. The first proof therefore explicitly uses AA factor 1.
+- Reported `maxTextureSize = 16384` is machine/browser-specific capability evidence, not a promise that 8K is safe or performant on every system.
+- Restore the pre-existing `CK.Capture.renderTarget` dimensions after each direct proof so the test does not intentionally leave a larger GPU allocation in HeroForge.
+- Do not patch `boothui.js`, replace `BT.maker.takeScreenshot`, mutate `CK.Settings.screenshotSize`, alter native capture controls, or change Witch Dock during this standalone stage.
+- No current Lob/ADP source is modified by this repair.
+- The exact current v0.99.30 source is still not archived under repository `/legacy/`; that provenance gate remains open before final maintained parity status.
+
+### Recommended action
+
+Commit the standalone 4K proof and durable diagnosis/spec/status tracking. Live-test a genuine 4096x4096 render and compare detail, framing, lighting, background, overlays/effects, color, and cleanup against the existing Lob output. Do not add 8192 or integrate into Witch Dock until the 4096 proof passes.
+
+---
+
 ## PFC-2026-09-05-008 — Synchronize stable corrected bound gizmo status
 
 **Date:** 2026-09-05
@@ -161,7 +231,7 @@ Commit this documentation-only audit/status normalization. No JavaScript or runt
 - Current Full Res renderer logic consumes that field as a tri-state override: undefined/native, true/projected, false/unprojected.
 - Live `CK.character.data.decals` exposes `bodyLower`, `bodyUpper`, `face`, and `splatter` on the loaded test figure.
 - The uploaded figure JSON contains 35 splatter records, 34 with `forceProjectedScript: false`, one without the field, and none with `true`.
-- The Slot F test candidate uses numeric key `6`; its saved record has decal ID `20990` and current Project state `false`.
+- The Slot F test candidate uses numeric key `6`; its saved record has decal ID `20990` and current state `false`.
 - Current HeroForge's native Mirror action still updates the selected decal through `CK.activeTweak({decals: ...})`, preserving the surrounding bucket and record state.
 
 ### Supported inference

@@ -39,7 +39,7 @@ Risk scale:
 | `textures.asset-size-exceptions` | Hard-coded size rules for specific assets | Full Res Decals/Textures | High | Provisional |
 | `textures.packing-policy` | Change/suppress packing behavior or logs | Full Res Decals/Textures | High | Provisional |
 | `render.output-resolution` | Change render/output resolution behavior | Full Res Decals/Textures | Critical | Provisional |
-| `media.screenshot-resolution` | Increase screenshot size | Advanced Decal Posing | Medium | Provisional; outside current posing pass |
+| `media.screenshot-resolution` | Restore genuine 4K/8K Photo Booth still-image rendering | Advanced Decal Posing v0.99.30 + current KW runtime reconstruction | Medium | Current Lob 4096 output confirmed to use a 2048 render target; standalone true-4096 proof committed, live detail/effect parity pending; 8K gated |
 | `media.spin-gif-quality` | Higher-quality spin GIF/export settings | Advanced Decal Posing | High | Provisional; outside current posing pass |
 
 ## Kitbash

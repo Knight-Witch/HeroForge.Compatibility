@@ -2,6 +2,69 @@
 
 All committed repository updates must be recorded here.
 
+## HFC-2026-09-05-011 — Add standalone Photo Booth true-resolution 4K proof
+
+**Date:** 2026-09-05
+
+### Summary
+
+Recorded the current Photo Booth high-resolution capture diagnosis and added a standalone 4096px proof that bypasses the new private Booth capture/compositing helper without patching `boothui.js`. The proof uses the named `CK.Capture.renderToImage` runtime path with the active Photo Booth camera and explicitly requests a 1x 4096x4096 render target.
+
+### Added
+
+- `entries/tampermonkey-standalone/photo-booth-true-resolution.user.js` — standalone v0.1.0 4K proof.
+- `docs/feature-specs/photo-booth-screenshot-resolution.md` — behavior/capability/lifecycle contract for `media.screenshot-resolution`.
+- `docs/investigations/INV-0003-photo-booth-high-res-capture-2026-09-05.md` — current-runtime diagnosis and repair rationale.
+
+### Confirmed diagnosis
+
+- Current ADP v0.99.30 still exposes 4096px and 8192px by changing the Photo Booth resolution-loop ceiling from `<=2*CK.Settings.screenshotSize` to `<=4*CK.Settings.screenshotSize` while setting `CK.Settings.screenshotSize = 2048`.
+- Amanda confirmed the downloaded files have literal 4K/8K dimensions but visibly lack corresponding detail; 8K is softer still at 100% view.
+- After a normal 4096px Lob capture, live `CK.Capture.renderTarget` remained 2048x2048.
+- Temporarily changing `CK.Settings.screenshotSize` to 4096 did not change the real render target; it still ended at 2048x2048. The setting was restored to 2048.
+- Current `CK.Capture.renderToImage` has no 2048 hard clamp and can size its render target from requested width/height and AA factor.
+- Current WebGL capability reports `maxTextureSize = 16384` on the tested machine/browser.
+
+### Standalone proof behavior
+
+- Requires Photo Booth to be open/initialized.
+- Uses the active Booth camera with current `CK.renderManager.camera` only as fallback.
+- Calls `CK.Capture.renderToImage(4096, 4096, camera, 1, true)`.
+- Verifies both the real render target and returned canvas are 4096x4096 before downloading.
+- Uses current named `boothScreenshotStarted` / `boothScreenshotFinished` events when available.
+- Restores the pre-existing `CK.Capture.renderTarget` dimensions after capture.
+- Exposes `HFPhotoBoothTrueResolutionTest.lastCapture` diagnostic metadata.
+- Does not enable 8K yet; 8192px remains gated until 4K visual parity passes.
+
+### Test status
+
+- JavaScript syntax check with Node: **passed**.
+- Existing 4096 Lob path real-render diagnosis: **passed live** (2048x2048 underlying target).
+- `CK.Settings.screenshotSize = 4096` hypothesis: **rejected live** (target remained 2048x2048).
+- Standalone true-4096 render/download: **pending Amanda live test**.
+- Photo Booth visual/effect parity: **pending Amanda live test**.
+- 8K: **not enabled / pending 4K gate**.
+
+### Runtime impact
+
+Repository code only until Amanda installs the standalone test.
+
+- No Witch Dock Dev or Stable runtime code changed.
+- No current Lob/ADP source changed.
+- No HeroForge bundle interception or patching added.
+- No persistent HeroForge or character setting is changed by initialization.
+- Exact ADP v0.99.30 source is still not archived under `/legacy/`; that provenance gate remains open before final maintained parity status.
+
+### Next gate
+
+Install the standalone 4K proof, capture the same Photo Booth scene, verify `lastCapture.renderTarget` and canvas are 4096x4096, and compare real detail/effects against the existing blurry Lob 4096 output. Only after that passes should 8192px be enabled.
+
+### Rollback
+
+Disable/remove the standalone Tampermonkey test or revert this commit. Native HeroForge and Lob capture actions are not replaced by the proof.
+
+---
+
 ## HFC-2026-09-05-010 — Synchronize corrected bound gizmo Stable status
 
 **Date:** 2026-09-05
