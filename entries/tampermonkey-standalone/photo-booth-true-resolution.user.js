@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         HF Compatibility - Photo Booth True Resolution TEST
 // @namespace    https://github.com/Knight-Witch/HeroForge.Compatibility
-// @version      0.2.0
-// @description  Standalone true-4K Photo Booth test that preserves HeroForge's native Booth capture/compositing path while upgrading its internal scene render.
+// @version      0.4.0
+// @description  Standalone adaptive true-4K Photo Booth test that preserves HeroForge's native Booth compositor and repairs detected low-resolution Effects tiling.
 // @author       Knight Witch
 // @match        https://www.heroforge.com/*
 // @match        https://heroforge.com/*
@@ -18,10 +18,10 @@
   const GLOBAL_NAME = 'HFPhotoBoothTrueResolutionTest';
   const PANEL_ID = 'hfc-photo-booth-true-resolution-test';
   const STYLE_ID = `${PANEL_ID}-style`;
-  const BUILD = '0.2.0-native-pipeline-4k';
+  const BUILD = '0.4.0-adaptive-native-effects-phase-feed-4k';
   const TEST_SIZE = 4096;
-  const NATIVE_RENDER_TARGET_MAX = 2048;
-  const NATIVE_RENDER_TARGET_MIN = 1024;
+  const MIN_NATIVE_TILE_SIZE = 256;
+  const MAX_PHASE_GRID = 16;
 
   let panel = null;
   let captureButton = null;
@@ -63,8 +63,8 @@
     if (typeof BT.maker.takeScreenshot !== 'function') {
       return { ok: false, reason: 'BT.maker.takeScreenshot unavailable', CK, BT, maxTextureSize };
     }
-    if (!CK.Capture || typeof CK.Capture.renderToImage !== 'function') {
-      return { ok: false, reason: 'CK.Capture.renderToImage unavailable', CK, BT, maxTextureSize };
+    if (!CK.Effects || typeof CK.Effects.renderToCanvas !== 'function') {
+      return { ok: false, reason: 'CK.Effects.renderToCanvas unavailable', CK, BT, maxTextureSize };
     }
     if (maxTextureSize !== null && TEST_SIZE > maxTextureSize) {
       return {
@@ -83,38 +83,6 @@
     if (!statusEl) return;
     statusEl.textContent = text;
     statusEl.dataset.error = isError ? '1' : '0';
-  }
-
-  function snapshotRenderTarget(target) {
-    if (!target) return null;
-    const width = Number(target.width);
-    const height = Number(target.height);
-    return {
-      width: Number.isFinite(width) ? width : null,
-      height: Number.isFinite(height) ? height : null
-    };
-  }
-
-  function restoreRenderTarget(CK, priorTarget, priorSize) {
-    const current = CK && CK.Capture ? CK.Capture.renderTarget : null;
-    if (!current) return;
-
-    if (priorTarget) {
-      if (current === priorTarget && priorSize && typeof current.setSize === 'function') {
-        if (Number.isFinite(priorSize.width) && Number.isFinite(priorSize.height)) {
-          current.setSize(priorSize.width, priorSize.height);
-        }
-      }
-      return;
-    }
-
-    try {
-      if (typeof current.dispose === 'function') current.dispose();
-    } catch (_) {}
-
-    try {
-      CK.Capture.renderTarget = null;
-    } catch (_) {}
   }
 
   function installTemporaryMethod(object, key, replacement) {
@@ -210,6 +178,9 @@
   async function downloadNativeResult(value) {
     const canvas = getCanvasLike(value);
     if (canvas) {
+      if (Number(canvas.width) !== TEST_SIZE || Number(canvas.height) !== TEST_SIZE) {
+        throw new Error(`Native Booth result was ${canvas.width}x${canvas.height}, expected ${TEST_SIZE}x${TEST_SIZE}.`);
+      }
       const blob = await canvasToBlob(canvas);
       downloadBlob(blob, TEST_SIZE);
       return {
@@ -233,6 +204,73 @@
     throw new Error(`Native Booth capture returned ${resultType(value)} instead of a downloadable canvas/blob/url.`);
   }
 
+  function classifyModelRender(width, height, camera) {
+    const w = Number(width);
+    const h = Number(height);
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0 || w !== h) return null;
+    if (!camera || Number(camera.width) !== TEST_SIZE || Number(camera.height) !== TEST_SIZE) return null;
+    const view = camera.view;
+    if (!view) return null;
+    if (![view.offsetX, view.offsetY, view.width, view.height].every((value) => Number.isFinite(Number(value)))) {
+      return null;
+    }
+
+    if (w === TEST_SIZE) {
+      return { mode: 'native-true-resolution', tileSize: w, grid: 1, expectedPhases: 1 };
+    }
+
+    if (w < MIN_NATIVE_TILE_SIZE || TEST_SIZE % w !== 0) return null;
+    const grid = TEST_SIZE / w;
+    if (!Number.isInteger(grid) || grid < 2 || grid > MAX_PHASE_GRID) return null;
+
+    return {
+      mode: 'tiled-repair',
+      tileSize: w,
+      grid,
+      expectedPhases: grid * grid
+    };
+  }
+
+  function makePhaseCanvas(source32, tileSize, grid, phaseX, phaseY) {
+    const canvas = document.createElement('canvas');
+    canvas.width = tileSize;
+    canvas.height = tileSize;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Could not create 2D context for phase canvas.');
+
+    const imageData = ctx.createImageData(tileSize, tileSize);
+    const output32 = new Uint32Array(imageData.data.buffer);
+    let dest = 0;
+
+    for (let y = 0; y < tileSize; y += 1) {
+      let source = ((grid * y + phaseY) * TEST_SIZE) + phaseX;
+      for (let x = 0; x < tileSize; x += 1, dest += 1, source += grid) {
+        output32[dest] = source32[source];
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    return canvas;
+  }
+
+  function phaseCoordinateFromOffset(actual, base, step, grid, axis) {
+    if (!Number.isFinite(actual) || !Number.isFinite(base) || !Number.isFinite(step) || step === 0) {
+      throw new Error(`Invalid native Booth ${axis}-phase offset geometry.`);
+    }
+    const raw = (actual - base) / step;
+    const phase = Math.round(raw);
+    const expected = base + phase * step;
+    const tolerance = Math.max(1e-7, Math.abs(step) * 0.05);
+
+    if (phase < 0 || phase >= grid || Math.abs(actual - expected) > tolerance) {
+      throw new Error(
+        `Native Booth ${axis}-phase topology changed: offset ${actual}, `
+        + `base ${base}, step ${step}, derived phase ${raw}.`
+      );
+    }
+    return phase;
+  }
+
   async function capture4096() {
     if (busy) return false;
 
@@ -244,17 +282,27 @@
     }
 
     const { CK, BT, maxTextureSize } = capability;
-    const priorTarget = CK.Capture.renderTarget || null;
-    const priorSize = snapshotRenderTarget(priorTarget);
-    const currentRenderToImage = CK.Capture.renderToImage;
-    const interceptedCalls = [];
-    let upgraded = false;
+    const currentRenderToCanvas = CK.Effects.renderToCanvas;
     let methodGuard = null;
     let nativeResult;
+    let sourceCanvas = null;
+    let sourcePixels32 = null;
+    let tileSize = null;
+    let grid = null;
+    let expectedPhases = null;
+    let phaseIndex = 0;
+    let baseOffsetX = null;
+    let baseOffsetY = null;
+    let stepX = null;
+    let stepY = null;
+    let creatingSource = false;
+    let nativeTrueResolutionDetected = false;
+    const suppliedPhases = [];
+    const seenPhaseKeys = new Set();
 
     busy = true;
     refresh();
-    setStatus(`Running native Photo Booth capture with a true ${TEST_SIZE}px scene render…`);
+    setStatus(`Running native Photo Booth capture with a true ${TEST_SIZE}px Effects source…`);
 
     lastCapture = {
       build: BUILD,
@@ -263,59 +311,119 @@
       maxTextureSize,
       startedAt: new Date().toISOString(),
       status: 'running',
-      priorRenderTarget: priorSize,
+      captureMode: null,
+      nativeTrueResolutionDetected: false,
       boothMode: BT.currentMode || null,
       boothAspect: BT.display && BT.display.state ? Number(BT.display.state.aspect) : null,
-      interceptedCalls
+      tileSize: null,
+      grid: null,
+      expectedPhases: null,
+      suppliedPhases
     };
 
     try {
-      const wrapper = function(width, height, camera, aaFactor, refreshAfter) {
-        const inputWidth = Number(width);
-        const inputHeight = Number(height);
-        const effectiveAA = Number.isFinite(Number(aaFactor)) ? Number(aaFactor) : 2;
-        const nativeTargetWidth = inputWidth * effectiveAA;
-        const nativeTargetHeight = inputHeight * effectiveAA;
-        const call = {
-          inputWidth,
-          inputHeight,
-          inputAA: effectiveAA,
-          nativeTargetWidth,
-          nativeTargetHeight,
-          cameraAspect: camera && Number.isFinite(Number(camera.aspect)) ? Number(camera.aspect) : null,
-          boothAspect: BT.display && BT.display.state && Number.isFinite(Number(BT.display.state.aspect))
-            ? Number(BT.display.state.aspect)
-            : null,
-          upgraded: false
-        };
-        interceptedCalls.push(call);
+      const wrapper = function(width, height, camera) {
+        if (creatingSource) return currentRenderToCanvas.apply(this, arguments);
 
-        const square = inputWidth === inputHeight && inputWidth > 0;
-        const looksLikeCappedPrimaryRender = square
-          && nativeTargetWidth === nativeTargetHeight
-          && nativeTargetWidth >= NATIVE_RENDER_TARGET_MIN
-          && nativeTargetWidth <= NATIVE_RENDER_TARGET_MAX;
+        const topology = classifyModelRender(width, height, camera);
+        if (!topology) return currentRenderToCanvas.apply(this, arguments);
 
-        if (!upgraded && looksLikeCappedPrimaryRender) {
-          upgraded = true;
-          call.upgraded = true;
-          call.overrideWidth = TEST_SIZE;
-          call.overrideHeight = TEST_SIZE;
-          call.overrideAA = 1;
-
-          const output = currentRenderToImage.call(this, TEST_SIZE, TEST_SIZE, camera, 1, refreshAfter);
-          const target = snapshotRenderTarget(CK.Capture.renderTarget);
-          const outputCanvas = getCanvasLike(output);
-          call.actualRenderTarget = target;
-          call.outputCanvasWidth = outputCanvas ? Number(outputCanvas.width) : null;
-          call.outputCanvasHeight = outputCanvas ? Number(outputCanvas.height) : null;
-          return output;
+        if (topology.mode === 'native-true-resolution') {
+          if (tileSize !== null || phaseIndex > 0) {
+            throw new Error('Native Booth mixed full-resolution and tiled model capture paths in one screenshot.');
+          }
+          nativeTrueResolutionDetected = true;
+          lastCapture.captureMode = 'native-true-resolution';
+          lastCapture.nativeTrueResolutionDetected = true;
+          return currentRenderToCanvas.apply(this, arguments);
         }
 
-        return currentRenderToImage.apply(this, arguments);
+        if (nativeTrueResolutionDetected) {
+          throw new Error('Native Booth switched from a full-resolution model render to a tiled model render mid-capture.');
+        }
+
+        if (tileSize === null) {
+          tileSize = topology.tileSize;
+          grid = topology.grid;
+          expectedPhases = topology.expectedPhases;
+          baseOffsetX = Number(camera.view.offsetX);
+          baseOffsetY = Number(camera.view.offsetY);
+          stepX = Number(camera.view.width) / TEST_SIZE;
+          stepY = Number(camera.view.height) / TEST_SIZE;
+
+          if (!Number.isFinite(stepX) || !Number.isFinite(stepY) || stepX === 0 || stepY === 0) {
+            throw new Error(`Unsupported native Booth phase geometry from tile ${tileSize}px.`);
+          }
+
+          creatingSource = true;
+          try {
+            sourceCanvas = currentRenderToCanvas.call(this, TEST_SIZE, TEST_SIZE, camera, 1);
+          } finally {
+            creatingSource = false;
+          }
+
+          const source = getCanvasLike(sourceCanvas);
+          if (!source || Number(source.width) !== TEST_SIZE || Number(source.height) !== TEST_SIZE) {
+            throw new Error(
+              `True Effects source did not produce ${TEST_SIZE}x${TEST_SIZE}; got `
+              + `${source ? `${source.width}x${source.height}` : resultType(sourceCanvas)}.`
+            );
+          }
+
+          const sourceCtx = source.getContext('2d', { willReadFrequently: true });
+          if (!sourceCtx) throw new Error('Could not read true Effects source canvas.');
+          const sourceImageData = sourceCtx.getImageData(0, 0, TEST_SIZE, TEST_SIZE);
+          sourcePixels32 = new Uint32Array(sourceImageData.data.buffer);
+
+          lastCapture.captureMode = 'adaptive-tiled-repair';
+          lastCapture.tileSize = tileSize;
+          lastCapture.grid = grid;
+          lastCapture.expectedPhases = expectedPhases;
+          lastCapture.trueEffectsRender = {
+            width: TEST_SIZE,
+            height: TEST_SIZE,
+            cameraAspect: Number.isFinite(Number(camera.aspect)) ? Number(camera.aspect) : null,
+            baseOffsetX,
+            baseOffsetY,
+            viewWidth: Number(camera.view.width),
+            viewHeight: Number(camera.view.height),
+            stepX,
+            stepY
+          };
+        } else if (topology.tileSize !== tileSize || topology.grid !== grid) {
+          throw new Error(
+            `Native Booth model tile topology changed mid-capture: `
+            + `${topology.tileSize}px/${topology.grid}x vs ${tileSize}px/${grid}x.`
+          );
+        }
+
+        if (phaseIndex >= expectedPhases) {
+          throw new Error(`Native Booth requested more than ${expectedPhases} model phases.`);
+        }
+
+        const actualOffsetX = Number(camera.view.offsetX);
+        const actualOffsetY = Number(camera.view.offsetY);
+        const phaseX = phaseCoordinateFromOffset(actualOffsetX, baseOffsetX, stepX, grid, 'X');
+        const phaseY = phaseCoordinateFromOffset(actualOffsetY, baseOffsetY, stepY, grid, 'Y');
+        const phaseKey = `${phaseX},${phaseY}`;
+        if (seenPhaseKeys.has(phaseKey)) {
+          throw new Error(`Native Booth requested duplicate model phase ${phaseKey}.`);
+        }
+        seenPhaseKeys.add(phaseKey);
+
+        const phaseCanvas = makePhaseCanvas(sourcePixels32, tileSize, grid, phaseX, phaseY);
+        suppliedPhases.push({
+          index: phaseIndex,
+          x: phaseX,
+          y: phaseY,
+          offsetX: actualOffsetX,
+          offsetY: actualOffsetY
+        });
+        phaseIndex += 1;
+        return phaseCanvas;
       };
 
-      methodGuard = installTemporaryMethod(CK.Capture, 'renderToImage', wrapper);
+      methodGuard = installTemporaryMethod(CK.Effects, 'renderToCanvas', wrapper);
 
       nativeResult = BT.maker.takeScreenshot(TEST_SIZE, TEST_SIZE);
       if (nativeResult && typeof nativeResult.then === 'function') {
@@ -323,22 +431,22 @@
       }
 
       lastCapture.nativeResultType = resultType(nativeResult);
-      lastCapture.upgraded = upgraded;
+      lastCapture.suppliedPhaseCount = phaseIndex;
 
-      if (!upgraded) {
-        throw new Error(
-          `Native Booth capture did not expose the expected capped scene render. Intercepted ${interceptedCalls.length} renderToImage call(s).`
-        );
-      }
-
-      const upgradedCall = interceptedCalls.find((call) => call.upgraded);
-      if (!upgradedCall || !upgradedCall.actualRenderTarget
-          || upgradedCall.actualRenderTarget.width !== TEST_SIZE
-          || upgradedCall.actualRenderTarget.height !== TEST_SIZE) {
-        const target = upgradedCall && upgradedCall.actualRenderTarget;
-        throw new Error(
-          `Internal render override did not reach ${TEST_SIZE}x${TEST_SIZE}; got ${target ? `${target.width}x${target.height}` : 'unknown target'}.`
-        );
+      if (nativeTrueResolutionDetected) {
+        if (sourcePixels32 || phaseIndex !== 0) {
+          throw new Error('Native Booth full-resolution path was mixed with an injected tiled repair.');
+        }
+      } else {
+        if (!sourcePixels32 || tileSize === null || expectedPhases === null) {
+          throw new Error('Native Booth did not expose a recognized full-resolution or tiled model capture path.');
+        }
+        if (phaseIndex !== expectedPhases || seenPhaseKeys.size !== expectedPhases) {
+          throw new Error(
+            `Native Booth consumed ${phaseIndex}/${expectedPhases} model phases `
+            + `(${seenPhaseKeys.size} unique).`
+          );
+        }
       }
 
       const download = await downloadNativeResult(nativeResult);
@@ -346,24 +454,37 @@
       lastCapture.status = 'downloaded';
       lastCapture.completedAt = new Date().toISOString();
 
-      const aspectNote = upgradedCall.cameraAspect !== null
-        ? ` camera aspect at native render=${upgradedCall.cameraAspect.toFixed(4)}`
-        : '';
-      setStatus(
-        `PASS: native Booth pipeline used a true ${TEST_SIZE}x${TEST_SIZE} scene render; downloaded ${download.type}.${aspectNote}`
-      );
-      console.log('[HF True Resolution TEST] native-pipeline capture result', lastCapture);
+      if (nativeTrueResolutionDetected) {
+        setStatus(
+          `PASS: HeroForge exposed a native true-${TEST_SIZE}px Effects path; no phase repair was injected. `
+          + `Downloaded ${download.type}.`
+        );
+      } else {
+        setStatus(
+          `PASS: true ${TEST_SIZE}px Effects source phase-fed through native Booth compositor `
+          + `(${phaseIndex}× ${tileSize}px phases, detected ${grid}×${grid} topology); downloaded ${download.type}.`
+        );
+      }
+      console.log('[HF True Resolution TEST] native Effects phase-feed capture result', lastCapture);
       return true;
     } catch (error) {
       lastCapture.status = 'failed';
+      lastCapture.suppliedPhaseCount = phaseIndex;
       lastCapture.error = error && error.message ? error.message : String(error);
       lastCapture.completedAt = new Date().toISOString();
-      console.error('[HF True Resolution TEST] native-pipeline capture failed', error, lastCapture);
+      console.error('[HF True Resolution TEST] native Effects phase-feed capture failed', error, lastCapture);
       setStatus(`Capture failed: ${lastCapture.error}`, true);
       return false;
     } finally {
       if (methodGuard) methodGuard.restore();
-      restoreRenderTarget(CK, priorTarget, priorSize);
+      sourcePixels32 = null;
+      if (sourceCanvas && Number.isFinite(Number(sourceCanvas.width))) {
+        try {
+          sourceCanvas.width = 0;
+          sourceCanvas.height = 0;
+        } catch (_) {}
+      }
+      sourceCanvas = null;
       busy = false;
       refresh();
     }
@@ -375,11 +496,11 @@
     if (capabilityEl) {
       const max = capability.maxTextureSize ? ` | GPU max ${capability.maxTextureSize}px` : '';
       capabilityEl.textContent = capability.ok
-        ? `Ready | native Booth pipeline + ${TEST_SIZE}px internal render${max}`
+        ? `Ready | native Booth compositor + true ${TEST_SIZE}px Effects source${max}`
         : `${capability.reason}${max}`;
     }
     if (!busy && statusEl && !lastCapture) {
-      setStatus(capability.ok ? 'Ready for native-pipeline 4K test.' : capability.reason, !capability.ok);
+      setStatus(capability.ok ? 'Ready for native-compositor true-4K test.' : capability.reason, !capability.ok);
     }
   }
 
@@ -429,7 +550,7 @@
 
     const title = document.createElement('div');
     title.className = 'hfc-title';
-    title.textContent = 'HF True Resolution TEST — 4K v0.2';
+    title.textContent = 'HF True Resolution TEST — 4K v0.4';
 
     capabilityEl = document.createElement('div');
     capabilityEl.className = 'hfc-meta';
@@ -445,7 +566,7 @@
 
     const note = document.createElement('div');
     note.className = 'hfc-note';
-    note.textContent = 'v0.2 preserves BT.maker.takeScreenshot so HeroForge owns Booth framing/aspect/effects. Only the capped internal CK.Capture.renderToImage call is temporarily upgraded, then restored.';
+    note.textContent = 'v0.4 detects the native model-capture topology at runtime. Low-resolution tiled paths are repaired through one true 4096px Effects frame; an already-true 4096px native path is left untouched. The named method is restored after capture.';
 
     panel.append(title, capabilityEl, captureButton, statusEl, note);
     document.body.appendChild(panel);
@@ -494,7 +615,7 @@
   UW[GLOBAL_NAME] = API;
 
   if (typeof GM_registerMenuCommand === 'function') {
-    GM_registerMenuCommand('HF True Resolution TEST: Native-pipeline 4096px', capture4096);
+    GM_registerMenuCommand('HF True Resolution TEST: Native-compositor 4096px', capture4096);
     GM_registerMenuCommand('HF True Resolution TEST: Refresh', refresh);
     GM_registerMenuCommand('HF True Resolution TEST: Dispose', dispose);
   }
