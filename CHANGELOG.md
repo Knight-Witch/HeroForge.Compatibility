@@ -2,6 +2,70 @@
 
 All committed repository updates must be recorded here.
 
+## HFC-2026-09-05-012 — Revise 4K proof to preserve native Photo Booth composition
+
+**Date:** 2026-09-05
+
+### Summary
+
+Recorded the failed visual-parity result from standalone Photo Booth true-resolution v0.1.0 and revised the proof to v0.2.0. The direct `CK.Capture.renderToImage(4096,4096,...)` path proved that HeroForge can allocate a genuine 4096x4096 render target, but it bypassed Photo Booth setup/compositing and produced a distorted image with the semi-transparent Booth viewport frame and grey/outside scene content visible.
+
+### Confirmed v0.1.0 result
+
+- Real render target: **4096x4096 PASS**.
+- Returned/downloaded canvas dimensions: **4096x4096 PASS**.
+- Photo Booth composition parity: **FAIL**.
+- Amanda reported the figure was visibly squashed and the capture included the same semi-transparent viewport/frame artifact previously handled by Witch Dock Persistent Booth.
+- Current live portrait state reports `BT.display.state.aspect = 1`, while the active camera was observed at `aspect = 1.1187943262411348` outside the private native capture setup.
+- Witch Dock Persistent Booth history confirms the 1:1 Booth frame can be WebGL-baked and that correct overlay state depends on `BT.display.overlays` frame/shadow/mask handling plus native resize/refresh/visibility synchronization.
+
+### Repair direction
+
+Do not manually reconstruct all Booth camera/overlay setup yet. v0.2.0 instead preserves `BT.maker.takeScreenshot(4096,4096)` so HeroForge's current private Booth path continues to own framing, aspect, effects, overlays, and compositing.
+
+During that one explicit capture only, v0.2.0 installs a reversible wrapper around the current `CK.Capture.renderToImage` method. The wrapper:
+
+- records the dimensions, AA factor, camera aspect, and Booth aspect passed by the native helper;
+- identifies the first square primary render whose effective native target is between 1024 and 2048;
+- substitutes a real `4096x4096` render with AA factor `1` while preserving the native helper's camera argument and surrounding capture sequence;
+- verifies the resulting `CK.Capture.renderTarget` actually reached `4096x4096`;
+- lets the native Booth helper continue with the returned canvas rather than bypassing its composition path;
+- restores the original method/property descriptor and the prior render-target dimensions in `finally` cleanup.
+
+This is a temporary per-capture runtime interception, not a permanent HeroForge override and not a bundle patch.
+
+### Changed
+
+- `entries/tampermonkey-standalone/photo-booth-true-resolution.user.js` -> v0.2.0 / build `0.2.0-native-pipeline-4k`.
+- Script update commit: `8a233745c73a44f7df2af4d385f91e4afcc9eb28`.
+
+### Test status
+
+- v0.1.0 true 4096 render capability: **passed live**.
+- v0.1.0 visual/composition parity: **failed live**.
+- v0.2.0 JavaScript syntax check with Node: **passed**.
+- v0.2.0 native-helper render interception: **pending Amanda live test**.
+- v0.2.0 framing/aspect/frame suppression/effects parity: **pending Amanda live test**.
+- 8K remains **disabled** until true 4K also passes visual parity.
+
+### Runtime impact
+
+- No Witch Dock Dev or Stable runtime code changed.
+- No Lob/ADP source changed.
+- No `boothui.js` bundle patch was added.
+- No permanent or non-configurable runtime override was added.
+- The temporary `CK.Capture.renderToImage` wrapper exists only while the explicit v0.2 capture is executing and is restored even on failure.
+
+### Next gate
+
+Install/run v0.2.0 on the same Photo Booth scene. Confirm the native helper exposes the expected capped internal render, the override reaches 4096x4096, and the downloaded image now matches native Photo Booth framing/aspect/overlay behavior. If the native helper does not route through the expected call shape, use the recorded `lastCapture.interceptedCalls` evidence rather than guessing another patch.
+
+### Rollback
+
+Disable/remove the standalone test or revert the v0.2 script commit. Normal HeroForge and Lob capture paths remain unchanged when the test is idle.
+
+---
+
 ## HFC-2026-09-05-011 — Add standalone Photo Booth true-resolution 4K proof
 
 **Date:** 2026-09-05
