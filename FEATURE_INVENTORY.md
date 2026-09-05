@@ -25,7 +25,7 @@ Risk scale:
 | `decals.transform.range` | Expand decal move/scale ranges | ADP v0.99.30 | High legacy / Medium target | Exact v0.99.30 UI patches confirmed; target should prefer independent/runtime controls |
 | `decals.transform.projected` | Project ON/OFF/Native state plus required renderer behavior | ADP v0.99.30 + Full Res v0.80 | Critical while renderer patch external | Runtime state/control path confirmed; exact current renderer dependency audit still required |
 | `decals.transform.unequal-scale` | Unequal X/Y/Z scaling controls and renderer behavior | ADP + Full Res | Critical legacy | Deferred by product decision; state/input works but Project-OFF renderer enhancement is not a release blocker |
-| `decals.gizmo.bound-correction` | Replace incorrect floor/origin gizmo for bound decals with projector-centered transform UI | Knight Witch current-runtime reconstruction; validated WITCH_DEV v0.4.2 repair | High | Witch Dock Stable 2026-09-05; Move/Rotate/Scale undo-redo, transform preservation, and fresh-slot first-bind normalization validated; unequal bound scale rendering/wireframe polish deferred |
+| `decals.gizmo.bound-correction` | Replace incorrect floor/origin gizmo for bound decals with projector-centered transform UI | Knight Witch current-runtime reconstruction; validated WITCH_DEV v0.4.2 repair | High | Witch Dock Stable 2026-09-05; Move/Rotate/Scale undo-redo, sane Project state preservation, bound artwork-swap transform preservation, and fresh-slot bad-default normalization validated; unequal bound scale rendering/wireframe polish deferred |
 | `decals.transform.tiling` | Texture/decal tiling behavior override | Full Res Decals/Textures | Critical | Provisional; outside current posing pass |
 | `decals.verification.policy` | Legacy eligibility/verification bypass behavior | HF Core Tweaks | Critical | Unresolved purpose/acceptability |
 
@@ -39,7 +39,7 @@ Risk scale:
 | `textures.asset-size-exceptions` | Hard-coded size rules for specific assets | Full Res Decals/Textures | High | Provisional |
 | `textures.packing-policy` | Change/suppress packing behavior or logs | Full Res Decals/Textures | High | Provisional |
 | `render.output-resolution` | Change render/output resolution behavior | Full Res Decals/Textures | Critical | Provisional |
-| `media.screenshot-resolution` | Restore genuine 4K/8K Photo Booth still-image rendering | Advanced Decal Posing v0.99.30 + current KW runtime reconstruction | Medium | 4K standalone validated on `heroforge07.1.9.98`: adaptive named-Effects phase-feed passed topology, 4096 download, whole-image visual acceptance, repeat-use, native-after, restoration, and dispose; 8K remains separate/gated |
+| `media.screenshot-resolution` | Restore genuine 4K/8K Photo Booth still-image rendering | Advanced Decal Posing v0.99.30 + current KW runtime reconstruction | Medium | **4K + 8K standalone validated on `heroforge07.1.9.98`**. v0.6: 4K uses one true 4096 Effects source; 8K uses four shifted 4096 sources covering all native 64 phase classes without an 8192 Effects target. Combined packaged visual acceptance passed. |
 | `media.spin-gif-quality` | Higher-quality spin GIF/export settings | Advanced Decal Posing | High | Provisional; outside current posing pass |
 
 ## Kitbash
@@ -90,6 +90,10 @@ Risk scale:
 | `slots.extra-minis` | Allow additional mini slots | I love extra slots | Medium | Standalone reconstruction candidate |
 | `catalog.heat-labels` | Add/alter heat labels | Advanced Decal Posing | High | Provisional; outside current posing pass |
 | `catalog.option-labels` | Add/alter option labels | Advanced Decal Posing | High | Provisional; outside current posing pass |
+
+## Current Photo Booth Validation Note
+
+The one-shot full-8192 Effects approach is rejected for maintained use on the tested machine because repeated packaged tests triggered the familiar white renderer-reset / blank-output failure. Sandbox/page-context changes, minimal packaging, and replacing `toBlob()` did not resolve it. The accepted v0.6 grouped 8K design uses four shifted 4096 Effects sources and avoids creating an 8192 WebGL Effects target.
 
 ## Unclassified Legacy Patches
 

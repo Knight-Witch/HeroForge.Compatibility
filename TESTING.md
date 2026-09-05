@@ -76,9 +76,10 @@ Current diagnosis on `heroforge07.1.9.98`:
 - Existing Lob 4096px output file dimensions: **4096px confirmed by Amanda**.
 - Existing Lob 8K visual detail: **visibly softer than 4K at 100%**.
 - Previously observed `CK.Capture.renderTarget = 2048x2048`: **confirmed but reclassified** as the current frame/auxiliary path, not the main visible-color render.
-- Visible model/color readbacks outside `CK.Capture.renderToImage`: **16 x 1024x1024 confirmed live**, carrying normal RGB and alpha 255.
+- Visible model/color path: named `CK.Effects.renderToCanvas` through a private high-resolution tiled helper.
 - Current private high-resolution model helper `maxTile`: **1024 confirmed from current authenticated `booth.js` source**, with a 512 Painterly special case.
 - Current normal 4096 model reconstruction: **4x4 / 16 visible-color Effects phases confirmed**.
+- Current normal 8192 model reconstruction: **8x8 / 64 visible-color Effects phases confirmed**.
 - `CK.Settings.screenshotSize = 4096` hypothesis: **rejected live**; setting restored to 2048.
 - `CK.Effects.renderToCanvas` named runtime capability: **confirmed**; current function contains no 1024 hard clamp and restores temporary Effects state in `finally` cleanup.
 - Current renderer `maxTextureSize`: **16384 confirmed on tested machine/browser**.
@@ -107,7 +108,30 @@ Standalone v0.4 adaptive true-4096 phase-feed repair:
 - `CK.Effects.renderToCanvas` restored after packaged capture: **passed live**.
 - Native Photo Booth capture remains functional afterward: **passed live** — normal 1024x1024 canvas returned.
 - Dispose/cleanup: **passed live** — global, panel, and style removed.
-- 8192 capture: **not enabled; separate resource-safe design/validation pending**.
+
+8K investigation and accepted grouped repair:
+
+- One-shot true `CK.Effects.renderToCanvas(8192,8192,...)` bridge proof: **mechanically passed once**; returned correct 8192 output, supplied 64/64 unique phases, restored Effects, and Amanda reported the result looked great.
+- Packaged one-shot 8192 attempts: **repeatedly failed** with the familiar HeroForge white renderer-reset / blank-output behavior at the tail end.
+- Tampermonkey sandbox vs raw/page-context execution: **rejected as root cause**; same failure reproduced.
+- Generalized package overhead: **rejected as root cause**; minimal 8K-only package reproduced the same failure.
+- `canvas.toBlob()` / PNG export tail-spike hypothesis: **rejected**; custom streaming PNG path reproduced the same white/blank failure.
+- Maintained one-shot 8192 Effects source: **rejected for stability on the tested machine**.
+- Grouped v0.5.4 design: **passed live**. Four shifted 4096 Effects sources cover all 64 native 8K phase classes without creating an 8192 WebGL Effects target.
+- Grouped 8K synthetic reconstruction math: **exact pass**.
+- Grouped packaged 8192 visual acceptance: **passed perfectly**.
+- Amanda reported grouped 8K was **very easy on the GPU** compared with the one-shot 8192 path.
+
+Combined standalone v0.6 maintained regression:
+
+- JavaScript syntax check: **passed**.
+- TRUE 4K: one 4096 source; **packaged visual regression passed**.
+- TRUE 8K: four shifted 4096 sources; **packaged visual regression passed perfectly**.
+- Current 8K path creates **no 8192 WebGL Effects target**.
+- Native topology remains dynamically validated rather than freezing private helper names or offsets.
+- Temporary named Effects wrapper is restored after explicit capture.
+- Source canvases and group pixel buffers are released after use.
+- A future already-native full-resolution Effects path is passed through unchanged.
 
 ## Test Order
 
@@ -125,19 +149,21 @@ Standalone v0.4 adaptive true-4096 phase-feed repair:
 
 ## Photo Booth High-Resolution Acceptance
 
-For `media.screenshot-resolution` v0.4:
+For `media.screenshot-resolution` v0.6:
 
-1. Open Photo Booth and keep the current Lob script enabled as the reference provider.
-2. Capture the same scene with the existing Lob/native 4096px action for comparison.
-3. Run packaged standalone `Capture TRUE 4096px via Native Booth`; the same adaptive algorithm already passed a bridge-driven live 4096 visual proof.
-4. Require `HFPhotoBoothTrueResolutionTest.lastCapture.trueEffectsRender.width/height` to report 4096x4096.
-5. Require `lastCapture.suppliedPhaseCount === lastCapture.expectedPhases`; normal tested state should report 16 x 1024 phases.
-6. Require returned/downloaded canvas to be 4096x4096.
-7. Compare at 100% view: fine model edges/details must show materially more real detail than the current soft Lob/native 4096 output.
-8. Verify camera framing, lighting, background, masks/frame, overlays/effects, transparency behavior where relevant, and color output.
-9. Verify a normal native/Lob capture still works after the phase-feed capture.
-10. Dispose the standalone test and confirm its panel/timer/global are removed.
-11. Packaged 4096 acceptance has passed. Any 8192 action must be designed/tested separately with explicit GPU/memory safeguards rather than assuming `maxTextureSize = 16384` guarantees safe allocation.
+1. Open Photo Booth and keep the current Lob script enabled as reference provider where useful.
+2. TRUE 4096 must use one 4096 staged Effects source through the native compositor and return/download a 4096x4096 result.
+3. TRUE 8192 must use the grouped four-shifted-4096 source strategy through the native compositor and return/download an 8192x8192 result without allocating an 8192 Effects target.
+4. Require all expected native phases to be supplied exactly once; current normal topology is 16 x 1024 for 4K and 64 x 1024 for 8K.
+5. Require source groups to be released after their final assigned phase.
+6. Compare at 100% view against current soft Lob/native outputs; fine model detail must be materially improved without phase/checkerboard/seam artifacts.
+7. Verify camera framing, lighting, background, masks/frame, overlays/effects, transparency behavior where relevant, and color output.
+8. Verify `CK.Effects.renderToCanvas` restoration after capture.
+9. Verify normal native/Lob capture remains functional afterward when doing lifecycle regression.
+10. Dispose the standalone test and confirm its panel/timer/global are removed when doing lifecycle regression.
+11. Re-run after any HeroForge build change or any shared capture-engine refactor.
+
+Current packaged v0.6 TRUE 4096 and TRUE 8192 visual acceptance has passed on `heroforge07.1.9.98`.
 
 ## Advanced Decal Posing Acceptance Additions
 
@@ -192,13 +218,12 @@ Fixture success does not replace live runtime testing.
 
 ## Planned Near-Term Sequence
 
-1. Keep packaged standalone v0.4 as the validated 4K regression baseline.
-2. Design/test 8192 with explicit resource safeguards and re-run the full 4K regression suite afterward.
-3. Keep 8K experimental/standalone until its own lifecycle/effect parity is validated; do not use Witch Dock Stable as the experiment.
-4. Archive current ADP v0.99.30 reference.
-5. Audit Full Res v0.80 projected renderer support.
-6. Audit HF Core Tweaks decal slot/schema behavior if included in first posing release.
-7. Keep the now-stable corrected bound gizmo isolated from unrelated posing refactors and use it as a regression target.
-8. Build consolidated Advanced Decal Posing standalone entrypoint for the remaining features.
-9. Run Lob-absent and Lob-present coexistence suites.
-10. Integrate only after those gates into Witch Dock Dev.
+1. Keep packaged standalone v0.6 as the validated 4K+8K regression baseline.
+2. Decide separately whether `media.screenshot-resolution` remains standalone or becomes a Witch Dock Dev candidate; do not use Stable as the next experiment.
+3. Archive current ADP v0.99.30 reference.
+4. Audit Full Res v0.80 projected renderer support.
+5. Audit HF Core Tweaks decal slot/schema behavior if included in first posing release.
+6. Keep the now-stable corrected bound gizmo isolated from unrelated posing refactors and use it as a regression target.
+7. Build consolidated Advanced Decal Posing standalone entrypoint for the remaining features.
+8. Run Lob-absent and Lob-present coexistence suites.
+9. Integrate only after those gates into Witch Dock Dev.
