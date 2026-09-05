@@ -6,7 +6,7 @@ Current Photo Booth validation target: `heroforge07.1.9.98` / 2026-09-05.
 
 | Component | Current status | Last verified build/date | Notes |
 |---|---|---|---|
-| `media.screenshot-resolution` | **Standalone validated; Witch Dock Stable promoted** | `heroforge07.1.9.98` / 2026-09-05 | v0.6 baseline; Stable provider promoted at Witch Dock commit `e155f2c2f961463b4a0e26f7c88f21f603ce1b95`. Clean public refresh smoke pending. |
+| `media.screenshot-resolution` | **Standalone validated; Witch Dock Stable validated** | `heroforge07.1.9.98` / 2026-09-05 | v0.6 baseline; Stable provider promoted at Witch Dock commit `e155f2c2f961463b4a0e26f7c88f21f603ce1b95`; clean public smoke passed perfectly. |
 | `decals.gizmo.bound-correction` | Witch Dock Stable | 2026-09-05 | Validated separately. |
 | Character local JSON | Core Save/Load passed live | 2026-09-03 | Lifecycle/repeated-use pending. |
 | Projected decal state/control | Runtime path confirmed | September 2026 | Renderer dependency audit pending. |
@@ -28,6 +28,7 @@ Current Photo Booth validation target: `heroforge07.1.9.98` / 2026-09-05.
 
 - With current Lob/ADP present, its existing HeroForge 4096 and 8192 UI choices successfully routed through the Witch Dock Dev provider and produced correct outputs.
 - Public Stable reuses that provider behavior and adds a narrow direct-button readiness adapter.
+- Clean public Stable validation passed both HeroForge/Lob high-resolution routes and both Witch Dock direct capture routes; readiness worked without cycling the repair toggle.
 - Lob/ADP itself is not modified.
 - Lob-absent users can use Witch Dock direct capture buttons; injection into HeroForge's native resolution selector remains future work.
 

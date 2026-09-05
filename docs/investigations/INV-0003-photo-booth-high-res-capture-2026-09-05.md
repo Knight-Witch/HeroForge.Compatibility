@@ -3,7 +3,7 @@
 **Date:** 2026-09-05  
 **Feature:** `media.screenshot-resolution`  
 **HeroForge build:** `heroforge07.1.9.98`  
-**Status:** diagnosis complete; standalone validated; Witch Dock Stable promoted
+**Status:** diagnosis complete; standalone validated; Witch Dock Stable validated
 
 ## Diagnosis
 
@@ -32,17 +32,27 @@ Current native/Lob nominal 4096 and 8192 visible model detail is produced throug
 
 WITCH_DEV_PHOTO wrapped only 4096/8192 `BT.maker.takeScreenshot` requests while leaving current Lob/ADP UI injection intact.
 
-Amanda confirmed:
+Amanda confirmed in Dev:
 
 - existing HeroForge UI 4096 -> repaired provider: perfect;
 - existing HeroForge UI 8192 -> grouped repaired provider: perfect;
-- direct Witch Dock capture works; initial buttons required provider toggle cycle.
+- direct Witch Dock capture worked; initial buttons required provider-toggle cycling.
 
-The button caveat was traced to stale UI readiness after provider installation before Photo Booth enabled. Public Witch Dock promotion at `e155f2c2f961463b4a0e26f7c88f21f603ce1b95` preserves the exact Dev-tested provider and adds a separate narrow readiness adapter.
+The button caveat was traced to stale UI readiness after provider installation before Photo Booth enabled. Public Witch Dock promotion at `e155f2c2f961463b4a0e26f7c88f21f603ce1b95` preserved the exact Dev-tested provider and added a separate narrow readiness adapter.
+
+Clean public Stable validation then confirmed:
+
+- readiness adapter works without toggle cycling;
+- public HeroForge/Lob 4096 route: perfect;
+- public HeroForge/Lob 8192 grouped route: perfect;
+- public Witch Dock direct TRUE 4K: perfect;
+- public Witch Dock direct TRUE 8K: perfect.
 
 ## Remaining work
 
-- clean public refresh smoke;
+The still-capture repair itself is closed/validated. Remaining adjacent work is separate:
+
 - Lob-absent injection into HeroForge's native resolution selector;
-- future build/effect-profile regression;
-- long-term maintainer assignment and Foundation extraction.
+- future build/effect-profile regression when triggered;
+- long-term maintainer assignment;
+- future Foundation extraction.

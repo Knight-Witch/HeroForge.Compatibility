@@ -1,29 +1,30 @@
 # Changelog
 
-## HFC-2026-09-05-015 — Record Photo Booth Witch Dock Stable promotion
+## HFC-2026-09-05-016 — Record Photo Booth Stable acceptance
 
 Date: 2026-09-05
 
 ### Summary
 
-Documentation-only status update recording promotion of validated `media.screenshot-resolution` into public Witch Dock Stable after WITCH_DEV_PHOTO integration testing.
+Documentation-only status update recording final public Witch Dock Stable acceptance of `media.screenshot-resolution`.
 
-### Confirmed integration result
+### Confirmed public result
 
-- Current Lob/ADP remained installed unchanged.
-- Lob's existing 4096 and 8192 choices in HeroForge's own Photo Booth UI both routed through the Witch Dock Dev provider and produced correct repaired captures.
-- Amanda reported both native-HeroForge-UI paths worked perfectly.
-- Witch Dock direct TRUE 4K/8K capture also worked after cycling the provider toggle.
-- The direct-button initial disabled state was diagnosed as UI readiness after pre-Booth provider installation; capture math/provider behavior remained valid.
-- Public Witch Dock commit `e155f2c2f961463b4a0e26f7c88f21f603ce1b95` promotes the exact Dev-tested provider plus a narrow public readiness adapter.
+- Temporary standalone v0.6 and WITCH_DEV_PHOTO test scripts were disabled for the clean public test.
+- Public readiness adapter worked without requiring the repair toggle to be cycled.
+- Public HeroForge/Lob 4096 capture routed through Witch Dock and passed perfectly.
+- Public HeroForge/Lob 8192 grouped capture routed through Witch Dock and passed perfectly.
+- Public Witch Dock direct TRUE 4K capture passed perfectly.
+- Public Witch Dock direct TRUE 8K capture passed perfectly.
+- Amanda reported the public integration works perfectly.
 
 ### Status
 
 - standalone: validated;
 - Witch Dock Dev: validated with Lob present;
-- Witch Dock Stable: promoted; clean public refresh smoke pending;
+- Witch Dock Stable: **validated**;
 - Lob-absent native HeroForge resolution-menu adapter: pending separately;
-- primary feature maintainer: unresolved; Amanda is not silently assigned feature maintenance by this promotion.
+- primary feature maintainer: unresolved; Amanda is not silently assigned feature maintenance by this validation.
 
 ### Runtime impact
 
@@ -34,7 +35,6 @@ Documentation-only status update recording promotion of validated `media.screens
 - `MASTER.md`
 - `FEATURE_INVENTORY.md`
 - `COMPATIBILITY.md`
-- `OWNERSHIP.md`
 - `TESTING.md`
 - `docs/feature-specs/photo-booth-screenshot-resolution.md`
 - `docs/investigations/INV-0003-photo-booth-high-res-capture-2026-09-05.md`
@@ -43,4 +43,4 @@ Documentation-only status update recording promotion of validated `media.screens
 
 ---
 
-Historical changelog entries through HFC-2026-09-05-014 remain preserved in Git history at/before `dfd1b7cca5a9c8a281b6a61216a7173918448360`.
+Historical changelog entries through HFC-2026-09-05-015 remain preserved in Git history at/before `94289f9dcb8364fb94cd19e8c8a9838c9c616d95`.

@@ -4,7 +4,7 @@ This is the canonical high-level source for current project state. Historical de
 
 ## Current Phase
 
-**Legacy feature decomposition plus current-runtime compatibility reconstruction, with `media.screenshot-resolution` now standalone validated and promoted through Witch Dock Dev into Witch Dock Stable.**
+**Legacy feature decomposition plus current-runtime compatibility reconstruction, with `media.screenshot-resolution` now standalone validated, Witch Dock Dev validated, and Witch Dock Stable validated.**
 
 The corrected bound decal gizmo is also Witch Dock Stable. Character JSON and projected-decal work remain separate reconstruction tracks.
 
@@ -27,23 +27,23 @@ Validated on HeroForge `heroforge07.1.9.98`:
 - One-shot 8192, sandbox/page-context changes, minimal packaging, and export-stage workarounds are rejected maintained paths.
 - Standalone v0.6 passed both 4K and 8K visual acceptance.
 - WITCH_DEV_PHOTO provider build `0.7.0-witch-dock-dev-provider` passed Lob-present integration: Lob-injected HeroForge 4096 and 8192 choices both produced correct repaired captures.
-- Witch Dock direct TRUE 4K/8K capture also passed after cycling the provider toggle; the remaining initial disabled-button state was diagnosed as UI readiness, not capture failure.
-- Public Witch Dock commit `e155f2c2f961463b4a0e26f7c88f21f603ce1b95` promoted the exact Dev-tested provider plus a narrow readiness adapter to Stable.
+- Public Witch Dock commit `e155f2c2f961463b4a0e26f7c88f21f603ce1b95` promoted the exact Dev-tested provider plus a narrow readiness adapter.
+- Clean public Stable smoke then passed: HeroForge/Lob 4K, HeroForge/Lob 8K, Witch Dock direct TRUE 4K, Witch Dock direct TRUE 8K, and readiness-without-toggle-cycle all worked perfectly.
 - Public Stable remains self-contained on `Witch_Scripts`; it does not load Compatibility `main` or HF-Chat-Bridge.
 
 ## Current Gates
 
 - `media.screenshot-resolution` standalone: **validated**.
 - `media.screenshot-resolution` Witch Dock Dev: **validated with Lob present**.
-- `media.screenshot-resolution` Witch Dock Stable: **promoted; clean public-refresh smoke test pending**.
+- `media.screenshot-resolution` Witch Dock Stable: **validated**.
 - Lob-absent injection of 4096/8192 into HeroForge's own resolution selector: **separate future UI-adapter gate**. Witch Dock direct buttons already provide Lob-free capture.
-- Feature primary-maintainer assignment: **unresolved**. Stable promotion was explicitly requested by Amanda; this does not silently assign her primary maintenance of the Lob-derived feature.
+- Feature primary-maintainer assignment: **unresolved**. Stable validation does not silently assign Amanda primary maintenance of the Lob-derived feature.
 
 ## Migration Queue
 
 | Area | Current state | Next gate |
 |---|---|---|
-| Photo Booth high-resolution still capture | Standalone validated; Witch Dock Stable promoted | Clean public smoke; later Lob-absent HF UI adapter; future Foundation extraction |
+| Photo Booth high-resolution still capture | Standalone + Witch Dock Stable validated | Later Lob-absent HF UI adapter; future Foundation extraction; build regression only when triggered |
 | Character local JSON | Standalone reconstruction committed; core Save/Load passed live | Finish lifecycle/repeated-use acceptance |
 | Projected decal state/control | Runtime state/control path confirmed | Complete renderer dependency audit then consolidate |
 | Corrected bound decal gizmo | Witch Dock Stable | Keep regression coverage current |

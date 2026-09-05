@@ -2,7 +2,7 @@
 
 **Feature ID:** `media.screenshot-resolution`  
 **Title:** True high-resolution Photo Booth still capture  
-**Status:** standalone validated; Witch Dock Stable promoted, clean public smoke pending  
+**Status:** standalone validated; Witch Dock Stable validated  
 **Risk:** Medium  
 **Primary maintainer:** TBD (Lob-derived feature; ownership not assigned)  
 **Reviewer:** Amanda  
@@ -57,6 +57,14 @@ WITCH_DEV_PHOTO Lob-present integration passed both 4096 and 8192 perfectly. Pub
 - ownership loss reports degraded state rather than blindly stacking wrappers;
 - no bundle patch, screenshot-size setting mutation, or Capture.renderToImage replacement.
 
-## Current gate
+## Stable validation
 
-Run a clean public refresh smoke with temporary standalone/Dev test scripts disabled. Long-term feature maintainer assignment and future Foundation extraction remain open.
+Clean public validation with temporary Dev/standalone scripts disabled passed:
+
+- readiness adapter activates direct buttons without repair-toggle cycling;
+- HeroForge/Lob 4096 capture: perfect;
+- HeroForge/Lob 8192 grouped capture: perfect;
+- Witch Dock direct TRUE 4K: perfect;
+- Witch Dock direct TRUE 8K: perfect.
+
+The `media.screenshot-resolution` Stable gate is closed. Future work is limited to regression testing when triggered, the optional Lob-absent HeroForge UI adapter, long-term maintainer assignment, and Foundation extraction.

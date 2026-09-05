@@ -21,31 +21,36 @@ WITCH_DEV_PHOTO provider build `0.7.0-witch-dock-dev-provider` with current Lob/
 
 - existing Lob-injected HeroForge 4096 control -> Witch Dock provider -> repaired capture: **passed perfectly**;
 - existing Lob-injected HeroForge 8192 control -> Witch Dock provider -> grouped repaired capture: **passed perfectly**;
-- Witch Dock direct TRUE 4K/TRUE 8K buttons: **capture behavior passed** after cycling provider toggle;
+- Witch Dock direct TRUE 4K/TRUE 8K capture behavior: **passed**;
 - initial direct-button disabled state: **reproduced/diagnosed** as stale UI readiness after provider installed before Photo Booth opened;
 - capture engine did not require change.
 
-### Witch Dock Stable promotion
+### Witch Dock Stable validation
 
-Public consumer commit: `e155f2c2f961463b4a0e26f7c88f21f603ce1b95`.
+Public consumer promotion: `e155f2c2f961463b4a0e26f7c88f21f603ce1b95`.
 
-- exact Dev-tested provider blob promoted: static parity confirmed by identical blob SHA;
+Static/public preparation:
+
+- exact Dev-tested provider blob promoted: parity confirmed by identical blob SHA;
 - public readiness adapter: JavaScript syntax passed;
 - public manifest: JSON parse passed;
 - `Witch_Dock.user.js`: unchanged;
-- `tools/Booth.js`: unchanged;
-- clean public refresh smoke with temporary Dev/standalone scripts disabled: **pending**.
+- `tools/Booth.js`: unchanged.
 
-## Current public smoke checklist
+Clean public smoke with temporary Dev/standalone scripts disabled:
 
-1. Disable the temporary standalone v0.6 true-resolution userscript and WITCH_DEV_PHOTO loader.
-2. Refresh HeroForge with normal public Witch Dock and current Lob/ADP enabled.
-3. Open Photo Booth; Witch Dock High Resolution Capture buttons should become clickable without cycling the repair toggle.
-4. Capture 4096 from HeroForge's existing Lob-injected resolution choice; verify correct true-4K output.
-5. Capture 8192 from the same HeroForge UI; verify grouped true-8K behavior without whiteout.
-6. Run Witch Dock direct TRUE 4K and TRUE 8K once each.
-7. Verify a normal lower-resolution capture still works.
-8. Disable/re-enable the repair control and verify upstream capture restoration/reinstallation.
+- direct Witch Dock buttons became usable without cycling the repair toggle: **passed**;
+- HeroForge/Lob 4096 -> public Witch Dock provider: **passed perfectly**;
+- HeroForge/Lob 8192 -> public grouped provider: **passed perfectly**;
+- public Witch Dock direct TRUE 4K: **passed perfectly**;
+- public Witch Dock direct TRUE 8K: **passed perfectly**;
+- user overall public result: **works perfectly**.
+
+Stable gate: **closed / validated**.
+
+## Future regression triggers
+
+Re-run the Photo Booth suite when the HeroForge build materially changes, named capture/Effects capabilities change, tile topology changes, or a native true-resolution Effects path appears. Lob-absent HeroForge-native resolution-menu injection is a separate UI-adapter test track and does not reopen the validated capture-engine gate.
 
 ## Other maintained milestones
 
