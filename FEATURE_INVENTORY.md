@@ -25,7 +25,7 @@ Risk scale:
 | `decals.transform.range` | Expand decal move/scale ranges | ADP v0.99.30 | High legacy / Medium target | Exact v0.99.30 UI patches confirmed; target should prefer independent/runtime controls |
 | `decals.transform.projected` | Project ON/OFF/Native state plus required renderer behavior | ADP v0.99.30 + Full Res v0.80 | Critical while renderer patch external | Runtime state/control path confirmed; exact current renderer dependency audit still required |
 | `decals.transform.unequal-scale` | Unequal X/Y/Z scaling controls and renderer behavior | ADP + Full Res | Critical legacy | Deferred by product decision; state/input works but Project-OFF renderer enhancement is not a release blocker |
-| `decals.gizmo.bound-correction` | Replace incorrect floor/origin gizmo for bound decals with projector-centered transform UI | Knight Witch current-runtime reconstruction | High | External standalone v0.4.1 behavior validated 2026-09-04; maintained extraction pending |
+| `decals.gizmo.bound-correction` | Replace incorrect floor/origin gizmo for bound decals with projector-centered transform UI | Knight Witch current-runtime reconstruction; validated WITCH_DEV v0.4.2 repair | High | Witch Dock Stable 2026-09-05; Move/Rotate/Scale undo-redo, transform preservation, and fresh-slot first-bind normalization validated; unequal bound scale rendering/wireframe polish deferred |
 | `decals.transform.tiling` | Texture/decal tiling behavior override | Full Res Decals/Textures | Critical | Provisional; outside current posing pass |
 | `decals.verification.policy` | Legacy eligibility/verification bypass behavior | HF Core Tweaks | Critical | Unresolved purpose/acceptability |
 

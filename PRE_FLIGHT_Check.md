@@ -2,6 +2,64 @@
 
 Use this file before committed repository updates to record what was checked, what can conflict, and what action is recommended.
 
+## PFC-2026-09-05-008 — Synchronize stable corrected bound gizmo status
+
+**Date:** 2026-09-05
+
+### Target files
+
+- `MASTER.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `MIGRATION_PLAN.md`
+- `TESTING.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+
+### Required material reviewed
+
+- `PROJECT_CONTRACT.md`
+- `MASTER.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+- `ARCHITECTURE.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `OWNERSHIP.md`
+- `MIGRATION_PLAN.md`
+- `TESTING.md`
+- current Witch Dock public `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, and `HISTORY/BULLSHIT/BOUND_DECAL_GIZMO.md`
+- current Witch Dock stable corrected-gizmo loader and accepted five source fragments
+- WITCH_DEV v0.4.0, v0.4.1, and v0.4.2 runtime test results
+- Witch Dock stable repair commit `1712b0ba24c8303d8d446d88cdf66199978045e7`
+
+### Confirmed findings
+
+- `decals.gizmo.bound-correction` has completed the intended standalone -> Witch Dock Dev -> Witch Dock Stable path.
+- Move, Rotate, and Scale Ctrl+Z / Ctrl+Shift+Z passed live testing.
+- The corrected Move undo problem was integration-specific: repeated `CK.activeTweak()` calls during pointer movement produced repeated intermediate history snapshots on the current runtime.
+- The validated repair uses live character data change/refresh during Move and retains the existing final `CK.passiveChangeFinish()` commit.
+- Existing sane Project ON/OFF state is preserved.
+- Changing decal artwork while Project OFF preserves the prior finite bound transform.
+- A brand-new Project-OFF slot with no genuine prior bound state can receive HeroForge's observed bad initializer near `v=1.503942117`, `s=1.768586891`, `sy=1.768586891`; the validated v0.4.2 repair normalizes only those three values to zero when the known signature is present.
+- WITCH_DEV v0.4.1 failed the fresh-slot scale case because projected scale values were incorrectly treated as an authoritative bound baseline; v0.4.2 corrected that model by caching only genuine Project-OFF state.
+- Public Witch Dock Stable does not depend on `HeroForge.Compatibility` runtime code or the HF-Chat-Bridge transport.
+- Compatibility repository status files were stale because they still described the bound gizmo as an external v0.4.1 experiment awaiting Witch Dock integration.
+
+### Material conflict risks
+
+- Documentation-only update in `HeroForge.Compatibility`; do not modify maintained JavaScript, `/legacy/`, Witch Dock runtime code, or the HF-Chat-Bridge repository.
+- Do not imply the entire `decals.advanced-posing` family is stable because the bound gizmo is stable.
+- Do not collapse the remaining Full Res renderer audit, HF Core Tweaks slot audit, provider arbitration, or ADP coexistence gates into the completed gizmo migration.
+- Preserve the explicit boundary that Witch Dock Stable consumes its own published module and does not load this repository's development head.
+- Keep unequal Project-OFF visible scaling, exact artwork-center polish, and projector wireframe correction marked deferred rather than silently solved.
+
+### Recommended action
+
+Commit a documentation-only status synchronization recording the completed gizmo promotion and v0.4.2 repair. No runtime behavior changes. After this checkpoint, the next material Advanced Decal Posing stage may return to the exact v0.99.30 archival/dependency audits without reopening the stable gizmo implementation.
+
+---
+
 ## PFC-2026-09-04-007 — ADP v0.99.30 decal posing subsystem audit
 
 **Date:** 2026-09-04

@@ -18,39 +18,56 @@ Diagnostic transport success does not itself validate a maintained compatibility
 
 ### Projected decal state/control
 
-- Named/runtime state resolution and `CK.activeTweak` update path: **confirmed current build**.
+- Named/runtime state resolution and `CK.activeTweak` update path: **confirmed current runtime**.
 - Current Lob v0.99.30 native-style Project compatibility control: **working reference**.
 - Exact current Full Res v0.80 renderer dependency: **audit pending**.
 
-### Corrected bound decal gizmo v0.4.1
+### Corrected bound decal gizmo — Witch Dock Stable
 
-Validated externally on current HeroForge build `heroforge07.1.9.93` before maintained extraction.
+The original standalone current-runtime investigation established the projector-center and transform semantics. The production feature has since passed Witch Dock Dev and Stable promotion testing.
 
-Passed:
+Validated behavior now includes:
 
 - stable projector-volume center anchor;
 - projector spread consistency in the tested decal;
 - per-frame camera tracking;
-- synthetic free Move +20 px horizontal: rendered projector center matched requested screen movement to approximately 0.01 px and restored exact H/V/D baseline;
-- synthetic free Move +20 px vertical: rendered projector center matched requested screen movement to approximately 0.01 px and restored exact H/V/D baseline;
-- Rotate propagation through HeroForge state plus exact restoration;
-- Scale propagation through HeroForge logarithmic scale state plus exact restoration;
-- disable removes corrected Transformer while preserving native Transformer/state;
-- re-enable creates one corrected Transformer again;
-- human Move usability: passed;
-- human Rotate usability: passed;
-- Scale input mapping: passed; Project-OFF uneven visible rendering remains a known renderer limitation/deferred enhancement.
+- corrected native-style Move, Rotate, and Scale behavior;
+- native floor/origin Transformer visualization suppression while preserving the native locator/state path;
+- Move H/V/D state propagation including depth;
+- Rotate propagation through HeroForge state;
+- logarithmic Scale propagation;
+- disable/re-enable lifecycle behavior;
+- human Move/Rotate/Scale usability;
+- Move Ctrl+Z / Ctrl+Shift+Z: **passed**;
+- Rotate Ctrl+Z / Ctrl+Shift+Z: **passed**;
+- Scale Ctrl+Z / Ctrl+Shift+Z: **passed**;
+- normal Project ON/OFF after a real bound transform: sane remembered state preserved;
+- changing decal artwork while Project OFF: prior bound transform preserved;
+- brand-new decal slot first Project-OFF conversion: confirmed bad `v≈1.50394`, `s≈1.76859`, `sy≈1.76859` initializer normalized to zero when no prior genuine bound state exists.
 
-After the human test, the Bling test decal was restored to the recorded baseline:
+Undo diagnosis/repair validated in WITCH_DEV v0.4.0-v0.4.2:
 
-- Move `-0.08 / -0.11 / 0`;
-- Rotate `0 / 0 / 0`;
-- Scale `-2 / 0 / 2`;
-- native locator position `(-0.08, -0.11, 0)`;
-- identity native rotation;
-- native scale `(0.25, 1, 4)`.
+- corrected Move previously called `CK.activeTweak()` on pointer movement, producing repeated intermediate history snapshots on the current runtime;
+- the accepted repair performs live character data change/refresh without adding a history point per pointer movement;
+- the existing `CK.passiveChangeFinish()` remains the single final Move commit;
+- cancel/interrupted Move restoration does not create a fake undo entry.
 
-This v0.4.1 result is **not yet a maintained repository module**. The acceptance tests must be rerun after extraction into production source boundaries.
+Transform-state preservation validated in v0.4.2:
+
+- only genuine Project-OFF state is treated as authoritative cached bound transform state;
+- projected `s`/`sy` are not accepted as a fresh bound baseline;
+- `characterEnterChange` listener lifecycle is installed/removed with the feature;
+- artwork replacement while bound preserves finite transform fields;
+- sane existing Project memory is left untouched;
+- first-ever known-bad bind normalizes only `v`, `s`, and `sy`.
+
+Current production source is delivered from `Knight-Witch/KnightWitch.Heroforge`; Witch Dock Stable does not depend on this repository at runtime.
+
+Known deferred behavior:
+
+- Project-OFF uneven visible scale renderer enhancement;
+- exact visible-artwork-center polish;
+- corrected projector wireframe/bounding-box visualization.
 
 ## Test Order
 
@@ -68,19 +85,18 @@ This v0.4.1 result is **not yet a maintained repository module**. The acceptance
 
 ## Advanced Decal Posing Acceptance Additions
 
-The forthcoming `decals.advanced-posing` reconstruction must additionally test:
+The forthcoming remaining `decals.advanced-posing` reconstruction must additionally test:
 
 - selected decal changes while controls/gizmo are active;
 - Project ON/OFF/Native transitions;
 - native gizmo enabled/disabled transitions;
-- corrected gizmo suppresses the incorrect native floor visualization without destroying the native locator/state service;
-- disable/dispose restores vanilla gizmo visibility/state;
+- stable corrected bound gizmo coexistence must not regress;
 - Full List and Project controls do not double-mount;
 - no feature partially initializes when required renderer capability is missing;
 - Lob v0.99.30 absent;
 - exact Lob v0.99.30 present;
 - provider arbitration prevents duplicate Project/Full List/transform ownership;
-- Undo/Redo around Move/Rotate/Scale/Project;
+- Undo/Redo around newly reconstructed Project/transform controls;
 - save/reload persistence;
 - quiet build change / missing capability behavior.
 
@@ -123,7 +139,7 @@ Fixture success does not replace live runtime testing.
 1. Archive current ADP v0.99.30 reference.
 2. Audit Full Res v0.80 projected renderer support.
 3. Audit HF Core Tweaks decal slot/schema behavior if included in first posing release.
-4. Extract and retest corrected bound gizmo as maintained module.
-5. Build consolidated Advanced Decal Posing standalone entrypoint.
+4. Keep the now-stable corrected bound gizmo isolated from unrelated posing refactors and use it as a regression target.
+5. Build consolidated Advanced Decal Posing standalone entrypoint for the remaining features.
 6. Run Lob-absent and Lob-present coexistence suites.
 7. Integrate only after those gates into Witch Dock Dev.
