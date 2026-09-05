@@ -74,29 +74,40 @@ Known deferred behavior:
 Current diagnosis on `heroforge07.1.9.98`:
 
 - Existing Lob 4096px output file dimensions: **4096px confirmed by Amanda**.
-- Existing Lob 4096px underlying `CK.Capture.renderTarget`: **2048x2048 confirmed live**.
-- Existing Lob 8K visual detail: **visibly softer than 4K at 100%**, consistent with lower-resolution source enlargement.
-- `CK.Settings.screenshotSize = 4096` hypothesis: **rejected live**; underlying 4096 action target remained 2048x2048.
-- `CK.Settings.screenshotSize` restored to 2048 after the bounded test: **confirmed**.
-- `CK.Capture.renderToImage` named runtime capability: **confirmed**; no 2048 hard clamp in current function source.
-- `CK.Capture.getDownloadableURL` post-render resize: **not present in current function source**.
-- Active Photo Booth camera/runtime camera equivalence in tested portrait scene: **confirmed**.
+- Existing Lob 8K visual detail: **visibly softer than 4K at 100%**.
+- Previously observed `CK.Capture.renderTarget = 2048x2048`: **confirmed but reclassified** as the current frame/auxiliary path, not the main visible-color render.
+- Visible model/color readbacks outside `CK.Capture.renderToImage`: **16 x 1024x1024 confirmed live**, carrying normal RGB and alpha 255.
+- Current private high-resolution model helper `maxTile`: **1024 confirmed from current authenticated `booth.js` source**, with a 512 Painterly special case.
+- Current normal 4096 model reconstruction: **4x4 / 16 visible-color Effects phases confirmed**.
+- `CK.Settings.screenshotSize = 4096` hypothesis: **rejected live**; setting restored to 2048.
+- `CK.Effects.renderToCanvas` named runtime capability: **confirmed**; current function contains no 1024 hard clamp and restores temporary Effects state in `finally` cleanup.
 - Current renderer `maxTextureSize`: **16384 confirmed on tested machine/browser**.
+- Native 2048 vs native 4096 central-region comparison: **4096 only ~7.2% higher measured edge information** than upscaled 2048.
+- Direct staged true-4096 Effects render: **passed live**; 4096x4096 and ~27.4% higher edge metric than untouched native 4096.
+- Runtime true-4096 phase feed: **passed mechanically**; 16/16 expected 1024 phases supplied through untouched native compositor.
+- Phase-fed final vs true source central 2048 region: **MAE 0 / RMSE 0 / identical edge metric**.
+- In-place 1024->2048 render-target supersample experiment: **rejected**; resulting edge metric was ~0.752 of untouched baseline.
 
-Standalone v0.1.0 true-4096 proof:
+Standalone v0.4 adaptive true-4096 phase-feed repair:
 
 - JavaScript syntax check with Node: **passed**.
-- No `boothui.js` interception: **static pass**.
-- No HeroForge function replacement: **static pass**.
+- Synthetic phase extraction/reconstruction test: **passed exact**.
+- No `booth.js` / `boothui.js` interception: **static pass**.
 - No `CK.Settings.screenshotSize` mutation: **static pass**.
-- Explicit direct request `CK.Capture.renderToImage(4096, 4096, camera, 1, true)`: **implemented**.
-- Real 4096x4096 render-target assertion: **implemented; live result pending**.
-- Returned 4096x4096 canvas assertion: **implemented; live result pending**.
-- PNG download: **pending live test**.
-- Camera/lighting/background/effect parity: **pending live test**.
-- Native/Lob capture remains functional afterward: **pending live test**.
-- Dispose/cleanup: **pending live test**.
-- 8192 capture: **not enabled; gated on 4096 acceptance**.
+- No `CK.Capture.renderToImage` replacement: **static pass**.
+- Temporary named `CK.Effects.renderToCanvas` wrapper only during explicit capture: **implemented / static pass**.
+- Dynamic square-divisor native phase-grid derivation: **implemented**; current live build resolves to 1024 / 4x4 / 16 phases.
+- True 4096x4096 Effects source assertion: **implemented**.
+- Native phase-coordinate validation from live temporary-camera offsets plus duplicate/incomplete topology rejection: **implemented**.
+- Final 4096x4096 canvas assertion and PNG download: **implemented**.
+- Adaptive bridge-run topology/download: **passed live**; 1024 tile, 4x4 grid, 16/16 unique phases, 4096x4096 result, 9,823,790-byte PNG.
+- Adaptive bridge-run whole-image human visual acceptance: **passed live**; Amanda opened the downloaded image and reported it looked great.
+- Packaged standalone whole-image/repeated-use regression: **passed live**.
+- Packaged second capture topology/result: **passed live** — 1024 tile, 4x4 grid, 16/16 phases, 4096x4096 canvas.
+- `CK.Effects.renderToCanvas` restored after packaged capture: **passed live**.
+- Native Photo Booth capture remains functional afterward: **passed live** — normal 1024x1024 canvas returned.
+- Dispose/cleanup: **passed live** — global, panel, and style removed.
+- 8192 capture: **not enabled; separate resource-safe design/validation pending**.
 
 ## Test Order
 
@@ -114,18 +125,19 @@ Standalone v0.1.0 true-4096 proof:
 
 ## Photo Booth High-Resolution Acceptance
 
-For `media.screenshot-resolution`:
+For `media.screenshot-resolution` v0.4:
 
 1. Open Photo Booth and keep the current Lob script enabled as the reference provider.
-2. Capture the same scene with the existing Lob 4096px action for comparison.
-3. Run the standalone `Capture TRUE 4096px PNG` action.
-4. Require `HFPhotoBoothTrueResolutionTest.lastCapture.renderTarget` to report 4096x4096.
-5. Require returned canvas/download to be 4096x4096.
-6. Compare at 100% view: fine model edges/details must show materially more real detail than the current soft Lob 4096 output.
-7. Verify camera framing, lighting, background, overlays/effects, transparency behavior where relevant, and color output.
-8. Verify a normal native/Lob capture still works after the direct render.
-9. Dispose the standalone test and confirm its panel/timer/global are removed.
-10. Only if the full 4096 suite passes may an 8192 action be added; first 8K test should use 1x render sampling and explicit GPU-capability/memory safeguards.
+2. Capture the same scene with the existing Lob/native 4096px action for comparison.
+3. Run packaged standalone `Capture TRUE 4096px via Native Booth`; the same adaptive algorithm already passed a bridge-driven live 4096 visual proof.
+4. Require `HFPhotoBoothTrueResolutionTest.lastCapture.trueEffectsRender.width/height` to report 4096x4096.
+5. Require `lastCapture.suppliedPhaseCount === lastCapture.expectedPhases`; normal tested state should report 16 x 1024 phases.
+6. Require returned/downloaded canvas to be 4096x4096.
+7. Compare at 100% view: fine model edges/details must show materially more real detail than the current soft Lob/native 4096 output.
+8. Verify camera framing, lighting, background, masks/frame, overlays/effects, transparency behavior where relevant, and color output.
+9. Verify a normal native/Lob capture still works after the phase-feed capture.
+10. Dispose the standalone test and confirm its panel/timer/global are removed.
+11. Packaged 4096 acceptance has passed. Any 8192 action must be designed/tested separately with explicit GPU/memory safeguards rather than assuming `maxTextureSize = 16384` guarantees safe allocation.
 
 ## Advanced Decal Posing Acceptance Additions
 
@@ -180,9 +192,9 @@ Fixture success does not replace live runtime testing.
 
 ## Planned Near-Term Sequence
 
-1. Live-test the true-4096 Photo Booth standalone proof.
-2. If 4K passes, add/test 8192 with explicit resource safeguards; otherwise diagnose the exact parity failure before changing architecture.
-3. Keep the Photo Booth repair standalone until its lifecycle/effect parity is validated; do not use Witch Dock Stable as the experiment.
+1. Keep packaged standalone v0.4 as the validated 4K regression baseline.
+2. Design/test 8192 with explicit resource safeguards and re-run the full 4K regression suite afterward.
+3. Keep 8K experimental/standalone until its own lifecycle/effect parity is validated; do not use Witch Dock Stable as the experiment.
 4. Archive current ADP v0.99.30 reference.
 5. Audit Full Res v0.80 projected renderer support.
 6. Audit HF Core Tweaks decal slot/schema behavior if included in first posing release.
