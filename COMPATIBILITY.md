@@ -7,7 +7,7 @@ Current media validation target: `heroforge07.1.9.98` / 2026-09-05.
 | Component | Current status | Last verified build/date | Notes |
 |---|---|---|---|
 | `media.screenshot-resolution` | **Standalone validated; Witch Dock Stable validated** | `heroforge07.1.9.98` / 2026-09-05 | Stable still-capture provider remains closed/validated. |
-| `media.spinny-mini-webp` | **Configurable standalone core validated; v0.2.1 UX candidate pending** | `heroforge07.1.9.98` / 2026-09-05 | v0.2.0 passes reported at 1024 Standard/250f, 2048 Standard/250f and 1024 Very Slow/750f. 1024 Very Slow ~34 MiB. v0.2.1 adds progress/ETA only. Public Witch Dock unchanged. |
+| `media.spinny-mini-webp` | **v0.2.1 configurable standalone validated on tested profiles** | `heroforge07.1.9.98` / 2026-09-05 | PASS at 1024 Standard/250f, 2048 Standard/250f, 1024 Very Slow/750f, and 2048 Slower/500f. Progress/ETA, repeat-use, parser verification and rotation restoration also passed. Public Witch Dock unchanged. |
 | `decals.gizmo.bound-correction` | Witch Dock Stable | 2026-09-05 | Validated separately. |
 | Character local JSON | Core Save/Load passed live | 2026-09-03 | Lifecycle/repeated-use pending. |
 | Projected decal state/control | Runtime path confirmed | September 2026 | Renderer dependency audit pending. |
@@ -27,20 +27,40 @@ Confirmed current capabilities:
 Validated results on `heroforge07.1.9.98`:
 
 - v0.1.0 1024/250 Lob-parity capture: PASS;
-- v0.2.0 1024 Standard / 250 frames: PASS by user report;
-- v0.2.0 2048 Standard / 250 frames: PASS by user report;
-- v0.2.0 1024 Very Slow / 750 frames: PASS by user report;
+- v0.2/v0.2.1 1024 Standard / 250 frames: PASS;
+- 2048 Standard / 250 frames: PASS;
+- 1024 Very Slow / 750 frames: PASS;
+- 2048 Slower / 500 frames: PASS;
 - 1024 Very Slow output approximately 34 MiB;
-- multiple successful captures in one session provide basic repeat-use evidence;
+- multiple successful captures in one session: PASS;
 - high-complexity figure test remained practical by user report.
 
-The latest reported 2048 / 500-frame capture was still in progress and is not considered validated yet.
+The 2048 Slower / 500-frame result is an **8x pixel-sample workload** relative to 1024 Standard and confirms combined resolution + frame-count scaling.
 
 ## v0.2.1 progress/ETA capability
 
-The ETA is intentionally device/session relative rather than based on animation playback duration. It measures actual wall-clock render+encode time per completed frame, warms up for five frames, then uses a continuously adapting smoothed current-capture estimate. Successful same-session timing is retained by resolution to seed subsequent estimates, but no timing state persists across reloads.
+The ETA is device/session relative rather than based on animation playback duration. It measures actual wall-clock render+encode time per completed frame, warms up for five frames when no history exists, then uses a continuously adapting smoothed current-capture estimate. Successful same-session timing is retained by resolution to seed subsequent estimates; no timing state persists across reloads.
+
+Live validation:
+
+- progress bar: PASS;
+- first-run ETA approximately 3m 7s, reported accurate throughout;
+- second same-session 1024 Standard estimate approximately 2m 57s: PASS;
+- bridge-confirmed second-run actual total: 177.101 s;
+- bridge-confirmed final estimated total: 175.614 s;
+- total-time error: 1.49 s / 0.84%;
+- parser: 1024x1024 / 250 frames / 10,000 ms / 40 ms x 250 / loop 0;
+- output: 13,565,278 bytes;
+- rotation restored: true;
+- error: null.
 
 This UI/diagnostic layer does not alter HeroForge frame production, animation timing or WebP mux semantics.
+
+## Remaining compatibility work before Dev integration
+
+- dedicated cancel/failure-path regression under an expensive profile;
+- decide practical warnings/guardrails for expensive combinations;
+- optional 2048 Very Slow / 750-frame 12x stress case if needed to define limits.
 
 ## Revalidation triggers
 

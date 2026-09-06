@@ -4,7 +4,7 @@ This is the canonical high-level source for current project state. Historical de
 
 ## Current Phase
 
-**`media.spinny-mini-webp` now has live standalone validation across both resolution scaling and high frame-count scaling. v0.2.1 adds progress/ETA UX on top of the validated configurable capture core. Public Witch Dock remains untouched.**
+**`media.spinny-mini-webp` standalone v0.2.1 is now live-validated across resolution scaling, high frame-count scaling, a combined 2048/500 high-load profile, repeated capture, progress-bar UX, and device-relative ETA. Public Witch Dock remains untouched.**
 
 `media.screenshot-resolution` and the corrected bound decal gizmo remain Witch Dock Stable. Character JSON and projected-decal work remain separate reconstruction tracks.
 
@@ -15,7 +15,7 @@ This is the canonical high-level source for current project state. Historical de
 - Development-only live transport: private `Knight-Witch/HF-Chat-Bridge`
 - Public Witch Dock runtime dependency on Compatibility `main`: **none**
 - Validated Spinny parity reference: `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js` v0.1.0
-- Active configurable Spinny test: `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js` v0.2.1 on `spinny-webp-hq-wip`
+- Active validated configurable Spinny test: `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js` v0.2.1 on `spinny-webp-hq-wip`
 
 ## Photo Booth True Resolution
 
@@ -50,42 +50,52 @@ The closure-local HeroForge animation encoder and Lob's compiled-string GIF patc
 
 ### Configurable profile validation
 
-v0.2.0 preserved the validated capture/mux core and added independent resolution and rotation-duration profiles at constant 40 ms/frame / 25 FPS.
+All current speed profiles remain 40 ms/frame / 25 FPS, with resolution and rotation duration independent.
 
 Live user validation on `heroforge07.1.9.98`:
 
-- **1024 Standard / 250 frames: PASS / works perfectly**;
-- **2048 Standard / 250 frames: PASS / works perfectly**;
-- **1024 Very Slow / 750 frames: PASS / works perfectly**;
+- **1024 Standard / 250 frames: PASS / perfect**;
+- **2048 Standard / 250 frames: PASS / perfect**;
+- **1024 Very Slow / 750 frames: PASS / perfect**;
+- **2048 Slower / 500 frames: PASS / perfect**;
 - 1024 Very Slow file size observed at approximately **34 MiB**;
 - multiple captures succeeded in one session;
-- existing percentage, Rendering/Encoding phase and px/frame/FPS/workload UI were explicitly reported useful;
 - testing used a high-complexity figure with many kitbash parts, effects, special paints and decals, and resource behavior remained acceptable by user report.
 
-A 2048 / 500-frame capture was active at the most recent report and remains pending until the user reports completion. HF-Chat-Bridge is intentionally not queried while that capture is active.
+The 2048 Slower / 500-frame pass represents an **8x pixel-sample workload** relative to 1024 Standard and demonstrates combined high-resolution + increased-frame-count scaling.
 
-### v0.2.1 UX stage
+### v0.2.1 progress/ETA validation
 
-v0.2.1 adds only UI/diagnostic behavior:
+v0.2.1 adds only UI/diagnostic behavior on top of the validated capture core:
 
-- progress bar beneath the percentage/status readout;
-- elapsed time;
-- estimated time remaining;
-- estimated total capture time;
-- prediction derived from measured render+encode wall time on the current device/figure;
-- five-frame live warm-up and continuously adapting smoothed prediction;
-- same-session per-resolution timing history for faster estimates on subsequent captures;
+- progress bar beneath the percentage/status readout: **PASS**;
+- elapsed / remaining / total timing display: **PASS**;
+- first-run ETA approximately **3m 7s**, reported accurate and stable throughout;
+- same-session second-run estimate approximately **2m 57s**: **PASS**;
 - no persistent cross-reload timing history.
 
-Capture cadence, frame count, WebP encoding, muxing, validation and rotation behavior remain unchanged from the live-validated v0.2.0 core.
+Bridge-confirmed second 1024 Standard run:
+
+- 250/250 rendered and encoded;
+- final output **13,565,278 bytes**;
+- parser confirmed 1024x1024 / 250 frames / 10,000 ms / 40 ms x 250 / loop 0;
+- actual wall-clock **177.101 s**;
+- final estimated total **175.614 s**;
+- total-time error **1.49 s / 0.84%**;
+- rotation restored: **true**;
+- error: **null**.
 
 ## Current Gates
 
 - `media.screenshot-resolution` Witch Dock Stable: **validated**.
 - `media.spinny-mini-webp` v0.1.0 Lob parity: **validated**.
-- Spinny v0.2 configurable core: **validated at 1024 Standard, 2048 Standard and 1024 Very Slow**.
-- Spinny v0.2.1 progress/ETA UX: **implemented; live UX validation pending**.
-- 2048 / 500-frame result: **pending user completion report**.
+- Spinny v0.2.1 configurable standalone behavior: **validated on tested profiles**.
+- Spinny progress/ETA UX: **validated**.
+- Spinny repeated 1024 Standard capture: **validated**.
+- Spinny full-run parser and rotation restoration on v0.2.1: **validated**.
+- Optional 2048 Very Slow / 750-frame 12x stress case: **not yet tested**.
+- Dedicated expensive-profile cancel/failure regression: **pending**.
+- Practical high-cost warning/guardrail policy: **pending decision**.
 - Witch Dock Spinny integration: **not started**.
 - Feature primary-maintainer assignment remains TBD.
 
@@ -94,7 +104,7 @@ Capture cadence, frame count, WebP encoding, muxing, validation and rotation beh
 | Area | Current state | Next gate |
 |---|---|---|
 | Photo Booth high-resolution still capture | Standalone + Witch Dock Stable validated | Revalidate only on trigger |
-| Spinny Mini animated WebP | Configurable core validated across 1024/2048 and 250/750-frame endpoints; v0.2.1 adds progress/ETA | Validate v0.2.1 UX/ETA, record active 2048/500 result, then decide remaining standalone matrix/guardrails before Witch Dock Dev |
+| Spinny Mini animated WebP | v0.2.1 standalone validated across 1x/3x/4x/8x tested workloads plus ETA/repeat-use | Decide practical guardrails and run dedicated cancel/failure regression before Witch Dock Dev |
 | Character local JSON | Core Save/Load passed live | Finish lifecycle/repeated-use acceptance |
 | Projected decal state/control | Runtime path confirmed | Complete renderer dependency audit |
 | Corrected bound decal gizmo | Witch Dock Stable | Keep regression coverage current |
@@ -102,4 +112,4 @@ Capture cadence, frame count, WebP encoding, muxing, validation and rotation beh
 
 ## Public Integration Rule
 
-Standalone validation remains the laboratory. Public Witch Dock must not consume this WIP branch directly; Spinny integration begins in Witch Dock Dev only after the standalone gate is explicitly closed.
+Standalone validation remains the laboratory. Public Witch Dock must not consume this WIP branch directly; Spinny integration begins in Witch Dock Dev only after the remaining standalone safety/guardrail gate is explicitly closed.

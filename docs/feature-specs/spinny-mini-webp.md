@@ -20,11 +20,12 @@ Historical Lob-parity reference:
 
 v0.1.0 validated that target live and produced a retained 12.9 MiB output.
 
-The configurable profile core has additionally passed live at:
+The current configurable standalone core has additionally passed live at:
 
 - 1024 Standard / 250 frames / 25 FPS;
 - 2048 Standard / 250 frames / 25 FPS;
-- 1024 Very Slow / 750 frames / 25 FPS, approximately 34 MiB.
+- 1024 Very Slow / 750 frames / 25 FPS, approximately 34 MiB;
+- 2048 Slower / 500 frames / 25 FPS.
 
 Resolution and rotation speed are independent. All current speed profiles retain 40 ms/frame so slower motion gains more angular samples instead of longer frame holds:
 
@@ -32,6 +33,8 @@ Resolution and rotation speed are independent. All current speed profiles retain
 - Slow: 15 s / 375 frames;
 - Slower: 20 s / 500 frames;
 - Very Slow: 30 s / 750 frames.
+
+The 2048 Slower / 500-frame pass represents an 8x baseline pixel-sample workload and confirms a combined high-resolution + increased-frame-count profile.
 
 ## Required capabilities
 
@@ -70,29 +73,47 @@ The maintained implementation does not depend on HeroForge's closure-local anima
 - Reduce source canvas backing store after frame extraction.
 - Continue measuring final compressed-output verification at expensive profiles.
 
-## Progress and ETA UX
+## Progress and ETA UX — validated
 
-v0.2.1 adds UX/diagnostics only; it must not alter capture or mux semantics.
+v0.2.1 adds UX/diagnostics only; it does not alter capture or mux semantics.
 
-Required UI:
+Required UI and current status:
 
-- existing phase/frame/percentage status;
-- progress bar directly beneath that status;
-- elapsed wall-clock time;
-- estimated time remaining;
-- estimated total capture time;
-- existing resolution/frame/FPS/workload readout.
+- existing phase/frame/percentage status: validated;
+- progress bar directly beneath that status: validated;
+- elapsed wall-clock time: validated;
+- estimated time remaining: validated;
+- estimated total capture time: validated;
+- existing resolution/frame/FPS/workload readout: validated/useful.
 
 ETA model:
 
 - estimate processing time from measured render+encode wall time per completed frame, never from animation playback duration;
-- first current-capture prediction after five completed frames;
+- first current-capture prediction after five completed frames when no history exists;
 - continuously adapt using a smoothed frame-time estimate plus current-run average;
-- successful same-session timing may seed later captures of the same resolution;
+- successful same-session timing seeds later captures of the same resolution;
 - do not persist ETA timing across reloads or figures;
 - final actual wall-clock capture duration remains visible and diagnostic-readable.
 
-This intentionally makes ETA relative to the active device, browser session, figure complexity, effects and selected resolution.
+Live acceptance:
+
+- first-run estimate approximately 3m 7s and reported accurate/stable throughout;
+- second same-session 1024 Standard estimate approximately 2m 57s;
+- bridge-confirmed second-run actual total 177.101 s versus final estimated 175.614 s;
+- final total-time error 1.49 s / 0.84%.
+
+This makes ETA relative to the active device, browser session, figure complexity, effects and selected resolution.
+
+## Diagnostics — validated current build
+
+For a completed v0.2.1 1024 Standard run, bridge-readable diagnostics confirmed:
+
+- build `0.2.1-progress-eta-runtime-rotation-webp-mux`;
+- 250/250 rendered and encoded;
+- 13,565,278-byte final output;
+- parsed 1024x1024 / 250 frames / 10,000 ms / 40 ms x 250 / loop 0;
+- rotation restored true;
+- error null.
 
 ## Lifecycle
 
@@ -114,24 +135,24 @@ This intentionally makes ETA relative to the active device, browser session, fig
 
 ## Risk
 
-High due to sustained hundreds-of-frame rendering and potentially large compressed outputs. Known workload multipliers versus 1024 Standard are 4x for 2048 Standard, 3x for 1024 Very Slow and 12x for 2048 Very Slow by pixel samples.
+High due to sustained hundreds-of-frame rendering and potentially large compressed outputs. Known workload multipliers versus 1024 Standard are 4x for 2048 Standard, 3x for 1024 Very Slow, 8x for 2048 Slower and 12x for 2048 Very Slow by pixel samples.
 
-The live 2048 Standard and 1024 Very Slow passes materially reduce uncertainty, but combined high-resolution + long-duration profiles still require measurement before being treated as routine supported combinations.
+The live 2048 Standard, 1024 Very Slow and 2048 Slower passes materially reduce uncertainty. The 2048 Very Slow 12x combination remains an optional stress case rather than a demonstrated prerequisite.
 
 ## Ownership
 
 - Primary maintainer: TBD.
 - Reviewer: Amanda.
 - Backup maintainer: TBD.
-- Current disposition: standalone validated configurable core; v0.2.1 UX validation pending.
+- Current disposition: standalone v0.2.1 validated on tested profiles; not yet integrated into Witch Dock Dev.
 
 ## Promotion gate
 
 Do not integrate into Witch Dock Dev until:
 
-- v0.2.1 progress/ETA UI is live-validated without capture regression;
-- active 2048/500 result is recorded when complete;
-- full-run rotation restoration/diagnostics are checked on the current configurable build;
-- practical limits/guardrails for expensive combinations are decided from measurement;
-- cancel/failure behavior remains safe;
+- practical warnings/guardrails for expensive profile combinations are decided;
+- dedicated cancel/failure behavior is regressed on the current standalone build;
+- any chosen optional stress case is completed if needed to establish the ceiling;
 - public integration is separately approved.
+
+The previous gates for 1024 behavior, 2048 Standard, slow-profile scaling, current-build rotation restoration, repeat-use, progress-bar UX and ETA accuracy are closed/validated.

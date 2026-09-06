@@ -41,11 +41,11 @@ Historical Lob HQ GIF:
 - retained UI: 12.9 MiB;
 - low-resolution independent mux proof and syntax check: PASS.
 
-### v0.2.0 configurable profile validation
+### Configurable profile validation
 
 `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
 
-Profiles remain:
+Current profiles:
 
 - Standard: 10 s / 250 frames / 25 FPS;
 - Slow: 15 s / 375 frames / 25 FPS;
@@ -55,11 +55,12 @@ Profiles remain:
 
 Live results reported by user:
 
-- **1024 Standard / 250 frames: PASS / works perfectly**;
-- **2048 Standard / 250 frames: PASS / works perfectly**;
-- **1024 Very Slow / 750 frames: PASS / works perfectly**;
+- **1024 Standard / 250 frames: PASS / perfect**;
+- **2048 Standard / 250 frames: PASS / perfect**;
+- **1024 Very Slow / 750 frames: PASS / perfect**;
+- **2048 Slower / 500 frames: PASS / perfect**;
 - 1024 Very Slow output: approximately **34 MiB**;
-- multiple successful captures in the same session: basic repeated-use **PASS**;
+- multiple successful captures in the same session: **PASS**;
 - percent progress readout: **PASS / useful**;
 - Rendering/Encoding phase display: **PASS / useful**;
 - px/frame/FPS/workload info readout: **PASS / useful**.
@@ -74,40 +75,63 @@ Test context reported by user:
 
 Under that workload, capture times varied with resolution/frame count as expected but remained acceptable. User reported 1024 Very Slow as roughly comparable in wall-clock time to Lob's historical HQ GIF capture/encode/delivery flow.
 
-Not yet recorded as passed:
+Scaling coverage relative to 1024 Standard:
 
-- 2048 / 500 frames: actively running at latest report;
-- 1024 Slow / 375 specifically;
-- 1024 Slower / 500 specifically;
-- 2048 Very Slow / 750;
-- dedicated cancel/failure regression under high profiles.
+- 1024 Standard / 250f = **1x** baseline: PASS;
+- 1024 Very Slow / 750f = **3x** pixel-sample workload: PASS;
+- 2048 Standard / 250f = **4x** pixel-sample workload: PASS;
+- 2048 Slower / 500f = **8x** pixel-sample workload: PASS.
 
-Per user instruction, do not inspect HF-Chat-Bridge until the active capture is reported complete.
+This provides live evidence for both independent axes and a combined high-resolution + increased-frame-count workload.
 
-### v0.2.1 progress/ETA candidate
+### v0.2.1 progress/ETA validation
 
-Runtime capture/mux core is preserved. New UX-only behavior:
+Build: `0.2.1-progress-eta-runtime-rotation-webp-mux`.
 
-- progress bar immediately below status/percentage;
-- elapsed wall-clock time;
-- estimated time remaining;
-- estimated total capture time;
-- first live current-capture estimate after five completed frames;
-- smoothed prediction combining EMA and current-run average frame cost;
-- same-session per-resolution timing history to seed subsequent captures;
-- no localStorage or cross-reload timing persistence;
-- completed actual wall-clock duration stored in `lastCapture.elapsedMs`;
-- timing details exposed in diagnostics.
+Acceptance criteria and results:
 
-ETA acceptance criteria:
+1. Progress bar tracks capture without affecting output: **PASS / works great**.
+2. First-run ETA begins from live measured frame cost and remains plausible: **PASS**; user reported approximately **3m 7s** and accurate/stable across the process.
+3. Remaining/total estimates adapt rather than using output playback duration: **PASS**.
+4. Second same-resolution capture receives a same-session seed: **PASS**; user reported approximately **2m 57s**.
+5. Repeated capture in one session: **PASS**.
+6. Final completion time remains visible: **PASS**.
+7. Existing 1024 output/playback remains unchanged: **PASS**.
 
-1. Progress bar tracks the existing percentage without affecting capture.
-2. First-run ETA begins as `estimating…`, then converges after live samples.
-3. Remaining time decreases plausibly and adapts when frame processing changes.
-4. Estimated total reflects actual device/figure processing rather than animation playback duration.
-5. A second same-resolution capture in the same page session receives an immediate seeded estimate, then adapts to live samples.
-6. Reload clears timing history.
-7. Final completion time remains visible after download.
-8. Existing 1024/2048 output metrics and playback remain unchanged.
+HF-Chat-Bridge issue #476 confirmed the second 1024 Standard run after capture work completed:
+
+- diagnostics build: `0.2.1-progress-eta-runtime-rotation-webp-mux`;
+- busy: false;
+- frames rendered: 250;
+- frames encoded: 250;
+- encoded still-frame bytes: **13,682,734**;
+- output bytes: **13,565,278**;
+- parser width/height: **1024x1024**;
+- parser frame count: **250**;
+- parser total duration: **10,000 ms**;
+- parser duration histogram: **40 ms x 250**;
+- loop count: **0 / infinite**;
+- actual wall-clock: **177,100.9 ms / 2m 57.1s**;
+- final estimated total: **175,614.0 ms / 2m 55.6s**;
+- absolute error: **1,486.9 ms / 1.49s**;
+- relative error: **0.84%**;
+- average measured frame processing: **706.716 ms**;
+- EMA frame time: **700.434 ms**;
+- blended predicted frame time: **702.319 ms**;
+- final mux/verification tail: **33.5 ms**;
+- rotation restored: **true**;
+- error: **null**;
+- retained status UI: `Downloaded 1024px Standard: 250 frames / 10.0 s / 12.9 MiB`;
+- retained timing UI: `Completed in 2m 57s`.
+
+Result: **v0.2.1 progress/ETA control regression closed / validated**.
+
+### Still pending before Witch Dock Dev
+
+- dedicated cancel/failure-path regression under an expensive profile;
+- decide practical warnings/guardrails for high-cost profile combinations;
+- optional 2048 Very Slow / 750-frame 12x stress case if needed to define a ceiling.
+
+Specific 1024 Slow / 375 and 1024 Slower / 500 have not been separately exercised, but the tested 1024/750 and 2048/500 endpoints already cover greater frame-count and combined workloads. They are not currently treated as blockers absent a profile-specific regression.
 
 Witch Dock integration: **not started**.

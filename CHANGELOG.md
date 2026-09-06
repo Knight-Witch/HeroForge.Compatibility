@@ -1,5 +1,77 @@
 # Changelog
 
+## HFC-2026-09-05-022 — Validate Spinny v0.2.1 progress/ETA and repeated capture
+
+Date: 2026-09-05
+
+### Summary
+
+Documentation-only validation checkpoint for `media.spinny-mini-webp` after the remaining active 2048/500 capture completed successfully and v0.2.1 progress/ETA behavior passed two live 1024 Standard runs.
+
+### Newly confirmed live results
+
+- 2048 Slower / 500 frames / 25 FPS: **PASS / perfect**.
+- v0.2.1 1024 Standard / 250 frames / 25 FPS: **PASS**.
+- v0.2.1 progress bar: **PASS / works great**.
+- First-run ETA: approximately **3m 7s**, reported accurate and stable throughout the capture.
+- Second same-session 1024 Standard ETA: approximately **2m 57s** and capture completed successfully.
+- Multiple same-session captures: **PASS**.
+
+### Bridge-confirmed v0.2.1 diagnostics
+
+HF-Chat-Bridge issue #476 was read after active capture work was complete.
+
+For the second 1024 Standard run:
+
+- build: `0.2.1-progress-eta-runtime-rotation-webp-mux`;
+- busy after completion: `false`;
+- frames rendered/encoded: **250 / 250**;
+- output bytes: **13,565,278**;
+- parser: **1024x1024**, **250 frames**, **10,000 ms**, **40 ms x 250**, loop **0/infinite**;
+- actual wall-clock time: **177,100.9 ms / 2m 57.1s**;
+- final estimated total: **175,614.0 ms / 2m 55.6s**;
+- estimation error: **1,486.9 ms / 0.84%**;
+- rotation restored: **true**;
+- error: **null**;
+- retained UI status: `Downloaded 1024px Standard: 250 frames / 10.0 s / 12.9 MiB`;
+- retained timing UI: `Completed in 2m 57s`.
+
+### Validation impact
+
+The standalone configurable implementation has now demonstrated:
+
+- 1x baseline: 1024 Standard / 250 frames;
+- 3x frame-count endpoint: 1024 Very Slow / 750 frames;
+- 4x resolution workload: 2048 Standard / 250 frames;
+- 8x combined high-resolution + increased-frame-count workload: 2048 Slower / 500 frames;
+- repeated-use success on the current v0.2.1 build;
+- accurate device-relative ETA and same-session timing seeding;
+- full-run parser validation and rotation restoration on v0.2.1.
+
+### Remaining standalone questions
+
+- optional 2048 Very Slow / 750-frame 12x stress case;
+- dedicated cancel/failure-path regression under an expensive profile;
+- final practical warning/guardrail policy before Witch Dock Dev integration.
+
+### Touched files
+
+- `MASTER.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `TESTING.md`
+- `docs/feature-specs/spinny-mini-webp.md`
+- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
+- `docs/validation/spinny-mini-webp-v0.2.1-2026-09-05.md`
+
+`ARCHITECTURE.md`, `OWNERSHIP.md`, runtime JavaScript, and public Witch Dock are unchanged.
+
+**Runtime behavior changed:** no. This commit is documentation-only.
+
+---
+
 ## HFC-2026-09-05-021 — Validate configurable Spinny profiles and add progress/ETA UX
 
 Date: 2026-09-05

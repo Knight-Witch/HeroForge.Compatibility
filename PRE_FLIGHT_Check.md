@@ -1,5 +1,82 @@
 # Pre-Flight Check Log
 
+## PFC-2026-09-05-018 — Record Spinny v0.2.1 progress/ETA and repeat-use validation
+
+Date: 2026-09-05
+
+### Target files
+
+- `MASTER.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `TESTING.md`
+- `docs/feature-specs/spinny-mini-webp.md`
+- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
+- `docs/validation/spinny-mini-webp-v0.2.1-2026-09-05.md` (new validation record)
+
+### Reviewed
+
+- binding `PROJECT_CONTRACT.md`
+- branch head `723f913674b2c662a62a2df8735f92e3c5ed5fe2`
+- `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`
+- current Spinny Mini feature spec and investigation
+- v0.2.1 standalone source/build `0.2.1-progress-eta-runtime-rotation-webp-mux`
+- user live acceptance results for the completed 2048/500 run and two v0.2.1 1024 Standard runs
+- HF-Chat-Bridge issue #476 diagnostics captured only after all active capture work was complete
+
+### Newly confirmed live results
+
+- 2048 Slower / 25 FPS / 500 frames: **PASS / perfect**.
+- v0.2.1 1024 Standard / 250 frames: **PASS** with progress bar and ETA working correctly.
+- First v0.2.1 ETA was approximately **3m 7s** and was reported accurate and stable throughout the capture.
+- A second same-session 1024 Standard run received an approximately **2m 57s** estimate and completed successfully, validating repeat-use and same-session ETA seeding.
+
+### Bridge-confirmed second v0.2.1 1024 Standard run
+
+- build: `0.2.1-progress-eta-runtime-rotation-webp-mux`;
+- busy: `false` after completion;
+- 250/250 frames rendered and encoded;
+- final output: **13,565,278 bytes**;
+- parser: **1024x1024**, **250 frames**, **10,000 ms**, **40 ms x 250**, loop **0/infinite**;
+- actual capture time: **177,100.9 ms / 2m 57.1s**;
+- final estimated total: **175,614.0 ms / 2m 55.6s**;
+- final total-time error: **1,486.9 ms / 0.84%**;
+- original rotation restored: **true**;
+- error: **null**;
+- retained UI: `Downloaded 1024px Standard: 250 frames / 10.0 s / 12.9 MiB` and `Completed in 2m 57s`.
+
+### Gate impact
+
+The configurable standalone implementation has now passed:
+
+- 1024 Standard / 250 frames;
+- 2048 Standard / 250 frames;
+- 1024 Very Slow / 750 frames;
+- 2048 Slower / 500 frames;
+- repeated 1024 Standard capture on v0.2.1;
+- progress-bar UX;
+- device-relative ETA and same-session estimate seeding;
+- full-run parser validation and rotation restoration on the current v0.2.1 build.
+
+The 2048/500 result represents an **8x pixel-sample workload** relative to 1024 Standard and provides a combined high-resolution + increased-frame-count pass.
+
+### Remaining risks / next gate
+
+- 2048 Very Slow / 750 frames remains an optional 12x stress case, not a prerequisite proven necessary for normal use.
+- Dedicated cancel/failure-path regression under an expensive profile remains useful before integration.
+- Practical warning/guardrail policy for expensive combinations remains to be decided.
+- Witch Dock Dev integration remains separate and has not started.
+
+### Recommended action
+
+Record the successful standalone validation checkpoint. Do not change the now-working runtime in this commit. Decide remaining guardrails/cancel testing before any Witch Dock Dev integration.
+
+**Runtime behavior changed:** no. This is documentation-only. No JavaScript or public Witch Dock behavior changed.
+
+---
+
 ## PFC-2026-09-05-017 — Record configurable Spinny validation and add progress/ETA UX
 
 Date: 2026-09-05
@@ -260,7 +337,7 @@ Date: 2026-09-05
 1. Reuse current named runtime capture/render capabilities and the native animated-WebP encoder if a stable callable seam can be found.
 2. Runtime capability/object-shape discovery.
 3. Webpack/module discovery if the encoder is closure-local.
-4. Do not resurrect Lob's exact compiled-string patch architecture unless runtime access is proven insufficient.
+4. Do not resurrect Lob's exact compiled-string Spinny patch architecture unless runtime access is proven insufficient.
 
 ### Material conflict risks
 
