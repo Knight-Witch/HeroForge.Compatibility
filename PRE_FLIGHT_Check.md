@@ -1,12 +1,15 @@
 # Pre-Flight Check Log
 
-## PFC-2026-09-06-021 — Add TRUE-3K Effects-source repair companion
+## PFC-2026-09-06-022 — Record TRUE-3K repaired Short Test validation
 
 Date: 2026-09-06
 
+### Scope
+
+Documentation-only validation checkpoint after live completion of `spinny-mini-webp-3k-repair-companion.user.js` v0.1.0.
+
 ### Target files
 
-- `entries/tampermonkey-standalone/spinny-mini-webp-3k-repair-companion.user.js` (new)
 - `MASTER.md`
 - `PRE_FLIGHT_Check.md`
 - `CHANGELOG.md`
@@ -15,87 +18,85 @@ Date: 2026-09-06
 - `TESTING.md`
 - `docs/feature-specs/spinny-mini-webp.md`
 - `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
+- `docs/validation/spinny-mini-webp-true3k-repair-2026-09-06.md` (new)
 
 ### Required material reviewed
 
 - binding `PROJECT_CONTRACT.md`;
-- branch head before this stage: `6ea2c5ce3188994016362c8f84abb78c1c17bc44`;
+- branch head before this checkpoint: `d7b160465d699a9d48a75a1286fd67e914933de4`;
 - `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`;
-- current Spinny feature spec/investigation;
-- v0.2.2 profile source and v0.1.0 Short Test source;
-- validated standalone/Witch Dock TRUE-resolution still-capture implementation;
-- live user result that the 16-frame 3072 baseline Short Test works correctly as a diagnostic but remains visually blurry;
-- HF-Chat-Bridge runtime source read and asynchronous 1024/2048/3072 render-path trace after a clean page reload.
+- current Spinny feature spec and investigation;
+- TRUE-3K repair companion source committed at the prior checkpoint;
+- live user visual result after repaired 3072 Short Test;
+- HF-Chat-Bridge read-only result issue #489.
 
-### Newly confirmed render-path findings
+### Confirmed live result
 
-- The Short Test diagnostic itself is live-validated and reproduces the same 3072 blur in a small partial spin.
-- `CK.Effects.renderToCanvas` is the relevant named render seam: it sizes its Effects render target from the width/height passed by the Booth capture path.
-- Live trace confirms a 1024 screenshot calls `CK.Effects.renderToCanvas(1024, 1024, camera1024)`.
-- Live trace confirms a 2048 screenshot uses repeated `renderToCanvas(1024, 1024, camera2048)` phase/tile renders rather than one native 2048 Effects source.
-- Live trace confirms the 3072 screenshot path drops those Effects renders to **768x768** while the capture camera remains 3072x3072.
-- Therefore the current 3072 file can be structurally 3072 while its Effects/model source fidelity is materially lower. This directly explains why canvas/WebP dimension validation passed while visual detail failed.
-- The existing validated TRUE-resolution still provider already repairs this class of tiled/phase capture by feeding native compositor phases from a real high-resolution Effects source.
+TRUE-3K repaired Short Test:
 
-Supported topology inference:
+- build: `0.1.0-3072-effects-source-phase-feed`;
+- status: `passed`;
+- started: `2026-09-06T09:04:26.293Z`;
+- completed: `2026-09-06T09:04:56.741Z`;
+- elapsed: approximately 30.448 seconds;
+- target: 3072x3072;
+- GPU max texture size: 16384;
+- GPU max renderbuffer size: 16384;
+- animation frames: 16;
+- every frame: native tile 768, grid 4, 16 expected / 16 supplied / 16 unique phases, one genuine 3072 Effects source render;
+- total supplied phases: 256;
+- native full-resolution passthrough calls: 0;
+- output bytes: 4,589,972;
+- parser: 3072x3072, 16 frames, 640 ms total, 40 ms x16, loop 0;
+- rotation restored: true;
+- Effects method restored: true;
+- repair error: null;
+- Short Test error: null;
+- user native-size visual inspection: **PASS — output now appears genuinely 3K rather than blurry/upscaled**.
 
-- 3072 / 768 = 4, matching a 4x4 native phase grid under the existing validated `classifyModelRender` contract;
-- the repair candidate does not hard-code 16 phases: it derives and validates the live grid/tile relationship per run and fails on topology mismatch.
+### Conclusion
 
-### Runtime change intent
+The TRUE-3K frame-source repair is validated for the 16-frame Short Test on `heroforge07.1.9.98`.
 
-Add a standalone diagnostic repair companion that:
+The observed native 768px Effects phases are the confirmed source-fidelity defect. Supplying the native 4x4 phase compositor from one real 3072x3072 Effects source per animation frame repairs the visual fidelity while preserving HeroForge's native compositor.
 
-- requires the existing v0.2.2 profile test and v0.1.0 Short Test companion;
-- adds a separate `TRUE 3K Test` action to the existing panel;
-- invokes the already-working 16-frame Short Test capture/mux path rather than duplicating it;
-- temporarily wraps only `CK.Effects.renderToCanvas` for the duration of that explicit test;
-- when native Booth requests a tiled 3072 frame, renders **one real 3072x3072 Effects source for that animation frame**;
-- derives the native phase canvases by interleaving pixels from that real 3072 source using the same validated phase-feed principle as TRUE 4K;
-- leaves `BT.maker.takeScreenshot` ownership untouched, avoiding collision with the public Witch Dock 4096/8192 provider;
-- restores the exact original `CK.Effects.renderToCanvas` in `finally`;
-- records per-frame tile/grid/phase/source diagnostics under `HFSpinnyMiniWebP3KRepair`;
-- routes cancellation through the already-validated Short Test cancel path.
+### Important gate distinction
 
-### Preserved behavior
+This checkpoint validates the **frame-source repair**, not yet the complete production 3072 profile.
 
-- main Spinny v0.2.2 source remains unchanged;
-- baseline Short Test v0.1.0 source remains unchanged;
-- validated 1024/2048 profile behavior remains unchanged;
-- existing Short Test rotation, refresh/occlusion, WebP encode/mux, parser, download and cancel mechanics remain the execution path;
-- public Witch Dock 4K/8K provider remains unchanged and retains ownership of `BT.maker.takeScreenshot` for 4096/8192;
+Before 3072 can be considered fully validated for maintained Spinny use:
+
+1. integrate the repair into the maintained standalone Spinny capture/profile path;
+2. re-run the integrated Short Test;
+3. run one full repaired 3072 Standard / 250-frame revolution;
+4. confirm output, parser, rotation restoration, resource behavior and native-size visual fidelity.
+
+### Preserved boundaries
+
+- no runtime source changed in this checkpoint;
+- main Spinny v0.2.2 remains unchanged;
+- Short Test source remains unchanged;
+- TRUE-3K companion source remains unchanged;
+- public Witch Dock remains unchanged;
 - 4K Spinny remains deferred;
-- no bundle patching or minified/private encoder dependency is introduced.
+- Pause/input guards remain a separate later stage.
 
-### Material risks
+### Test status
 
-- `CK.Effects.renderToCanvas` is temporarily wrapped across the 16-frame test; unrelated render calls are passed through unless they match a 3072 capture-camera topology.
-- One real 3072 Effects source is approximately 36 MiB RGBA before phase extraction; only one frame source is retained at a time and it is released after its phase feed completes.
-- Native Booth topology can change. The candidate validates tile size, grid, phase coordinates, duplicate phases and complete phase delivery and fails rather than guessing.
-- Camera/Booth interaction guards are not implemented yet; the user must still avoid camera/Booth changes during the diagnostic.
-- A visual TRUE-3K PASS is still required. This commit does not claim repaired 3072 support before live testing.
+- TRUE-3K repaired Short Test mechanical diagnostics: **PASS**.
+- TRUE-3K repaired Short Test native-size visual fidelity: **PASS by user report**.
+- full repaired 3072 Standard: pending.
 
-### Test status before commit
-
-- `spinny-mini-webp-3k-repair-companion.user.js`: local `node --check` **PASS**.
-- baseline 3072 Short Test: **PASS as diagnostic / fidelity still FAIL** by user report.
-- TRUE 3K repaired Short Test: pending live validation.
-- Public Witch Dock: untouched.
-
-### Recommended action
-
-Install the TRUE-3K repair companion alongside the existing profile + Short Test scripts, select **3072px + Standard**, and run **TRUE 3K Test**. Accept the repair only if the downloaded partial WebP shows genuinely improved native-size detail and diagnostics confirm complete per-frame phase feeds with Effects restoration. Do not run another full 3072 spin until this short gate passes.
-
-**Runtime behavior changed:** yes, standalone diagnostic repair companion only. Existing profile/Short Test code and public Witch Dock are unchanged.
+**Runtime behavior changed:** no. Documentation-only validation checkpoint.
 
 ---
 
-## PFC-2026-09-06-020 — Add short partial-spin diagnostic companion after 3072 fidelity failure
+## PFC-2026-09-06-021 — Add TRUE-3K Effects-source repair companion
 
-Recorded the 3072 fidelity failure and added the 16-frame Short Test diagnostic companion. That helper has since passed live as a rapid diagnostic and reproduced the expected 3072 blur.
+Added the standalone candidate after confirming native 3072 uses 768px Effects phases. The candidate has now passed the live Short Test gate described above.
 
-**Runtime behavior changed:** standalone diagnostic companion only.
+**Runtime behavior changed:** standalone diagnostic repair companion only.
 
 ---
 
-Historical pre-flight records through PFC-2026-09-05-019 remain preserved in Git history.
+Historical pre-flight records through PFC-2026-09-06-020 remain preserved in Git history.
