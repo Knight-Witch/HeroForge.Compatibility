@@ -4,7 +4,7 @@ Feature ID: `media.spinny-mini-webp`
 
 ## Purpose
 
-Provide higher-quality animated Spinny Mini export using animated WebP, replacing the broken legacy Higher Quality Spinny Mini GIF behavior and adding higher-resolution plus slower-rotation profiles without returning to brittle compiled-string patching.
+Provide higher-quality animated Spinny Mini export using animated WebP, replacing the broken legacy Higher Quality Spinny Mini GIF behavior and adding higher-resolution plus slower-rotation profiles without brittle compiled-string patching.
 
 ## Validated behavior
 
@@ -18,40 +18,48 @@ Historical Lob-parity reference:
 - 25 FPS;
 - infinite loop.
 
-v0.1.0 validated that target live and produced a retained 12.9 MiB output.
-
 Validated configurable standalone combinations:
 
-- 1024 Standard / 250 frames / 25 FPS;
-- 2048 Standard / 250 frames / 25 FPS;
-- 1024 Very Slow / 750 frames / 25 FPS, approximately 34 MiB;
-- 2048 Slower / 500 frames / 25 FPS.
+- 1024 Standard / 250 frames;
+- 2048 Standard / 250 frames;
+- 1024 Very Slow / 750 frames;
+- 2048 Slower / 500 frames.
 
-Resolution and rotation speed are independent. All current speed profiles retain 40 ms/frame so slower motion gains more angular samples instead of longer frame holds:
-
-- Standard: 10 s / 250 frames;
-- Slow: 15 s / 375 frames;
-- Slower: 20 s / 500 frames;
-- Very Slow: 30 s / 750 frames.
-
-The 2048 Slower / 500-frame pass represents an 8x baseline pixel-sample workload and confirms a combined high-resolution + increased-frame-count profile.
+Resolution and rotation speed are independent. Current speed profiles retain 40 ms/frame so slower motion gains additional angular samples rather than longer frame holds.
 
 ## Current resolution policy
 
-v0.2.2 exposes:
+Accepted:
 
 - 1024px — validated Lob-parity baseline;
-- 2048px — validated resolution on tested combinations;
-- 3072px — experimental 3K candidate.
+- 2048px — validated on tested combinations.
 
-3072 workload relative to 1024 Standard:
+Rejected pending repair:
 
-- Standard: 9x;
-- Slow: 13.5x;
-- Slower: 18x;
-- Very Slow: 27x.
+- 3072px — v0.2.2 full structural capture completed, but true-resolution visual fidelity **FAILED**.
 
-4096/8192 are intentionally **not** exposed by Spinny. The current Witch Dock `media.screenshot-resolution` provider intercepts square 4096/8192 `BT.maker.takeScreenshot` requests for still-image repair. A 4K Spinny mode therefore requires a separately designed native-frame bypass/capability before it can be considered safe.
+Deferred:
+
+- 4096/8192 — not exposed by Spinny because Witch Dock `media.screenshot-resolution` currently owns square 4096/8192 `BT.maker.takeScreenshot` requests for still-image repair.
+
+## 3072 fidelity result
+
+The first v0.2.2 3072 Standard / 250-frame capture completed in approximately 25 minutes.
+
+Confirmed:
+
+- final animation container is 3072x3072;
+- exactly 250 frames were produced;
+- individual encoded frame payloads are also 3072-sized;
+- the custom animated-WebP mux is not simply relabeling 2048 payloads as 3072.
+
+Failed requirement:
+
+- user inspection at native size reports the image is visibly blurry and looks like lower-resolution content enlarged to 3072.
+
+A subsequent 1024 Standard control capture was visually correct. Current evidence therefore points upstream of the mux/browser WebP encoder, toward HeroForge's higher-resolution screenshot/render source behavior.
+
+The feature must not claim 3072 support until source-detail fidelity is demonstrated.
 
 ## Required capabilities
 
@@ -86,91 +94,106 @@ The maintained implementation does not depend on HeroForge's closure-local anima
 
 - Do not retain raw RGBA for all frames.
 - Encode each frame immediately to compressed static WebP.
-- Retain compressed WebP image payload chunks only until final mux.
+- Retain compressed image payload chunks only until final mux.
 - Reduce source canvas backing store after frame extraction.
-- Continue measuring final compressed-output verification at expensive profiles.
 
-A single 3072x3072 RGBA canvas is approximately 36 MiB before compression. v0.2.2 still holds only one source canvas at a time plus accumulated compressed frame payloads.
+## Short Test diagnostic companion
 
-## Progress and ETA UX — validated
+Temporary standalone diagnostic:
 
-v0.2.1 added progress/ETA UI without changing capture or mux semantics.
+`entries/tampermonkey-standalone/spinny-mini-webp-short-test.user.js`
 
-Live acceptance:
+Build: `0.1.0-short-test-16f-partial-arc`.
 
-- progress bar: validated;
-- first-run estimate approximately 3m 7s and reported accurate/stable throughout;
-- second same-session 1024 Standard estimate approximately 2m 57s;
-- bridge-confirmed second-run actual total 177.101 s versus final estimated 175.614 s;
-- final total-time error 1.49 s / 0.84%.
+Purpose:
 
-ETA remains device/session relative and is derived from measured render+encode wall time per completed frame.
+Rapidly exercise the same selected-resolution frame path and produce a partial animated WebP so visual source-detail changes can be checked without a full long revolution.
 
-## High-workload warning
+Contract:
 
-v0.2.2 adds red `LONG CAPTURE` text directly beneath the timing line when either:
+- requires the existing profile test global/UI;
+- injects `Short Test` into the existing panel;
+- captures exactly 16 contiguous frames;
+- uses the selected resolution and selected speed's normal angular step;
+- preserves current 40 ms frame duration;
+- Standard / 250-frame selection covers 21.6 degrees from first to last frame;
+- uses the same refresh/occlusion/shadow/matrix sequence;
+- calls the same `BT.maker.takeScreenshot(size,size)` surface;
+- uses the same browser static-WebP encoding and RIFF mux semantics;
+- final output is parser-gated for requested dimensions, exactly 16 frames, expected duration, loop count and frame timing;
+- records requested profile, returned canvas-size histogram, output bytes/parser metrics, elapsed time and rotation restore in `HFSpinnyMiniWebPShortTest.diagnostics`;
+- disables base profile controls during the short test;
+- Short Test button becomes `Cancel Test` while active;
+- cancellation occurs after the current frame;
+- original figure rotation restores in `finally`;
+- refuses 4096/8192+ sizes.
 
-- resolution is 2048 or higher; or
-- frame count is 500 or higher.
+This companion is diagnostic scaffolding, not the intended production/Witch Dock architecture. Once high-resolution behavior is settled, repeated capture mechanics should remain centralized in the maintained feature/service rather than duplicated permanently.
 
-The warning includes the selected pixel-sample workload multiplier. It is advisory only and does not block capture.
+## Progress and ETA UX
 
-## Diagnostics — validated current lower-resolution build
+The existing full-profile v0.2.1/v0.2.2 progress/ETA remains validated. The Short Test intentionally uses simple frame status rather than adding a second ETA subsystem.
 
-For a completed v0.2.1 1024 Standard run, bridge-readable diagnostics confirmed:
+## Interaction protection requirement
 
-- build `0.2.1-progress-eta-runtime-rotation-webp-mux`;
-- 250/250 rendered and encoded;
-- 13,565,278-byte final output;
-- parsed 1024x1024 / 250 frames / 10,000 ms / 40 ms x 250 / loop 0;
-- rotation restored true;
-- error null.
+During the completed 3072 run, two accidental mouse-wheel camera interactions produced visible jumps in the output. Active-capture protection is therefore required before integration:
 
-The same parser/diagnostic contract is preserved in v0.2.2 and must validate the first 3072 Standard capture before that profile is accepted.
+- camera/canvas manipulation;
+- leaving Photo Booth;
+- Booth view/backdrop/overlay/light/effect changes;
+- other state changes that invalidate frame continuity.
+
+Guard implementation remains a separate stage from the Short Test helper.
+
+## Diagnostics / render-source limitation
+
+Current full and short capture scripts can mechanically validate returned canvas and WebP dimensions, but those checks do not prove the scene was internally rasterized at the requested source resolution.
+
+Runtime tracing must determine the actual render target/source size behind a 3072 screenshot request. HF-Chat-Bridge issue #478 is queued for that read-only investigation but had not returned at this checkpoint.
 
 ## Lifecycle
 
-- capability polling/refresh;
-- capture;
-- cancel after current frame;
+Full profile test:
+
+- capability polling;
+- capture/cancel;
 - concurrent capture block;
-- original rotation restoration in `finally`;
-- idle `dispose()` removes UI/style/timer/global;
-- no permanent HeroForge runtime override.
+- rotation restoration;
+- dispose removes owned UI/style/timer/global.
 
-User live testing has confirmed the general Cancel path stops cleanly and restores the figure to its starting orientation without observed follow-on issues. Exact cancelled profile was not recorded.
+Short Test companion:
 
-## Pause/resume design status
-
-Pause/resume is approved as a separate next-stage feature after 3072 Standard validation. It should pause only between complete frames, preserve already-compressed frames, freeze active-processing ETA while paused, and protect against camera/Booth-state changes that would invalidate continuity. It must not be bundled into the first 3072 test build.
+- waits for the base profile test;
+- attaches/removes only its own button/status/style/global/timers;
+- does not modify the base script source;
+- dispose is blocked while its capture is active.
 
 ## Failure behavior
 
-- Any render/encode/mux/validation failure stops capture.
-- Restore original character rotation where technically possible.
+- Render/encode/mux/validation failure stops the current capture.
+- Restore original rotation where technically possible.
 - Do not initialize capture when required capabilities are unavailable.
 - Do not affect unrelated HeroForge behavior.
 - Public Witch Dock remains untouched during standalone validation.
 
 ## Risk
 
-High due to sustained hundreds-of-frame rendering and potentially large compressed outputs.
+High because media capture performs sustained render/encode work and relies on undocumented HeroForge screenshot behavior.
 
-Validated workload multipliers include 1x, 3x, 4x and 8x. 3072 Standard begins at 9x and remains unvalidated. 3072 longer-duration combinations reach 13.5x/18x/27x and should not be treated as routine until measured.
+The 3072 result demonstrates that output dimensions alone are not a sufficient compatibility postcondition; visual/source-raster fidelity must be part of the acceptance gate for higher-resolution profiles.
 
 ## Ownership
 
 - Primary maintainer: TBD.
 - Reviewer: Amanda.
 - Backup maintainer: TBD.
-- Current disposition: v0.2.1 validated on tested profiles; v0.2.2 3072 standalone candidate pending live validation; no Witch Dock integration yet.
+- Current disposition: tested 1024/2048 profiles validated; 3072 rejected pending render-path repair; Short Test diagnostic candidate pending live validation; no Witch Dock integration yet.
 
 ## Promotion gate
 
 Do not integrate into Witch Dock Dev until:
 
-- 3072 Standard is either validated or explicitly rejected/deferred;
-- Pause/input-guard work is separately implemented and validated if it remains part of the intended integrated feature;
+- 3072 is either repaired and validated or removed/deferred from the intended integrated feature;
+- Short Test has served its diagnostic purpose;
+- Pause/input guards are separately implemented and validated if still intended;
 - public integration is separately approved.
-
-The previous gates for 1024 behavior, tested 2048 behavior, slow-profile scaling, repeat-use, progress/ETA, parser validation, rotation restoration and general Cancel behavior are closed/validated.

@@ -1,11 +1,11 @@
 # Feature Inventory
 
-This is the canonical feature-ID inventory. Historical/provisional inventory detail remains preserved in Git history; this file tracks currently active and near-term features.
+This is the canonical feature-ID inventory. Historical/provisional detail remains preserved in Git history; this file tracks currently active and near-term features.
 
 | Feature ID | Purpose | Risk | Status |
 |---|---|---|---|
-| `media.screenshot-resolution` | Restore genuine 4K/8K Photo Booth still-image rendering | Medium | **Standalone validated; Witch Dock Stable validated on `heroforge07.1.9.98`**. |
-| `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | **v0.2.1 validated on tested 1024/2048 profiles; v0.2.2 standalone candidate adds experimental 3072px plus high-workload warning.** Cancel/rotation restore also passed by user report. 4K Spinny deferred because 4096 collides with the Witch Dock TRUE-resolution still provider. Public Witch Dock unchanged. Supersedes provisional `media.spin-gif-quality`. |
+| `media.screenshot-resolution` | Restore genuine 4K/8K Photo Booth still-image rendering | Medium | Standalone + Witch Dock Stable validated on `heroforge07.1.9.98`. |
+| `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | **v0.2.1 validated on tested 1024/2048 profiles. v0.2.2 3072 structural capture completed but true-resolution visual fidelity FAILED.** Short Test diagnostic companion v0.1.0 added for rapid partial-spin iteration. 4K deferred. Public Witch Dock unchanged. |
 | `decals.gizmo.bound-correction` | Correct bound/Project-OFF decal transform gizmo | High | Witch Dock Stable; validated Move/Rotate/Scale, undo/redo, transform-state preservation and fresh-slot normalization. |
 | `character.local-export` | Export character JSON locally | Medium | Standalone reconstruction committed; core Save passed live. |
 | `character.local-import` | Import character JSON locally | Medium | Standalone reconstruction committed; core Load passed live. |
@@ -17,23 +17,32 @@ This is the canonical feature-ID inventory. Historical/provisional inventory det
 | `kitbash.capacity` | Raise kitbash capacity policy | High | Provisional. |
 | `slots.extra-minis` | Additional mini slots | Medium | Standalone reconstruction candidate. |
 
-## Photo Booth note
+## Spinny Mini WebP current status
 
-Maintained 8K still capture remains the validated grouped four-shifted-4096 implementation. Spinny work is a separate media feature and does not reopen that gate.
-
-## Spinny Mini WebP note
-
-Validated v0.2.1 behavior includes:
+Validated lower-resolution behavior:
 
 - 1024 Standard / 250f: PASS;
 - 2048 Standard / 250f: PASS;
 - 1024 Very Slow / 750f: PASS;
 - 2048 Slower / 500f: PASS;
-- progress/ETA and same-session timing seed: PASS;
-- repeated 1024 Standard capture: PASS;
-- parser validation and rotation restoration: PASS;
-- general Cancel path: PASS by user report, with starting orientation restored and no observed issue.
+- progress/ETA, repeat use, parser, rotation restore: PASS;
+- general Cancel path: PASS by user report.
 
-v0.2.2 adds a 3072px experimental resolution. 3072 Standard is a 9x baseline pixel-sample workload and is pending live validation. 3072 does not hit the Witch Dock high-resolution provider's 4096/8192 interception sizes.
+3072 result:
 
-4K Spinny is explicitly deferred because square 4096 `BT.maker.takeScreenshot` calls are currently owned by the TRUE-resolution still-capture provider. Pause/resume and interaction guards remain a separate next-stage standalone change.
+- full Standard / 250f completed in ~25 minutes;
+- container/frame payload dimensions are structurally 3072;
+- user visual inspection found native-size detail blurry and consistent with a lower-resolution render enlarged to 3072;
+- **true 3K fidelity is therefore rejected/unsupported pending render-path repair**;
+- follow-up 1024 control visually passed.
+
+Diagnostic helper:
+
+- `entries/tampermonkey-standalone/spinny-mini-webp-short-test.user.js` v0.1.0;
+- 16 contiguous frames using selected profile's real angular spacing and frame duration;
+- designed to validate candidate resolution fixes in roughly minutes rather than a full long spin;
+- live validation pending.
+
+Two mouse-wheel camera changes during the full 3072 run produced visible output jumps, confirming the need for planned active-capture interaction guards.
+
+4K Spinny remains explicitly deferred because square 4096 capture requests collide with the Witch Dock TRUE-resolution still provider.

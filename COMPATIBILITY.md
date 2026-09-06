@@ -2,16 +2,16 @@
 
 Human-readable current HeroForge compatibility status. Historical detail remains available in Git history.
 
-Current media validation target: `heroforge07.1.9.98` / 2026-09-05.
+Current media validation target: `heroforge07.1.9.98` / 2026-09-06.
 
 | Component | Current status | Last verified build/date | Notes |
 |---|---|---|---|
-| `media.screenshot-resolution` | **Standalone validated; Witch Dock Stable validated** | `heroforge07.1.9.98` / 2026-09-05 | Stable still-capture provider remains closed/validated. |
-| `media.spinny-mini-webp` | **v0.2.1 validated on tested profiles; v0.2.2 3072 candidate pending** | `heroforge07.1.9.98` / 2026-09-05 | PASS at 1024 Standard/250f, 2048 Standard/250f, 1024 Very Slow/750f and 2048 Slower/500f. Progress/ETA/repeat-use/parser/rotation restore passed. General Cancel path also passed by user report. v0.2.2 adds 3072 + warning only. Public Witch Dock unchanged. |
+| `media.screenshot-resolution` | Standalone validated; Witch Dock Stable validated | `heroforge07.1.9.98` / 2026-09-05 | Stable still-capture provider remains closed/validated. |
+| `media.spinny-mini-webp` | **v0.2.1 validated at tested 1024/2048 profiles; current 3072 true-resolution fidelity FAILED** | `heroforge07.1.9.98` / 2026-09-06 | 3072 container/frame payloads are structurally 3072, but native-size detail is visibly blurred/upscaled. Short Test companion added; render-path diagnosis pending. |
 | `decals.gizmo.bound-correction` | Witch Dock Stable | 2026-09-05 | Validated separately. |
 | Character local JSON | Core Save/Load passed live | 2026-09-03 | Lifecycle/repeated-use pending. |
 | Projected decal state/control | Runtime path confirmed | September 2026 | Renderer dependency audit pending. |
-| HF-Chat-Bridge | Live validated | September 2026 | Development-only; not a production dependency. |
+| HF-Chat-Bridge | Live validated transport; current probe #478 pending pickup | September 2026 | Development-only; not a production dependency. |
 | Shared maintained compatibility bridge/Foundation | Not implemented | — | Planned extraction target. |
 
 ## Spinny Mini WebP capability contract
@@ -24,40 +24,68 @@ Confirmed current capabilities:
 - browser `canvas.toBlob('image/webp', quality)` still-WebP encoding;
 - project-owned RIFF/VP8X/ANIM/ANMF animated container assembly.
 
-Validated results on `heroforge07.1.9.98`:
+Validated lower-resolution results on `heroforge07.1.9.98`:
 
-- v0.1.0 1024/250 Lob-parity capture: PASS;
-- v0.2/v0.2.1 1024 Standard / 250 frames: PASS;
+- 1024 Standard / 250 frames: PASS;
 - 2048 Standard / 250 frames: PASS;
 - 1024 Very Slow / 750 frames: PASS;
 - 2048 Slower / 500 frames: PASS;
 - multiple same-session captures: PASS;
-- high-complexity figure test remained practical by user report;
-- general Cancel path: PASS by user report, including restoration of starting orientation.
+- progress/ETA and rotation restoration: PASS;
+- general Cancel path: PASS by user report.
 
-## v0.2.1 progress/ETA capability
+## 3072 capability status
 
-The ETA is device/session relative rather than based on animation playback duration. Live validation included a bridge-confirmed repeated 1024 Standard run with actual total 177.101 s versus final estimate 175.614 s, an error of 1.49 s / 0.84%. Parser output was 1024x1024 / 250 frames / 10,000 ms / 40 ms x 250 / loop 0; rotation restored true; error null.
+The first 3072 Standard / 250-frame capture completed successfully at the file-structure level in approximately 25 minutes.
 
-## v0.2.2 3072 capability status
+Confirmed:
 
-Candidate resolution:
+- returned/final animation dimensions: 3072x3072;
+- 250 animated frames;
+- individual encoded frame payloads are also 3072-sized;
+- no evidence that the custom mux itself is wrapping 2048 frame payloads as 3072.
 
-- 3072x3072 / Standard / 250f = **9x** 1024 Standard pixel samples;
-- 3072 Slow / 375f = **13.5x**;
-- 3072 Slower / 500f = **18x**;
-- 3072 Very Slow / 750f = **27x**.
+Failed requirement:
 
-3072 does not match the current Witch Dock `media.screenshot-resolution` provider interception sizes, which are square 4096 and 8192 requests. Therefore v0.2.2 continues to call the same normal `BT.maker.takeScreenshot(3072,3072)` path used by the lower Spinny resolutions.
+- user visual inspection at native size reports the 3072 result is blurry and looks like a lower-resolution render enlarged to 3072.
 
-3072 remains **untested** until a live full capture completes.
+Therefore current 3072 support is **degraded/unsupported for true-resolution output**. Passing canvas/container dimensions is insufficient evidence of source-raster fidelity.
+
+A follow-up 1024 Standard control capture was visually correct, narrowing the issue to HeroForge's higher-resolution screenshot/render path rather than the general WebP encoder/mux.
+
+## Short Test diagnostic capability
+
+New standalone companion:
+
+`entries/tampermonkey-standalone/spinny-mini-webp-short-test.user.js`
+
+- build `0.1.0-short-test-16f-partial-arc`;
+- requires the v0.2.2 profile test;
+- captures 16 contiguous samples using the selected profile's normal angular step and frame duration;
+- uses the same per-frame HeroForge screenshot path and WebP serialization mechanics;
+- records returned canvas-size histogram and final parser/output diagnostics;
+- refuses >3072 / 4096 / 8192 sizes;
+- live validation pending.
+
+This helper is diagnostic only. It can rapidly show whether a candidate fix visibly produces additional detail, but it does not itself prove HeroForge's hidden internal render-target size.
+
+## Interaction protection trigger
+
+Two accidental mouse-wheel camera changes during the full 3072 capture produced visible animation jumps. This is now a direct revalidation trigger/requirement for planned active-capture camera/Booth interaction protection.
 
 ## 4K Spinny incompatibility note
 
-Do not add 4096 Spinny through the current public `BT.maker.takeScreenshot` surface while Witch Dock TRUE-resolution repair is enabled. The provider intentionally intercepts square 4096 requests and routes them through the still-image repair engine. 4K Spinny is deferred until an explicit native-frame bypass/capability is designed and validated.
+Do not add 4096 Spinny through the current public `BT.maker.takeScreenshot` surface while Witch Dock TRUE-resolution repair is enabled. The provider intentionally intercepts square 4096/8192 requests and routes them through the still-image repair engine.
 
 ## Revalidation triggers
 
-Photo Booth stills: re-run on relevant HeroForge capture/render topology changes.
+Spinny Mini WebP should be re-run when:
 
-Spinny Mini WebP: re-run when HeroForge character-display rotation/refresh behavior changes, `BT.maker.takeScreenshot` semantics change, browser WebP encoding support changes, generated RIFF validation fails, or higher-profile resource limits are observed.
+- HeroForge screenshot/render source behavior changes;
+- a candidate fix claims true 3072 source fidelity;
+- character-display rotation/refresh behavior changes;
+- browser WebP support/container validation changes;
+- capture interaction guards are added;
+- high-cost resource limits are observed.
+
+Use Short Test first for resolution-path iteration; reserve a full 3072 run for final confirmation only after visual fidelity passes.

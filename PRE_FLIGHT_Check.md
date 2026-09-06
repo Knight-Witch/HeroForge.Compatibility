@@ -1,427 +1,91 @@
 # Pre-Flight Check Log
 
-## PFC-2026-09-05-019 — Add 3072 Spinny profile and high-workload warning
+## PFC-2026-09-06-020 — Add short partial-spin diagnostic companion after 3072 fidelity failure
 
-Date: 2026-09-05
+Date: 2026-09-06
 
 ### Target files
 
-- `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
+- `entries/tampermonkey-standalone/spinny-mini-webp-short-test.user.js` (new)
 - `MASTER.md`
 - `PRE_FLIGHT_Check.md`
 - `CHANGELOG.md`
 - `FEATURE_INVENTORY.md`
 - `COMPATIBILITY.md`
+- `OWNERSHIP.md`
 - `TESTING.md`
 - `docs/feature-specs/spinny-mini-webp.md`
 - `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
+- `docs/validation/spinny-mini-webp-v0.2.2-3072-fidelity-2026-09-06.md` (new)
 
-### Reviewed
+### Required material reviewed
 
-- binding `PROJECT_CONTRACT.md`
-- branch head `6b15df3233c6c6fae5b63647c8f6f776faa66c73`
-- `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`
-- current Spinny feature spec/investigation and v0.2.1 source
-- Witch Dock Stable `media.screenshot-resolution` provider behavior around square 4096/8192 `BT.maker.takeScreenshot` requests
-- user report that Cancel already works correctly and restores the starting figure orientation without issues
+- binding `PROJECT_CONTRACT.md`;
+- branch head before this stage: `997f1181af9954262e19ee04723be6137f891b79`;
+- `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`;
+- current Spinny feature spec/investigation;
+- current v0.2.2 source and public API;
+- completed 3072 Standard user result and uploaded WebP;
+- follow-up 1024 Standard control capture reported visually correct;
+- user report that two scroll-wheel camera interactions during the 3072 run caused visible jumps in the resulting animation;
+- Witch Dock TRUE-resolution provider ownership of square 4096/8192 requests.
 
-### Confirmed design findings
+### Confirmed findings
 
-- 3072x3072 is **9x** the 1024 Standard pixel-sample workload at 250 frames and does not match the Witch Dock TRUE-resolution provider's 4096/8192 interception sizes.
-- 4096x4096 is **16x** baseline at 250 frames and currently collides with the Witch Dock TRUE-4K still-capture provider, which intentionally intercepts square 4096 screenshot requests. 4K Spinny is therefore explicitly deferred rather than added naively.
-- The current animated-WebP mux stores compressed per-frame payloads rather than raw RGBA across the entire run, so 3072 does not require an architecture change; remaining uncertainty is practical browser/GPU/render cost and final compressed output size.
-- Pause/input-guard behavior is a separate lifecycle/input-interception change and will not be bundled into the first 3072 test build.
+- The completed 3072 Standard run took approximately 25 minutes and produced a structurally 3072x3072 animated WebP with 250 frames.
+- Inspection of the uploaded file confirmed the animation container and individual encoded frame payloads are genuinely 3072-sized; the mux is not merely declaring 3072 around 2048 frame payloads.
+- User visual inspection at native size found the 3072 result blurry and consistent with a lower-resolution render enlarged to 3072. Therefore **true 3K fidelity failed** even though output dimensions passed.
+- A new 1024 Standard control run was visually correct, so the failure is specific to the higher-resolution path rather than a general WebP/mux defect.
+- Current v0.2.2 verifies returned canvas/container dimensions but cannot verify internal HeroForge scene-raster resolution.
+- Two accidental mouse-wheel camera changes during capture produced visible discontinuities, directly validating the need for planned capture interaction guards.
+- HF-Chat-Bridge read-only probe #478 was queued to inspect the current screenshot/render path but had not been picked up at this checkpoint; no runtime result is claimed from it.
 
-### Runtime change intent
+### Diagnostic implementation intent
 
-Advance the standalone profile script to v0.2.2 with only:
+Add a separate disposable companion rather than modifying v0.2.2:
 
-- a `3072px — 3K experimental` resolution option;
-- no 4096/8192 Spinny options;
-- red `LONG CAPTURE` text beneath the timer for profiles expected to be materially slower (`size >= 2048` or `frames >= 500`);
-- validation labels updated to reflect already-passed 2048 Standard, 2048 Slower and 1024 Very Slow combinations.
+- requires the existing `HFSpinnyMiniWebPProfilesTest` standalone script;
+- injects a `Short Test` button into the existing test panel;
+- captures exactly **16 contiguous frames**;
+- preserves the selected profile's normal angular spacing (`360 / full-profile frame count`), rather than sparsely sampling a full revolution;
+- preserves the selected 40 ms frame timing and current resolution;
+- uses the same HeroForge refresh/occlusion sequence, `BT.maker.takeScreenshot`, static browser WebP encoder, and RIFF mux logic;
+- downloads a labeled `SHORT_TEST` animated WebP;
+- exposes bridge-readable `HFSpinnyMiniWebPShortTest.diagnostics` including selected profile, angular step/arc, returned canvas-size histogram, output/parser data, elapsed time and rotation restoration;
+- uses its own cancel-after-current-frame behavior;
+- disables the base profile controls during a short test;
+- refuses 4096/8192+ sizes to avoid the known TRUE-resolution still-provider collision.
 
-### Preserved behavior
-
-- 1024/2048 capture path and all speed definitions;
-- 40 ms/frame / 25 FPS output cadence;
-- full-revolution runtime rotation stepping;
-- existing HeroForge refresh/occlusion/shadow/matrix sequence;
-- `BT.maker.takeScreenshot(size,size)` frame production;
-- immediate static-WebP encode and compressed-frame retention;
-- deterministic RIFF mux and parser gating;
-- progress/ETA behavior;
-- cancel-after-current-frame and final rotation restoration;
-- public Witch Dock remains untouched.
+At Standard / 250-frame angular spacing, 16 frames cover 15 intervals = **21.6 degrees** from first to last sample. Relative to the completed 25-minute 250-frame 3072 run, expected processing time is roughly 1.6 minutes if per-frame cost is similar.
 
 ### Material risks
 
-- 3072 Standard is 9x baseline and may expose browser/GPU/canvas limits that 2048 did not.
-- 3072 Slow/Slower/Very Slow are 13.5x/18x/27x baseline respectively and remain unvalidated even if Standard passes.
-- No claim is made that 3072 is supported until a live capture completes and parser/output behavior is verified.
-- 4K Spinny remains deferred pending an explicit native-frame bypass/capability if it is revisited later.
+- The helper intentionally duplicates a bounded subset of the validated capture/mux mechanics as a diagnostic companion. It is not a production architecture or Witch Dock integration target.
+- Short Test can prove whether a candidate resolution change visibly improves source detail much faster, but it still cannot by itself reveal HeroForge's hidden internal render target size without runtime tracing.
+- The current camera/Booth interaction guards are not yet implemented; users must still avoid camera/Booth changes during the short test.
+- A partial looping WebP necessarily jumps from its final frame back to the first; loop continuity is not an acceptance criterion for this diagnostic.
+- 3072 remains unsupported for true-resolution output until the upstream render-source issue is diagnosed and corrected.
+
+### Test status before commit
+
+- `spinny-mini-webp-short-test.user.js`: local `node --check` **PASS**.
+- Live Short Test: pending.
+- Public Witch Dock: untouched.
 
 ### Recommended action
 
-Commit v0.2.2 as a standalone candidate, then run **3072 Standard / 250 frames** as the first and only required 3K validation control. Do not mix the first 3K test with Pause/input-guard changes.
+Install the companion alongside v0.2.2 and run **3072 + Standard + Short Test** first. Use the resulting partial WebP only to judge render fidelity and exercise the same per-frame path quickly. Keep 3072 full-spin support rejected until a true-resolution fix passes Short Test and then one full validation run.
 
-**Runtime behavior changed:** yes, standalone WIP profile/UI only. Existing validated capture/mux mechanics and public Witch Dock are unchanged.
-
----
-
-## PFC-2026-09-05-018 — Record Spinny v0.2.1 progress/ETA and repeat-use validation
-
-Date: 2026-09-05
-
-### Target files
-
-- `MASTER.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-- `FEATURE_INVENTORY.md`
-- `COMPATIBILITY.md`
-- `TESTING.md`
-- `docs/feature-specs/spinny-mini-webp.md`
-- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
-- `docs/validation/spinny-mini-webp-v0.2.1-2026-09-05.md` (new validation record)
-
-### Reviewed
-
-- binding `PROJECT_CONTRACT.md`
-- branch head `723f913674b2c662a62a2df8735f92e3c5ed5fe2`
-- `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`
-- current Spinny Mini feature spec and investigation
-- v0.2.1 standalone source/build `0.2.1-progress-eta-runtime-rotation-webp-mux`
-- user live acceptance results for the completed 2048/500 run and two v0.2.1 1024 Standard runs
-- HF-Chat-Bridge issue #476 diagnostics captured only after all active capture work was complete
-
-### Newly confirmed live results
-
-- 2048 Slower / 25 FPS / 500 frames: **PASS / perfect**.
-- v0.2.1 1024 Standard / 250 frames: **PASS** with progress bar and ETA working correctly.
-- First v0.2.1 ETA was approximately **3m 7s** and was reported accurate and stable throughout the capture.
-- A second same-session 1024 Standard run received an approximately **2m 57s** estimate and completed successfully, validating repeat-use and same-session ETA seeding.
-
-### Bridge-confirmed second v0.2.1 1024 Standard run
-
-- build: `0.2.1-progress-eta-runtime-rotation-webp-mux`;
-- busy: `false` after completion;
-- 250/250 frames rendered and encoded;
-- final output: **13,565,278 bytes**;
-- parser: **1024x1024**, **250 frames**, **10,000 ms**, **40 ms x 250**, loop **0/infinite**;
-- actual capture time: **177,100.9 ms / 2m 57.1s**;
-- final estimated total: **175,614.0 ms / 2m 55.6s**;
-- final total-time error: **1,486.9 ms / 0.84%**;
-- original rotation restored: **true**;
-- error: **null**;
-- retained UI: `Downloaded 1024px Standard: 250 frames / 10.0 s / 12.9 MiB` and `Completed in 2m 57s`.
-
-### Gate impact
-
-The configurable standalone implementation has now passed:
-
-- 1024 Standard / 250 frames;
-- 2048 Standard / 250 frames;
-- 1024 Very Slow / 750 frames;
-- 2048 Slower / 500 frames;
-- repeated 1024 Standard capture on v0.2.1;
-- progress-bar UX;
-- device-relative ETA and same-session estimate seeding;
-- full-run parser validation and rotation restoration on the current v0.2.1 build.
-
-The 2048/500 result represents an **8x pixel-sample workload** relative to 1024 Standard and provides a combined high-resolution + increased-frame-count pass.
-
-### Remaining risks / next gate
-
-- 2048 Very Slow / 750 frames remains an optional 12x stress case, not a prerequisite proven necessary for normal use.
-- Dedicated cancel/failure-path regression under an expensive profile remains useful before integration.
-- Practical warning/guardrail policy for expensive combinations remains to be decided.
-- Witch Dock Dev integration remains separate and has not started.
-
-### Recommended action
-
-Record the successful standalone validation checkpoint. Do not change the now-working runtime in this commit. Decide remaining guardrails/cancel testing before any Witch Dock Dev integration.
-
-**Runtime behavior changed:** no. This is documentation-only. No JavaScript or public Witch Dock behavior changed.
+**Runtime behavior changed:** yes, standalone diagnostic companion only. Existing v0.2.2 and public Witch Dock behavior are unchanged.
 
 ---
 
-## PFC-2026-09-05-017 — Record configurable Spinny validation and add progress/ETA UX
+## PFC-2026-09-05-019 — Add 3072 Spinny profile and high-workload warning
 
-Date: 2026-09-05
+v0.2.2 added experimental 3072 plus the long-capture warning while preserving the validated lower-resolution capture/mux core. 4K was deferred due the Witch Dock TRUE-resolution provider collision.
 
-### Target files
-
-- `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
-- `MASTER.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-- `FEATURE_INVENTORY.md`
-- `COMPATIBILITY.md`
-- `TESTING.md`
-- `docs/feature-specs/spinny-mini-webp.md`
-- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
-
-### Reviewed
-
-- binding `PROJECT_CONTRACT.md`
-- `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`
-- current Spinny Mini feature spec/investigation
-- validated v0.1.0 parity reference
-- configurable v0.2.0 candidate at branch head `02ffc1cfa7512af90ab7fce2afefdfe22c989806`
-- user live results from multiple v0.2.0 captures on HeroForge `heroforge07.1.9.98`
-
-### Newly confirmed live results
-
-- 1024 Standard / 25 FPS / 250 frames: **PASS / works perfectly**.
-- 2048 Standard / 25 FPS / 250 frames: **PASS / works perfectly**.
-- 1024 Very Slow / 25 FPS / 750 frames: **PASS / works perfectly**.
-- 1024 Very Slow output observed at approximately **34 MiB**.
-- Multiple captures were run successfully in one session, providing basic repeated-use evidence.
-- Existing percentage, Rendering/Encoding phase text, and selected px/frame/FPS/workload readout were explicitly reported useful and working well.
-- Test context was a high-complexity figure with many kitbash parts, special paints/effects and a high decal count, with moderately high Photo Booth complexity; resource behavior remained acceptable by user report.
-- User observed 1024 Very Slow capture time as roughly comparable to Lob's historical HQ Spinny GIF capture/encode/delivery time.
-- 2048 / 500-frame run was still active when this pre-flight was written and is **not recorded as passed yet**.
-- Per user instruction, HF-Chat-Bridge activity is not inspected while the active capture is running.
-
-### Runtime change intent
-
-Advance the same standalone profile script to v0.2.1 with UX-only additions:
-
-- progress bar directly below the existing percentage/status readout;
-- elapsed / estimated time-left / estimated-total display;
-- ETA derived from measured wall-clock render+encode time per completed frame on the current device/figure;
-- same-session timing history keyed by resolution to improve estimates for subsequent captures;
-- no persistent timing history across reloads, preventing stale estimates from leaking between sessions/figures.
-
-### Preserved behavior
-
-- resolution/speed definitions and constant 40 ms output frame timing;
-- full-revolution `CK.character.display.rotation.y` stepping;
-- established display/occlusion/shadow/matrix refresh sequencing;
-- `BT.maker.takeScreenshot` capture path;
-- immediate static-WebP compression and compressed-payload retention;
-- deterministic RIFF animated-WebP mux and parser validation;
-- concurrency block, cancellation semantics and rotation restoration;
-- public Witch Dock remains untouched.
-
-### Material conflict risks
-
-- ETA must measure capture processing time, not confuse it with animation playback duration.
-- Early ETA samples can be noisy; v0.2.1 therefore warms up before using current-capture estimates.
-- Figure/effect complexity can change per-frame cost; estimate must continue adapting during the run.
-- Same-session history must not become persistent cross-figure state.
-- UI-only change must not alter the now-validated capture/mux core.
-
-### Recommended action
-
-Commit v0.2.1 on `spinny-webp-hq-wip`, syntax-check it, then have the user switch after the currently running v0.2.0 capture completes. Validate the progress bar and ETA with one normal capture before any Witch Dock integration.
-
-**Runtime behavior changed:** yes, standalone WIP UI/diagnostics only. Capture/mux behavior and public Witch Dock are unchanged.
+**Runtime behavior changed:** standalone WIP profile/UI only.
 
 ---
 
-## PFC-2026-09-05-016 — Add configurable Spinny WebP profile test
-
-Date: 2026-09-05
-
-### Target files
-
-- `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js` (new standalone candidate)
-- `MASTER.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-- `FEATURE_INVENTORY.md`
-- `COMPATIBILITY.md`
-- `TESTING.md`
-- `docs/feature-specs/spinny-mini-webp.md`
-- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
-
-### Reviewed
-
-- binding `PROJECT_CONTRACT.md`
-- branch head `442365c9d84a90d585617b07489a17ad707d0d11`
-- validated v0.1.0 parity reference `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js`
-- `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`
-- current Spinny Mini feature spec and investigation
-- native HeroForge and historical Lob baselines
-- successful 1024/250 parity result checkpointed at `442365c9d84a90d585617b07489a17ad707d0d11`
-
-### Implementation intent
-
-Preserve v0.1.0 unchanged as the validated fallback and add a separate v0.2.0 standalone candidate that parameterizes only the already-proven capture engine.
-
-Profiles:
-
-- 1024 / 2048 resolution, independent of speed;
-- Standard: 10 s / 250 frames / 40 ms;
-- Slow: 15 s / 375 frames / 40 ms;
-- Slower: 20 s / 500 frames / 40 ms;
-- Very Slow: 30 s / 750 frames / 40 ms.
-
-The 40 ms frame duration remains constant so slower rotation gains additional angular samples rather than longer frame holds.
-
-### Preserved behavior
-
-- same `CK.character.display.rotation.y` full-revolution stepping;
-- same HeroForge display/occlusion/shadow/matrix refresh sequencing;
-- same `BT.maker.takeScreenshot(size,size)` frame source;
-- same immediate browser static-WebP compression;
-- same compressed-payload-only retention and canvas backing-store release;
-- same deterministic RIFF/VP8X/ANIM/ANMF mux;
-- same concurrency block, cancel-after-current-frame, and `finally` rotation restoration;
-- no persistent HeroForge runtime override.
-
-### Added validation/diagnostics
-
-- final parser additionally verifies loop count and one exact frame-duration histogram;
-- plain bridge-readable `diagnostics` state records requested profile, exact output bytes, parser result, and rotation-restored status;
-- UI exposes selected profile and a pixel-sample workload multiplier against validated 1024 Standard.
-
-### Material conflict risks
-
-- The validated v0.1.0 file must remain untouched until v0.2.0 regression passes.
-- 2048 Standard is 4x the pixel-sample workload of 1024 Standard.
-- Slow/Slower/Very Slow multiply frame count to 1.5x/2x/3x baseline.
-- 2048 Very Slow reaches 12x baseline pixel-sample workload and is intentionally not the first live test.
-- Output verification currently materializes the completed WebP once as a byte array; high-cost profiles may expose a memory limit that requires a later bounded verifier.
-- Public Witch Dock remains out of scope.
-
-### Recommended action
-
-Commit the separate v0.2.0 standalone candidate, keep v0.1.0 canonical, then run 1024 Standard regression first. Proceed to 2048 Standard only after that regression passes.
-
-**Runtime behavior changed:** yes, by adding a new standalone experimental userscript only. Existing v0.1.0 and public Witch Dock are unchanged.
-
----
-
-## PFC-2026-09-05-015 — Record successful 1024 HQ Spinny WebP parity capture
-
-Date: 2026-09-05
-
-### Target files
-
-- `MASTER.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-- `FEATURE_INVENTORY.md`
-- `COMPATIBILITY.md`
-- `OWNERSHIP.md`
-- `TESTING.md`
-- `docs/feature-specs/spinny-mini-webp.md`
-- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
-
-### Reviewed
-
-- binding `PROJECT_CONTRACT.md`
-- current branch head `19ea283e670a0a700ee84e7b9d6b2453afb5b17a`
-- standalone v0.1.0 `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js`
-- `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`
-- current Spinny Mini feature spec and investigation
-- historical Lob HQ output baseline and current native HeroForge WebP baseline
-- user live acceptance report: “the webp worked”
-- retained standalone UI status recovered through HF-Chat-Bridge: `Downloaded 1024px WebP: 250 frames / 10.0 s / 12.9 MiB`
-
-### Confirmed
-
-- The successful capture came from standalone v0.1.0 build `0.1.0-runtime-rotation-webp-mux`.
-- v0.1.0 only downloads after mechanically verifying 1024x1024 dimensions, exactly 250 ANMF frames, and exactly 10,000 ms total animation duration.
-- The mux writes every frame at 40 ms and loop count 0/infinite, so the accepted output matches the Lob parity cadence: 25 FPS effective and continuous loop.
-- The retained UI reports an output size of 12.9 MiB (rounded display value).
-- User reported the generated WebP worked; this closes the first 1024/250 parity milestone.
-- Exact output byte count was not recoverable from the safe bridge reader because `lastCapture` is exposed through a getter; the rounded 12.9 MiB UI result is retained.
-- Repeat-use and 2048/resource-limit testing remain separate next-stage work; they do not invalidate the successful first parity capture.
-
-### Material conflict risks for the next runtime stage
-
-- Preserve the now-working 1024/250 capture path exactly while generalizing profiles.
-- 2048 multiplies pixels per frame by four and may materially increase capture time/output size.
-- Slower presets that preserve 25 FPS multiply frame count and must not retain raw RGBA frames.
-- Very slow + 2048 combinations may be expensive enough to require practical guardrails after measurement.
-- Public Witch Dock remains out of scope until standalone profile testing passes.
-
-### Recommended action
-
-Checkpoint the successful parity validation in durable docs, then begin standalone 2048 plus independent speed-profile implementation by parameterizing the validated capture engine rather than replacing it.
-
-**Runtime behavior changed:** no. This checkpoint is documentation-only. No JavaScript changed and public Witch Dock behavior is unchanged.
-
----
-
-## PFC-2026-09-05-014 — Spinny Mini animated WebP reconstruction kickoff
-
-Date: 2026-09-05
-
-### Target files
-
-- `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js` (planned)
-- `docs/feature-specs/spinny-mini-webp.md`
-- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
-- `FEATURE_INVENTORY.md`
-- `COMPATIBILITY.md` / `TESTING.md` when live proof exists
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-
-### Reviewed
-
-- binding `PROJECT_CONTRACT.md`
-- `MASTER.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-- `ARCHITECTURE.md`
-- `FEATURE_INVENTORY.md`
-- `COMPATIBILITY.md`
-- `OWNERSHIP.md`
-- `TESTING.md`
-- current Photo Booth capture findings and named runtime seams
-- current Lob/ADP high-quality Spinny Mini behavior as previously audited
-- user-supplied archived output `The Viper.gif` recovered from ZIP for output-level parity measurement
-- live native HeroForge Spinny Mini WebP trace on `heroforge07.1.9.98`
-
-### Confirmed baseline
-
-- New feature ID: `media.spinny-mini-webp`.
-- This supersedes the provisional inventory label `media.spin-gif-quality`; the maintained target is animated WebP, not GIF.
-- Native HeroForge Spinny Mini WebP output measured from a real capture:
-  - 512x512;
-  - 386 frames;
-  - 17 ms/frame;
-  - 6562 ms total revolution;
-  - 58.82 FPS effective;
-  - infinite loop;
-  - 11,331,110-byte `image/webp` blob;
-  - 386 calls to `BT.maker.takeScreenshot(512,512,...)` and 386 matching `CK.Effects.renderToCanvas(512,512,...)` calls.
-- User-supplied historical Lob Higher Quality Spinny Mini GIF measured from original bytes:
-  - 1024x1024;
-  - 250 frames;
-  - 10.0 s total duration;
-  - 25 FPS effective;
-  - approximately 40 ms/frame;
-  - 145,375,926 bytes.
-- First parity target is therefore animated WebP at 1024x1024, 250 frames, 10.0 s / 25 FPS.
-- Future speed presets are a separate dimension from resolution; slower presets should preserve smooth motion by increasing angular samples/frame count rather than merely holding a sparse frame set longer.
-
-### Integration priority
-
-1. Reuse current named runtime capture/render capabilities and the native animated-WebP encoder if a stable callable seam can be found.
-2. Runtime capability/object-shape discovery.
-3. Webpack/module discovery if the encoder is closure-local.
-4. Do not resurrect Lob's exact compiled-string Spinny patch architecture unless runtime access is proven insufficient.
-
-### Material conflict risks
-
-- Native WebP encoder may be closure-local rather than exposed through a named runtime API.
-- Resolution, angular sample count, and playback timing may be controlled by separate private values.
-- A 1024x250 capture increases render cost substantially over native 512; memory must be released frame-by-frame or in bounded batches.
-- Existing `media.screenshot-resolution` provider wraps high-resolution still capture requests; Spinny implementation must coexist without recursively routing each animation frame into the still-image 4K/8K repair path.
-- Lob's current Higher Quality Spinny Mini generator is broken after the HeroForge update and cannot be used as a live caller; parity is defined from historical output plus audited legacy arguments.
-
-### Recommended action
-
-Continue live runtime/module discovery until the current WebP encoder and spin-loop control surface are identified. Build a standalone Tampermonkey parity entry before any Witch Dock integration.
-
-**Runtime behavior changed:** no. This is pre-flight/documentation only.
-
----
-
-Historical pre-flight entries through PFC-2026-09-05-013 remain preserved in Git history at/before `732dae09e83d712a26ac383f7b64ce9e27e07a59`.
+Historical pre-flight records through PFC-2026-09-05-018 remain preserved in Git history.
