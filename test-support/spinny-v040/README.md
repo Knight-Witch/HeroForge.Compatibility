@@ -1,0 +1,1 @@
+Temporary split source chunks were used only to transport the locally validated v0.4.0 pause/resume candidate during development. They are not a maintained runtime entrypoint and should be removed when the validated source is committed to entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js.
