@@ -1,5 +1,79 @@
 # Pre-Flight Check Log
 
+## PFC-2026-09-05-016 — Add configurable Spinny WebP profile test
+
+Date: 2026-09-05
+
+### Target files
+
+- `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js` (new standalone candidate)
+- `MASTER.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `TESTING.md`
+- `docs/feature-specs/spinny-mini-webp.md`
+- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
+
+### Reviewed
+
+- binding `PROJECT_CONTRACT.md`
+- branch head `442365c9d84a90d585617b07489a17ad707d0d11`
+- validated v0.1.0 parity reference `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js`
+- `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`
+- current Spinny Mini feature spec and investigation
+- native HeroForge and historical Lob baselines
+- successful 1024/250 parity result checkpointed at `442365c9d84a90d585617b07489a17ad707d0d11`
+
+### Implementation intent
+
+Preserve v0.1.0 unchanged as the validated fallback and add a separate v0.2.0 standalone candidate that parameterizes only the already-proven capture engine.
+
+Profiles:
+
+- 1024 / 2048 resolution, independent of speed;
+- Standard: 10 s / 250 frames / 40 ms;
+- Slow: 15 s / 375 frames / 40 ms;
+- Slower: 20 s / 500 frames / 40 ms;
+- Very Slow: 30 s / 750 frames / 40 ms.
+
+The 40 ms frame duration remains constant so slower rotation gains additional angular samples rather than longer frame holds.
+
+### Preserved behavior
+
+- same `CK.character.display.rotation.y` full-revolution stepping;
+- same HeroForge display/occlusion/shadow/matrix refresh sequencing;
+- same `BT.maker.takeScreenshot(size,size)` frame source;
+- same immediate browser static-WebP compression;
+- same compressed-payload-only retention and canvas backing-store release;
+- same deterministic RIFF/VP8X/ANIM/ANMF mux;
+- same concurrency block, cancel-after-current-frame, and `finally` rotation restoration;
+- no persistent HeroForge runtime override.
+
+### Added validation/diagnostics
+
+- final parser additionally verifies loop count and one exact frame-duration histogram;
+- plain bridge-readable `diagnostics` state records requested profile, exact output bytes, parser result, and rotation-restored status;
+- UI exposes selected profile and a pixel-sample workload multiplier against validated 1024 Standard.
+
+### Material conflict risks
+
+- The validated v0.1.0 file must remain untouched until v0.2.0 regression passes.
+- 2048 Standard is 4x the pixel-sample workload of 1024 Standard.
+- Slow/Slower/Very Slow multiply frame count to 1.5x/2x/3x baseline.
+- 2048 Very Slow reaches 12x baseline pixel-sample workload and is intentionally not the first live test.
+- Output verification currently materializes the completed WebP once as a byte array; high-cost profiles may expose a memory limit that requires a later bounded verifier.
+- Public Witch Dock remains out of scope.
+
+### Recommended action
+
+Commit the separate v0.2.0 standalone candidate, keep v0.1.0 canonical, then run 1024 Standard regression first. Proceed to 2048 Standard only after that regression passes.
+
+**Runtime behavior changed:** yes, by adding a new standalone experimental userscript only. Existing v0.1.0 and public Witch Dock are unchanged.
+
+---
+
 ## PFC-2026-09-05-015 — Record successful 1024 HQ Spinny WebP parity capture
 
 Date: 2026-09-05

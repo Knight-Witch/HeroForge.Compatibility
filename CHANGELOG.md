@@ -1,5 +1,61 @@
 # Changelog
 
+## HFC-2026-09-05-020 — Add configurable Spinny WebP profile test
+
+Date: 2026-09-05
+
+### Summary
+
+Added a separate v0.2.0 standalone candidate for `media.spinny-mini-webp` while preserving the validated v0.1.0 1024/250 parity script unchanged.
+
+### Runtime implementation
+
+New entry: `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js` v0.2.0.
+
+Resolution and rotation duration are now independent profile dimensions:
+
+- 1024px — validated baseline size;
+- 2048px — experimental next size;
+- Standard — 10 s / 250 frames / 40 ms / 25 FPS;
+- Slow — 15 s / 375 frames / 40 ms / 25 FPS;
+- Slower — 20 s / 500 frames / 40 ms / 25 FPS;
+- Very Slow — 30 s / 750 frames / 40 ms / 25 FPS.
+
+Slower profiles increase angular sample/frame count instead of holding the same sparse frames for longer.
+
+The candidate deliberately preserves the validated v0.1.0 frame-production and mux path: HeroForge display Y rotation, established refresh/occlusion sequencing, `BT.maker.takeScreenshot`, immediate browser static-WebP encoding, compressed image-chunk retention, deterministic RIFF animation assembly, concurrency blocking, cancel behavior, and rotation restoration.
+
+### Added diagnostics/verification
+
+- Parser now verifies loop count as well as dimensions/frame count/total duration.
+- Parser verifies the complete ANMF duration histogram is exactly the selected 40 ms duration for every frame.
+- Plain `HFSpinnyMiniWebPProfilesTest.diagnostics` state is bridge-readable and records selected profile, exact output bytes, parser metrics, and rotation-restored status.
+- Test UI displays a pixel-sample workload multiplier relative to validated 1024 Standard.
+
+### Validation status
+
+- v0.1.0 1024 Standard: **validated live and remains canonical fallback**.
+- v0.2.0 source: implementation/source review complete; live validation pending.
+- First required v0.2.0 live test: **1024 Standard regression**.
+- 2048 Standard and slower profiles: **not yet validated**.
+- Public Witch Dock: unchanged.
+
+### Touched files
+
+- `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
+- `MASTER.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `TESTING.md`
+- `docs/feature-specs/spinny-mini-webp.md`
+- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
+
+**Runtime behavior changed:** yes, on the standalone WIP branch only through a new experimental userscript. Existing v0.1.0 and public Witch Dock are unchanged.
+
+---
+
 ## HFC-2026-09-05-019 — Validate first 1024 HQ Spinny WebP parity capture
 
 Date: 2026-09-05
@@ -96,7 +152,7 @@ This avoids a dependency on closure-local minified encoder/module identifiers an
 
 - low-resolution live mux proof: PASS;
 - standalone 1024/250 package syntax: PASS;
-- full 1024/250 human capture/visual/repeat-use acceptance: pending.
+- full 1024/250 human capture/visual/repeat-use acceptance: pending at time of this commit; later closed by HFC-2026-09-05-019.
 
 ### Touched files
 

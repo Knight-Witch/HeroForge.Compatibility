@@ -29,14 +29,6 @@ WITCH_DEV_PHOTO provider build `0.7.0-witch-dock-dev-provider` with current Lob/
 
 Public consumer promotion: `e155f2c2f961463b4a0e26f7c88f21f603ce1b95`.
 
-Static/public preparation:
-
-- exact Dev-tested provider blob promoted: parity confirmed by identical blob SHA;
-- public readiness adapter: JavaScript syntax passed;
-- public manifest: JSON parse passed;
-- `Witch_Dock.user.js`: unchanged;
-- `tools/Booth.js`: unchanged.
-
 Clean public smoke with temporary Dev/standalone scripts disabled:
 
 - direct Witch Dock buttons became usable without cycling the repair toggle: **passed**;
@@ -54,21 +46,17 @@ HeroForge build: `heroforge07.1.9.98`.
 
 ### Measured native baseline
 
-A real native HeroForge Spinny Mini WebP was captured and parsed:
-
 - canvas: **512x512**;
 - MIME: `image/webp`;
 - file size: **11,331,110 bytes**;
 - frames: **386**;
-- per-frame duration: **17 ms** for all 386 frames;
+- per-frame duration: **17 ms**;
 - total duration: **6562 ms**;
 - effective FPS: **58.82**;
 - loop count: **0 / infinite**;
 - traced calls: 386 x `BT.maker.takeScreenshot(512,512,...)`, 386 x `CK.Effects.renderToCanvas(512,512,...)`, one `CK.Capture.renderToImage(512,512,...)`.
 
-### Historical Lob HQ output baseline
-
-Original GIF bytes supplied in ZIP and measured directly:
+### Historical Lob HQ baseline
 
 - dimensions: **1024x1024**;
 - frames: **250**;
@@ -77,41 +65,26 @@ Original GIF bytes supplied in ZIP and measured directly:
 - approximate frame delay: **40 ms**;
 - file size: **145,375,926 bytes**.
 
-Initial WebP parity target: **1024x1024 / 250 frames / 40 ms / 10.0 s / infinite loop**.
-
 ### Animated-WebP mux proof
 
-Live HeroForge microproof using only runtime rotation/capture plus browser static-WebP encoding:
+Live four-frame 128x128 proof:
 
-- rotated current character through four test angles;
-- captured four 128x128 HeroForge frames;
-- encoded each as static `image/webp`;
-- extracted compressed WebP image chunks;
-- assembled project-owned RIFF/VP8X/ANIM/ANMF animated WebP;
-- result blob size: **9,590 bytes**;
-- browser `Image.decode()` accepted output at **128x128**;
-- frame count: **4**;
-- total duration: **400 ms**;
-- original character rotation restored: **PASS**.
-
-Result: **PASS**. Native closure-local animated-WebP encoder is not required for the first maintained implementation.
-
-Local synthetic mux proof:
-
-- 64x64 / 3 frames;
-- generated animated WebP recognized as animated WebP by independent file/image tooling;
-- loop metadata decoded correctly.
+- four HeroForge frames captured/encoded;
+- custom RIFF animation mux produced 4 frames / 400 ms;
+- output blob 9,590 bytes;
+- browser `Image.decode()` PASS;
+- original rotation restoration PASS.
 
 Result: **PASS**.
 
-### Standalone parity package v0.1.0
+### Standalone parity package v0.1.0 — validated reference
 
 Entry: `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js`.
 
 Static checks:
 
 - `node --check`: **PASS**.
-- fixed requested profile: 1024x1024, 250 frames, 40 ms/frame, quality 0.95, infinite loop.
+- fixed profile: 1024x1024, 250 frames, 40 ms/frame, quality 0.95, infinite loop.
 - concurrent capture block: present.
 - cancel-after-current-frame: present.
 - rotation restoration in `finally`: present.
@@ -121,45 +94,87 @@ Static checks:
 Full live parity result:
 
 - user reported the generated WebP worked: **PASS**;
-- successful runtime build confirmed present: `0.1.0-runtime-rotation-webp-mux`;
-- output downloaded only after parser confirmed **1024x1024**: **PASS**;
-- output downloaded only after parser confirmed **250 frames**: **PASS**;
-- output downloaded only after parser confirmed **10,000 ms total duration**: **PASS**;
-- mux writes **40 ms on every frame / 25 FPS effective**: confirmed by implementation;
+- build: `0.1.0-runtime-rotation-webp-mux`;
+- parser-gated dimensions **1024x1024**: **PASS**;
+- parser-gated frame count **250**: **PASS**;
+- parser-gated total duration **10,000 ms**: **PASS**;
+- mux frame timing **40 ms / 25 FPS**: confirmed by implementation;
 - mux loop count **0 / infinite**: confirmed by implementation;
 - retained post-capture UI status: `Downloaded 1024px WebP: 250 frames / 10.0 s / 12.9 MiB`;
-- Photo Booth capture capability remained ready after the completed capture.
+- Photo Booth capture capability remained ready afterward.
 
-Parity milestone: **closed / validated**.
+Parity milestone: **closed / validated**. v0.1.0 remains the canonical fallback until the profile candidate passes regression.
 
-Still pending as next-stage coverage rather than parity blockers:
+### Configurable profile package v0.2.0 — candidate
 
-- exact output byte count from a future bridge-readable diagnostic snapshot;
-- repeat full capture in the same session;
-- explicit post-capture orientation assertion on a full 250-frame run;
-- 2048 completion/resource behavior;
-- slower-profile completion/resource behavior;
-- combined high-resolution + very-slow practical limits.
+Entry: `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`.
+
+Implemented profiles:
+
+- 1024 / 2048 resolution;
+- Standard: 10 s / 250 frames / 40 ms;
+- Slow: 15 s / 375 frames / 40 ms;
+- Slower: 20 s / 500 frames / 40 ms;
+- Very Slow: 30 s / 750 frames / 40 ms.
+
+Preserved from validated v0.1.0:
+
+- runtime display Y rotation strategy;
+- refresh/occlusion/shadow/matrix sequencing;
+- `BT.maker.takeScreenshot` frame path;
+- immediate static-WebP compression;
+- compressed payload retention and source-canvas release;
+- deterministic mux;
+- cancellation/concurrency behavior;
+- rotation restore in `finally`.
+
+Added:
+
+- exact loop-count verification;
+- exact ANMF frame-duration histogram verification;
+- bridge-readable plain diagnostics with exact output bytes and rotation-restored status;
+- pixel-sample workload display relative to 1024 Standard.
+
+Static status:
+
+- source review: **PASS / no identified syntax or logic blocker**;
+- `node --check`: **not yet independently executed against the committed v0.2.0 file**;
+- live runtime: **not yet tested**.
+
+Required live validation order:
+
+1. 1024 Standard regression.
+2. 2048 Standard.
+3. 1024 Slow.
+4. 1024 Slower.
+5. 1024 Very Slow.
+6. 2048 + slower combinations only after resource behavior is measured.
+
+Approximate pixel-sample workload relative to validated 1024 Standard:
+
+- 1024 Standard: 1.0x;
+- 2048 Standard: 4.0x;
+- 1024 Slow: 1.5x;
+- 1024 Slower: 2.0x;
+- 1024 Very Slow: 3.0x;
+- 2048 Very Slow: 12.0x.
+
+Still pending:
+
+- v0.2.0 1024 regression;
+- exact full-run rotation-restored diagnostic;
+- repeat full capture in one session;
+- 2048 completion/output/memory behavior;
+- slower-profile resource behavior;
+- practical guardrails for expensive combinations.
 
 Witch Dock integration: **not started**.
 
-### Next standalone profile suite
-
-Preserve the validated 1024 Standard profile exactly. Add independent resolution and speed profile selection, beginning with:
-
-- resolution: 1024, 2048;
-- Standard: 10 s / 250 frames / 25 FPS;
-- Slow: 15 s / 375 frames / 25 FPS;
-- Slower: 20 s / 500 frames / 25 FPS;
-- Very Slow: 30 s / 750 frames / 25 FPS.
-
-The first validation order should be 1024 Standard regression, 2048 Standard, then 1024 slow profiles before attempting the most expensive 2048 + slow combinations.
-
 ## Future regression triggers
 
-Re-run the Photo Booth still suite when the HeroForge build materially changes, named capture/Effects capabilities change, tile topology changes, or a native true-resolution Effects path appears. Lob-absent HeroForge-native resolution-menu injection is a separate UI-adapter test track and does not reopen the validated capture-engine gate.
+Re-run the Photo Booth still suite when the HeroForge build materially changes, named capture/Effects capabilities change, tile topology changes, or a native true-resolution Effects path appears.
 
-Re-run the Spinny Mini WebP suite when HeroForge character-display rotation/refresh behavior changes, `BT.maker.takeScreenshot` semantics change, browser WebP encoding support changes, or the generated RIFF animation fails structural/browser validation.
+Re-run the Spinny Mini WebP suite when HeroForge character-display rotation/refresh behavior changes, `BT.maker.takeScreenshot` semantics change, browser WebP encoding support changes, or generated RIFF animation validation fails.
 
 ## Other maintained milestones
 
