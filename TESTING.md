@@ -1,6 +1,6 @@
 # Testing
 
-Standalone-first validation precedes Witch Dock integration.
+Standalone-first validation precedes Witch Dock integration and public promotion.
 
 ## `media.screenshot-resolution`
 
@@ -12,101 +12,127 @@ Standalone, Witch Dock Dev and public Witch Dock Stable still-capture gates rema
 
 HeroForge build: `heroforge07.1.9.98`.
 
-Committed maintained implementation:
+Maintained standalone implementation:
 
 - file: `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
-- version: `0.3.0`
-- build: `0.3.0-integrated-true3k-short-test`
+- version: `0.5.0`
+- build: `0.5.0-integrated-pause-interaction-guards`
 
-## Validated profile matrix
+## Validated standalone profile matrix
 
 - 1024 Standard / 250 frames: PASS
 - 2048 Standard / 250 frames: PASS
 - 1024 Very Slow / 750 frames: PASS
 - 2048 Slower / 500 frames: PASS
-- 3072 Standard / 250 frames via TRUE-3K: PASS
-- 3072 Slower / 500 frames via TRUE-3K: PASS
-- 3072 Standard integrated Short Test / 16 frames: PASS
+- repaired 3072 Standard / 250 frames via TRUE-3K: PASS
+- repaired 3072 Slower / 500 frames via TRUE-3K: PASS
+- repaired 3072 integrated Short Test / 16 frames: PASS
 
-Other validated behavior:
+Other validated standalone behavior:
 
 - repeat use: PASS
 - parser validation: PASS
+- animated-WebP mux/timing: PASS
 - rotation restoration: PASS
 - progress/readout: PASS
-- ETA usefulness: PASS on tested long TRUE-3K run
+- ETA usefulness: PASS on tested long TRUE-3K runs
 - general cancel / starting-rotation restoration: PASS
+- frame-boundary Pause/Resume at native 1024: PASS
+- frame-boundary Pause/Resume at repaired TRUE-3K 3072: PASS
+- cancel while paused: PASS
+- paused-time ETA behavior: PASS
+- camera wheel/drag guard: PASS
+- Booth-control guard: PASS
+- Keep Capture: PASS
+- guard-triggered cancel requiring repeat intended action: PASS
+- guard protection while paused: PASS
 
 ## Native 3072 failure reference
 
-Native un-repaired 3072 is rejected. Runtime trace confirmed a 3072 capture camera paired with repeated 768px Effects phase renders; structural dimensions pass while source fidelity fails.
+Native unrepaired 3072 is rejected. Runtime trace confirmed a 3072 capture camera paired with repeated 768px Effects phase renders; structural dimensions pass while source fidelity fails.
 
 ## TRUE-3K repair
 
-TRUE-3K is validated through Short Test, 250-frame full and 500-frame full capture. The maintained v0.3.0 adapter feeds the native compositor from one genuine 3072 Effects source per animation frame and restores `CK.Effects.renderToCanvas` after each repaired frame.
+TRUE-3K is validated through Short Test, 250-frame full and 500-frame full capture. The maintained adapter feeds the native compositor from one genuine 3072 Effects source per animation frame and restores `CK.Effects.renderToCanvas` after each repaired frame.
 
-## Local v0.4.0 Pause/Resume candidate — LIVE PASS
+## Witch Dock Dev integration gate — PASS
 
-Candidate build: `0.4.0-frame-boundary-pause-resume`.
+Final integrated Dev service:
 
-Requested live tests and user result:
+- v0.5.1
+- build `0.5.1-witch-dock-dev-download-scroll-guard`
 
-1. 1024 Standard Short Test — pause/resume: PASS.
-2. Pause request waits for current frame completion: PASS.
-3. Frame count remains stopped while paused: PASS.
-4. Resume continues normally and output completes: PASS.
-5. 3072 TRUE-3K Standard Short Test pause/resume: PASS.
-6. Cancel while paused: PASS.
-7. Starting-state restoration after pause/cancel path: PASS.
-8. ETA/pause-time behavior: PASS by user observation.
+Final integrated Dev UI:
 
-Prior static/mock checks for the same candidate had already passed:
+- v0.1.1
+- build `0.1.1-dev-download-ux`
 
-- syntax;
-- frame-boundary pause sequencing;
-- TRUE-3K Effects restoration before entering paused state;
-- cancel-while-paused deadlock avoidance;
-- paused-time exclusion from active timing;
-- API/state exposure for `pause`, `resume`, and diagnostics.
+Final Dev hardening commit:
 
-Conclusion: Pause/Resume behavior is validated at standalone test level on the current HeroForge build.
+`fa75a9c1790009b4b4ae1a1162d419982e20545e`
 
-Important source-status distinction: the committed maintained runtime file is still v0.3.0 until the tested v0.4.0 source is promoted atomically with its docs.
+Integrated user testing passed:
 
-## Interaction-guard investigation — ACTIVE
+1. Spinny placement under High Res Image Capture.
+2. Docked controls and shared-state draggable popout.
+3. Popout movement and return-to-dock behavior.
+4. Pause/Resume.
+5. Cancel.
+6. ETA/progress.
+7. Camera/Booth interaction guards.
+8. Guard behavior while paused.
+9. Silent wheel/scroll suppression after final UX adjustment.
+10. Privileged userscript WebP download after final download-boundary repair.
+11. Dark dropdown options / plain resolution labels / popout icon presentation were accepted as part of the final integrated UI.
 
-An earlier long 3072 run demonstrated a real failure mode: accidental mouse-wheel camera changes caused visible jumps in the animation.
+User conclusion after final re-smoke: integrated behavior works perfectly; explicit public rollout approval received.
 
-Required guard tests after implementation:
+The optional transient in-panel download-complete flash was not observed. User explicitly treated it as non-problematic because the browser's download UI visibly confirms the save. It is not a functional gate.
 
-1. Camera wheel attempt during active capture warns before camera mutation.
-2. Pointer/camera drag attempt during active capture warns before camera mutation.
-3. Same camera guards work while paused.
-4. Photo Booth exit attempt warns before exit.
-5. Booth backdrop/view/overlay/light/effect changes warn before mutation.
-6. Choosing stay blocks the invalidating action without cancelling.
-7. Choosing cancel cancels safely first; original pointer sequence is not blindly replayed.
-8. Spinny Pause/Resume/Cancel remain usable while guards are installed.
-9. Left/right/mobile HeroForge layouts pass without coordinate assumptions.
-10. Diagnostics record cancellation cause / guarded action.
+## Witch Dock Stable promotion gate — PROMOTED / PUBLIC SMOKE PENDING
 
-Broad read-only DOM probe #492 completed but exceeded the bridge result limit and returned only a truncation summary. Follow-up discovery must use narrower selectors/queries.
+Public Witch Dock v1.1.0 promotion commit:
+
+`8d96dd803f452c3c7b623c6963b4fdb3ef762f59`
+
+Static promotion gate passed before `Witch_Scripts` advanced. Coverage included:
+
+- `Witch_Dock.user.js` JavaScript syntax;
+- Stable Spinny service JavaScript syntax;
+- Stable Spinny UI JavaScript syntax;
+- `manifest.json` parse;
+- public userscript version/`GM_download` host assertions;
+- Spinny version/build and resolution-label assertions;
+- silent wheel-guard assertion;
+- awaited privileged download-boundary assertion;
+- dark-option / icon-tooltip assertions;
+- public manifest URLs point to `Witch_Scripts`, not Dev;
+- exactly one Spinny service/UI entry;
+- Developer Mode and compact High Res Dev UI excluded;
+- Spinny does not assign ownership of `BT.maker.takeScreenshot`;
+- diff whitespace/static gate.
+
+### Required clean public smoke
+
+Do not repeat expensive TRUE-3K production runs absent a regression. Minimum public Stable smoke:
+
+1. Update/install public Witch Dock v1.1.0 and approve `GM_download` permission if prompted.
+2. Disable the Dev loader and temporary/standalone Spinny scripts.
+3. Reload HeroForge.
+4. Open Photo Booth and confirm public Spinny renders under the existing High Resolution Capture section.
+5. Run 1024px Standard / 250 frames, the cheapest public full profile because Short Test is hidden in Stable.
+6. Confirm WebP download succeeds.
+7. During capture, confirm wheel over the HeroForge canvas has no effect and shows no modal.
+8. Confirm one non-wheel guarded camera/Booth action still shows Keep Capture / Cancel Capture.
+
+If this passes, mark public Stable validated with documentation-only checkpoints in Witch Dock and HeroForge.Compatibility.
 
 ## Short Test Witch Dock policy
 
-Standalone exposes Short Test because it is a development harness.
+Standalone development harness exposes Short Test.
 
-Future Witch Dock:
-
-- Spinny service retains `captureShortTest()`;
-- normal UI hides Short Test;
-- Developer Mode exposes it through the Spinny host;
-- Developer Mode must not duplicate media capture logic.
+Witch Dock service retains `captureShortTest()`, but normal public UI hides it. Dev Developer Mode may reveal it through the Spinny host; Developer Mode does not duplicate media capture logic.
 
 ## 4K Spinny
 
 Deferred. Current Witch Dock TRUE-resolution still provider owns square 4096/8192 screenshot requests.
-
-## Spinny v0.5.0 integrated standalone gate — PASS
-
-Live user validation passed for 1024 Short Test pause/resume, TRUE-3K 3072 Short Test, cancel while paused, camera wheel/drag guard, Booth-control guard, Keep Capture, guard-triggered cancel requiring repeat action, and guard behavior while paused. Exact promoted source SHA-256: `4d450bd18c427e31ea8a38825ed9c8223045a4834a526ec041ca04256d654ce3`.

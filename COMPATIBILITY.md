@@ -7,7 +7,7 @@ Current media validation target: `heroforge07.1.9.98` / 2026-09-06.
 | Component | Current status | Last verified build/date | Notes |
 |---|---|---|---|
 | `media.screenshot-resolution` | Standalone validated; Witch Dock Stable validated | `heroforge07.1.9.98` / 2026-09-05 | Stable still-capture provider remains closed/validated. |
-| `media.spinny-mini-webp` | Committed maintained v0.3.0 validated for tested production profiles; local v0.4.0 Pause/Resume candidate live PASS | `heroforge07.1.9.98` / 2026-09-06 | Native 3072 rejected; repaired TRUE-3K validated. Interaction-guard discovery active. v0.4.0 source promotion pending. |
+| `media.spinny-mini-webp` | Standalone v0.5.0 validated; Witch Dock Dev integration validated; Witch Dock Stable v1.1.0 promoted, public smoke pending | `heroforge07.1.9.98` / 2026-09-06 | Native 3072 rejected; repaired TRUE-3K validated. Public promotion commit `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`. |
 | `decals.gizmo.bound-correction` | Witch Dock Stable | 2026-09-05 | Validated separately. |
 | Character local JSON | Core Save/Load passed live | 2026-09-03 | Lifecycle/repeated-use pending. |
 | Projected decal state/control | Runtime path confirmed | September 2026 | Renderer dependency audit pending. |
@@ -23,7 +23,8 @@ Confirmed named/runtime capabilities:
 - `BT.maker.takeScreenshot(width,height)`;
 - `CK.Effects.renderToCanvas(width,height,camera,aa)`;
 - browser static WebP encoding via `canvas.toBlob('image/webp', quality)`;
-- project-owned RIFF/VP8X/ANIM/ANMF animated WebP mux.
+- project-owned RIFF/VP8X/ANIM/ANMF animated WebP mux;
+- Witch Dock public Blob-download host through userscript `GM_download` for integrated consumer delivery.
 
 ## Validated production profiles / behaviors
 
@@ -31,20 +32,26 @@ Confirmed named/runtime capabilities:
 - 2048 Standard / 250 frames: PASS
 - 1024 Very Slow / 750 frames: PASS
 - 2048 Slower / 500 frames: PASS
-- 3072 Standard / 250 frames via TRUE-3K: PASS
-- 3072 Slower / 500 frames via TRUE-3K: PASS
+- repaired 3072 Standard / 250 frames via TRUE-3K: PASS
+- repaired 3072 Slower / 500 frames via TRUE-3K: PASS
 - integrated 3072 Short Test / 16 frames: PASS
 - repeated captures / parser / rotation restoration: PASS
 - progress/ETA: PASS on tested captures
 - general Cancel path: PASS
+- frame-boundary Pause/Resume: PASS
+- cancel while paused: PASS
+- paused-time ETA accounting: PASS
+- capture-invalidating interaction guards: PASS
+- final Witch Dock Dev privileged download: PASS
+- final Witch Dock Dev silent wheel/scroll suppression: PASS
 
 ## Native 3072 incompatibility
 
-Native un-repaired 3072 remains rejected. Runtime tracing confirmed a 3072 capture camera with repeated 768px `CK.Effects.renderToCanvas` phase renders, producing structurally 3072 output with degraded source fidelity.
+Native unrepaired 3072 remains rejected. Runtime tracing confirmed a 3072 capture camera paired with repeated 768px `CK.Effects.renderToCanvas` phase renders, producing structurally 3072 output with degraded source fidelity.
 
 ## TRUE-3K repaired frame-source capability
 
-Maintained v0.3.0 behavior:
+Maintained v0.5.0 behavior:
 
 - 1024/2048 use native frame source;
 - 3072 uses a temporary `CK.Effects.renderToCanvas` phase-feed adapter;
@@ -52,33 +59,38 @@ Maintained v0.3.0 behavior:
 - adapter validates tile/grid/phase completeness and restores the exact Effects method after each frame;
 - `BT.maker.takeScreenshot` ownership is never displaced.
 
-## Local v0.4.0 Pause/Resume validation
+## Pause / interaction-guard compatibility
 
-Candidate build: `0.4.0-frame-boundary-pause-resume`.
+Validated on the current HeroForge build:
 
-User reported all requested live tests successful:
+- pause request completes the active frame before stopping;
+- no next angular sample begins while paused;
+- TRUE-3K temporary Effects ownership is restored before entering paused state;
+- resume continues at the next sample;
+- cancel while paused restores state without deadlock;
+- paused wall-clock time does not corrupt active ETA;
+- camera/canvas and continuity-invalidating Booth interactions are blocked before mutation;
+- wheel/scroll is silently blocked without a modal;
+- other guarded interactions retain Keep Capture / Cancel Capture choices.
 
-- native 1024 Short Test pause/resume;
-- TRUE-3K 3072 Short Test pause/resume;
-- pause after current-frame completion;
-- resume continuation;
-- cancel while paused;
-- restoration behavior;
-- paused-time/ETA behavior.
+## Witch Dock consumer compatibility
 
-Compatibility conclusion: frame-boundary Pause/Resume is supported by the tested candidate on the current HeroForge build. The committed maintained runtime remains v0.3.0 until the candidate source is promoted atomically.
+Final Dev integration commit:
 
-## Interaction-guard compatibility investigation
+`fa75a9c1790009b4b4ae1a1162d419982e20545e`
 
-Required next coverage:
+Final Dev re-smoke passed the two last integration-specific risks:
 
-- camera/canvas wheel and drag;
-- Photo Booth exit;
-- Booth view/backdrop/background/overlay/frame/lighting/effects edits;
-- same behavior while paused;
-- no coordinate assumptions across left/right/mobile layouts.
+- userscript-level WebP download initiation/completion: PASS;
+- silent wheel/scroll block: PASS.
 
-Broad DOM probe #492 exceeded the bridge result-size limit. Follow-up probes must be narrower and semantic.
+Public Witch Dock v1.1.0 promotion commit:
+
+`8d96dd803f452c3c7b623c6963b4fdb3ef762f59`
+
+Public Stable has been promoted but has not yet received a clean production smoke with Dev/temporary scripts disabled. Until that smoke passes, compatibility status is **Stable promoted / public smoke pending**, not fully Stable validated.
+
+The public release does not depend on HeroForge.Compatibility unstable head or HF-Chat-Bridge.
 
 ## Revalidation triggers
 
@@ -90,13 +102,10 @@ Re-run Spinny validation when:
 - character-display rotation/refresh behavior changes;
 - browser WebP support/container validation changes;
 - Pause/interaction guard implementation changes;
-- Witch Dock host integration changes lifecycle/visibility behavior;
+- Witch Dock host integration changes lifecycle/download behavior;
+- public 4096/8192 provider ownership changes;
 - high-cost resource limits are observed.
 
 ## 4K Spinny incompatibility note
 
 Do not add 4096 Spinny through the current public `BT.maker.takeScreenshot` surface while Witch Dock TRUE-resolution still repair is enabled. The provider owns square 4096/8192 requests. 4K Spinny remains deferred until a separately designed explicit frame-capture capability/bypass is validated.
-
-## Spinny v0.5.0 compatibility checkpoint
-
-Validated on `heroforge07.1.9.98`: maintained v0.5.0 preserves tested 1024/2048/TRUE-3K behavior and adds live-validated frame-boundary Pause/Resume plus interaction guards. Native unrepaired 3072 remains rejected; 4096 animated WebP remains deferred.

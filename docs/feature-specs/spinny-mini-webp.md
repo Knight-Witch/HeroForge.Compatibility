@@ -12,12 +12,14 @@ File:
 
 `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
 
-Version: `0.3.0`
-Build: `0.3.0-integrated-true3k-short-test`
+Version: `0.5.0`  
+Build: `0.5.0-integrated-pause-interaction-guards`
 
 Compatibility target: `heroforge07.1.9.98`.
 
-Current disposition: **standalone validated for tested production profiles; Pause/interaction guards next; Witch Dock Dev integration not yet started.**
+Current disposition: **standalone validated; Witch Dock Dev validated; public Witch Dock Stable v1.1.0 promoted; clean public smoke pending.**
+
+Public promotion commit: `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`.
 
 ## Historical Lob-parity reference
 
@@ -43,11 +45,11 @@ Slower motion uses additional angular samples, not repeated/held frames.
 - 2048 Standard / 250 frames: PASS
 - 1024 Very Slow / 750 frames: PASS
 - 2048 Slower / 500 frames: PASS
-- 3072 Standard / 250 frames TRUE-3K: PASS
-- 3072 Slower / 500 frames TRUE-3K: PASS
-- 3072 integrated Short Test / 16 frames: PASS
+- repaired 3072 Standard / 250 frames TRUE-3K: PASS
+- repaired 3072 Slower / 500 frames TRUE-3K: PASS
+- repaired 3072 integrated Short Test / 16 frames: PASS
 
-Native un-repaired 3072 remains rejected.
+Native unrepaired 3072 remains rejected.
 
 ## Confirmed native 3072 defect
 
@@ -55,9 +57,9 @@ Native HeroForge can return a structurally 3072 screenshot while rendering the E
 
 Runtime trace established:
 
-- 1024 request → `CK.Effects.renderToCanvas(1024,1024,camera1024)`;
-- 2048 request → repeated `renderToCanvas(1024,1024,camera2048)` phases;
-- 3072 request → repeated `renderToCanvas(768,768,camera3072)` phases.
+- 1024 request -> `CK.Effects.renderToCanvas(1024,1024,camera1024)`;
+- 2048 request -> repeated `renderToCanvas(1024,1024,camera2048)` phases;
+- 3072 request -> repeated `renderToCanvas(768,768,camera3072)` phases.
 
 The native `renderToCanvas` implementation sizes its Effects target from supplied dimensions. Native 3072 therefore loses source detail despite a 3072 final canvas.
 
@@ -79,7 +81,10 @@ TRUE-3K additionally requires:
 - classifiable native tiled capture topology;
 - temporary replace/restore capability for `CK.Effects.renderToCanvas`.
 
-Future interaction guards additionally require semantic evidence sufficient to classify camera input, Booth exit and Booth state-changing controls without coordinate assumptions.
+Witch Dock integrated delivery additionally requires:
+
+- a host download operation capable of receiving the finished Blob and filename;
+- current public implementation: Promise-backed `WitchDock.downloadBlob` using userscript `GM_download` callbacks.
 
 ## Serialization architecture
 
@@ -96,7 +101,7 @@ project-owned RIFF animated-WebP mux
     ↓
 parser validation
     ↓
-download
+host download boundary
 ```
 
 Do not retain raw RGBA for all animation frames. Encode each frame immediately and retain compressed WebP payloads until final mux.
@@ -148,7 +153,9 @@ The adapter:
 
 Spinny must not replace `BT.maker.takeScreenshot`.
 
-Public Witch Dock `media.screenshot-resolution` owns that method for 4096/8192 still repair. The 3072 repair therefore operates one layer lower at `CK.Effects.renderToCanvas` during explicit frame capture.
+Public Witch Dock `media.screenshot-resolution` owns that method for square 4096/8192 still repair. Spinny 1024/2048/3072 requests pass through that provider's non-owned sizes, while the 3072 fidelity repair operates one layer lower at `CK.Effects.renderToCanvas` during explicit frame capture.
+
+4096 animated WebP remains deferred until a separately validated explicit animation-frame path can coexist with still-provider ownership.
 
 ## Short Test diagnostic operation
 
@@ -163,8 +170,7 @@ Contract:
 - same refresh sequence;
 - same frame-source adapter;
 - same WebP encoder/mux/parser;
-- same cancel-after-current-frame behavior;
-- same starting-rotation restoration;
+- same Pause/Cancel/restoration lifecycle;
 - output labeled `SHORT_TEST`.
 
 For Standard / 250-frame spacing, 16 samples span 21.6 degrees first-to-last.
@@ -172,83 +178,91 @@ For Standard / 250-frame spacing, 16 samples span 21.6 degrees first-to-last.
 ### Short Test UI policy
 
 - standalone development harness: directly visible;
-- future Witch Dock normal mode: hidden;
-- Witch Dock Developer Mode ON: visible through Spinny host;
+- Witch Dock normal mode: hidden;
+- Witch Dock Dev Developer Mode ON: visible through Spinny host;
 - Developer Mode OFF: hidden;
 - Developer Mode controls presentation only; it does not own capture logic.
 
-## Validation evidence
+Public Stable v1.1.0 does not promote Developer Mode, so Short Test is hidden there.
 
-### Integrated TRUE-3K Short Test
-
-PASS. Native-size output looked genuinely 3K. Runtime history recorded `3072:true3k-phase-feed`, mode `short-test`, 16 frames and ~2123.48 ms average frame time after successful mux/parser/download.
-
-### Full TRUE-3K captures
-
-PASS at:
-
-- 3072 Standard / 250 frames — user confirmed correct resolution, clear motion and quite accurate ETA;
-- 3072 Slower / 500 frames — user confirmed fantastic correct-resolution output and clear movement; runtime retained a successful 500-frame `3072:true3k-phase-feed` post-validation timing entry (~3032.42 ms average frame time).
-
-### Post-consolidation 1024 regression
-
-PASS. HF-Chat-Bridge issue #491 confirmed 1024x1024 / 250 frames / 10,000 ms / `{40:250}` / loop 0, output 12,035,026 bytes, rotation restored true, error null.
-
-## Pause / Resume contract — next stage
+## Pause / Resume contract
 
 Pause is allowed only at safe completed-frame boundaries.
 
-Required behavior:
+Validated behavior:
 
 - a pause request during a frame lets that frame finish;
 - no next angular sample starts until resumed;
 - already-compressed frames remain retained;
 - resume continues from the next sample;
-- no partial TRUE-3K phase feed may remain installed while paused;
-- active ETA excludes or freezes indefinite paused time;
-- multiple pause/resume cycles must be supported;
-- cancel while paused must restore figure/runtime state and release retained capture state safely.
+- no partial TRUE-3K phase feed remains installed while paused;
+- active ETA excludes indefinite paused time;
+- multiple pause/resume cycles are supported;
+- cancel while paused releases the waiter and restores figure/runtime state safely.
 
-Diagnostics should include:
+Diagnostics include pause state/count/duration and cancellation/guard context.
 
-- `paused`;
-- pause count;
-- total paused duration;
-- current/last pause timestamps as useful;
-- cancellation cause;
-- guarded action category when applicable.
+## Interaction guard contract
 
-## Interaction guard contract — next stage
+While active or paused, actions that would invalidate capture continuity are intercepted before HeroForge mutation.
 
-While active or paused, actions that would invalidate capture continuity must warn before mutation.
+Current validated behavior:
 
-Guard categories:
+- camera/canvas pointer interaction: blocked + warning;
+- relevant Photo Booth/state-changing UI interaction: blocked + warning;
+- wheel/scroll: silently blocked with no warning modal;
+- Spinny controls remain usable;
+- choosing Keep Capture leaves the capture running and the attempted mutation blocked;
+- choosing Cancel cancels capture first and requires the intended action to be repeated after cleanup;
+- pointer sequences are not blindly replayed;
+- classification does not rely on fixed screen coordinates.
 
-- camera/canvas wheel, drag/pointer or relevant keyboard manipulation;
-- leaving Photo Booth;
-- Booth view/backdrop/background/overlay/frame/lighting/effect controls;
-- other semantically identified state changes that affect output frames.
+## Witch Dock host integration
 
-Rules:
+Final Dev consumer:
 
-- do not use fixed screen coordinates;
-- support HeroForge split left/right, grouped-right and mobile-bottom layouts;
-- Spinny's own controls remain usable;
-- choosing Stay blocks the invalidating event/action;
-- choosing Cancel cancels capture safely first;
-- do not blindly redispatch/replay pointer sequences after cancellation;
-- failure to classify a required guard surface must be reported rather than silently assumed safe.
+- service v0.5.1 / build `0.5.1-witch-dock-dev-download-scroll-guard`;
+- UI v0.1.1 / build `0.1.1-dev-download-ux`;
+- commit `fa75a9c1790009b4b4ae1a1162d419982e20545e`.
+
+Integrated behavior passed placement, popout, Pause/Resume, cancel, ETA and guard testing. Final hardening re-smoke confirmed privileged WebP download and silent wheel/scroll blocking.
+
+The original page-context anchor download could silently fail to initiate a visible browser download despite successful mux/parser completion. The accepted Witch Dock integration therefore moves the final file-save boundary into the userscript shell:
+
+```text
+Spinny output Blob
+→ WitchDock.downloadBlob(blob, filename)
+→ GM_download
+→ success / error / timeout callback
+```
+
+Spinny waits for that callback before marking the integrated download confirmed.
+
+The optional transient `Download complete` UI flash is best-effort only. It was not observed in the final Dev smoke and is not part of the functional acceptance gate.
+
+## Public Stable promotion
+
+Public Witch Dock v1.1.0 was promoted at:
+
+`8d96dd803f452c3c7b623c6963b4fdb3ef762f59`
+
+The promotion includes only the accepted Spinny service/UI, public manifest entries, userscript download host and tracking docs. It excludes Developer Mode, compact High Res UI, Dev module registry, Dev loader and unrelated Dev branch changes.
+
+Status is **Stable promoted / clean public smoke pending**. Do not label fully Stable validated until that clean smoke runs with Dev/temporary Spinny scripts disabled.
+
+## Clean public smoke gate
+
+Minimum required test:
+
+1. Public Witch Dock v1.1.0 active; Dev/temporary Spinny scripts disabled.
+2. Photo Booth opens and Spinny UI renders normally.
+3. 1024px Standard / 250 frames completes.
+4. WebP download succeeds through the public host.
+5. Wheel over HeroForge canvas during capture is silently ignored.
+6. One non-wheel continuity-invalidating action still produces the guard warning.
+
+If this passes, close the public Stable gate with documentation-only checkpoints. A new expensive 3072 production run is not required absent regression evidence.
 
 ## Lifecycle
 
-Current standalone feature blocks concurrent captures and restores figure rotation. TRUE-3K restores temporary Effects wrapping after every repaired frame.
-
-Future Pause/guard listeners/DOM must be removable on dispose and must not intentionally affect HeroForge when no Spinny capture is active.
-
-## 4K Spinny
-
-Deferred. Current Witch Dock TRUE-resolution still provider owns square 4096/8192 screenshot requests. A future 4K animation path requires a separately validated explicit frame capability/bypass.
-
-## Maintained v0.5.0 lifecycle / guard status
-
-Version `0.5.0`, build `0.5.0-integrated-pause-interaction-guards`, is the maintained standalone implementation. Pause occurs only after a completed encoded frame; paused wall-clock time is separated from active ETA; cancel while paused restores state; capture-invalidating HeroForge interaction is blocked before mutation with Keep Capture / Cancel Capture choices. Consolidated guard integration passed live.
+The maintained feature blocks concurrent captures, restores figure rotation, restores temporary TRUE-3K Effects ownership after every repaired frame, releases Pause waiters on cancellation, and installs removable guard listeners/DOM. One Spinny failure must not intentionally disable unrelated Witch Dock or unmodified HeroForge behavior.

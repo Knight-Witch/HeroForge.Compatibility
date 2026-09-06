@@ -1,55 +1,37 @@
 # Changelog
 
-## HFC-2026-09-06-031 — Promote validated Spinny v0.5.0
-
-Date: 2026-09-06
-
-Promoted the exact live-tested consolidated Spinny source as maintained v0.5.0 / build `0.5.0-integrated-pause-interaction-guards`.
-
-Live validation passed for 1024 and TRUE-3K 3072 capture, safe frame-boundary Pause/Resume, cancel while paused, paused-time ETA accounting, camera wheel/drag protection, Booth-control protection, Keep Capture, guard-triggered cancel, and protection while paused.
-
-Exact promoted source SHA-256: `4d450bd18c427e31ea8a38825ed9c8223045a4834a526ec041ca04256d654ce3`.
-
-Disposition advances to Witch Dock Dev candidate. Public Stable remains a separate gate.
-
-**Runtime behavior changed:** yes — maintained standalone runtime advances to v0.5.0.
-
----
-
-# Changelog
-
-## HFC-2026-09-06-030 — Validate Spinny v0.4.0 Pause/Resume candidate
+## HFC-2026-09-06-032 — Record Witch Dock Stable Spinny v1.1.0 promotion
 
 Date: 2026-09-06
 
 ### Summary
 
-Recorded successful standalone live validation of the local Spinny v0.4.0 Pause/Resume candidate build `0.4.0-frame-boundary-pause-resume`.
+Recorded the completed public Witch Dock Stable promotion of `media.spinny-mini-webp` after standalone and integrated Dev validation.
 
-User-reported requested live tests all passed:
+### External consumer status
 
-- 1024 Short Test pause/resume;
-- TRUE-3K 3072 Short Test pause/resume;
-- pause after the current frame completes;
-- resume at the next sample;
-- cancel while paused;
-- restoration behavior;
-- paused-time/ETA behavior.
+- final Witch Dock Dev hardening commit: `fa75a9c1790009b4b4ae1a1162d419982e20545e`;
+- final Dev service: v0.5.1 / build `0.5.1-witch-dock-dev-download-scroll-guard`;
+- final Dev UI: v0.1.1 / build `0.1.1-dev-download-ux`;
+- final Dev re-smoke: privileged WebP download PASS;
+- final Dev re-smoke: silent wheel/scroll block PASS;
+- user explicitly approved public rollout;
+- public Witch Dock promotion commit: `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`;
+- public Witch Dock userscript version: `1.1.0`;
+- public Stable state: promoted, one clean public smoke pending.
 
-The broad read-only Photo Booth DOM probe #492 later completed but exceeded the bridge response limit; guard discovery therefore continues with narrower semantic probes.
+The Stable release is a narrow accepted delta. It does not merge Developer Mode, compact High Res UI, Dev module registry, Dev loader, or unrelated `WITCH_DEV_UI` work.
 
-### Important source-status distinction
+Existing public 4096/8192 still-capture ownership remains unchanged and 4096 animated WebP remains deferred.
 
-The maintained branch runtime entry remains v0.3.0 until the already-tested v0.4.0 source is promoted in a separate atomic source/docs checkpoint. This documentation checkpoint does not claim otherwise.
+### HFC runtime impact
 
-### Next stage
+**No HeroForge.Compatibility runtime behavior changed.** Maintained standalone Spinny remains v0.5.0 / build `0.5.0-integrated-pause-interaction-guards`. This commit updates durable project state only.
 
-Interaction-guard discovery and implementation for camera/canvas input, Photo Booth exit, and continuity-invalidating Booth state changes.
+### Next gate
 
-**Runtime behavior changed:** no in this commit. Documentation records a separately tested local candidate.
+Run one clean public Witch Dock v1.1.0 smoke at 1024 Standard with Dev/temporary Spinny scripts disabled. If it passes, close the Stable validation gate with documentation-only checkpoints.
 
 ---
 
-## HFC-2026-09-06-029 — Close Spinny v0.3.0 standalone validation
-
-v0.3.0 production-path validation closed successfully. Historical detail remains preserved in Git history.
+Historical changelog records through HFC-2026-09-06-031 remain preserved in Git history at and before commit `566ad6b4284faf979c3771895d98da5e267f2345`.

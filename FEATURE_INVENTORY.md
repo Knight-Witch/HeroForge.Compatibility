@@ -5,7 +5,7 @@ This is the canonical feature-ID inventory. Historical/provisional detail remain
 | Feature ID | Purpose | Risk | Status |
 |---|---|---|---|
 | `media.screenshot-resolution` | Restore genuine 4K/8K Photo Booth still-image rendering | Medium | Standalone + Witch Dock Stable validated on `heroforge07.1.9.98`. |
-| `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | Committed maintained runtime v0.3.0 validated for tested production profiles. Local v0.4.0 Pause/Resume candidate live PASS; source promotion pending. Interaction-guard discovery active. 4K deferred. Public Witch Dock unchanged. |
+| `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | Standalone v0.5.0 validated; Witch Dock Dev v0.5.1/v0.1.1 validated; public Witch Dock v1.1.0 promoted at `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`; clean public smoke pending. 4K animated WebP deferred. |
 | `decals.gizmo.bound-correction` | Correct bound/Project-OFF decal transform gizmo | High | Witch Dock Stable; validated Move/Rotate/Scale, undo/redo, transform-state preservation and fresh-slot normalization. |
 | `character.local-export` | Export character JSON locally | Medium | Standalone reconstruction committed; core Save passed live. |
 | `character.local-import` | Import character JSON locally | Medium | Standalone reconstruction committed; core Load passed live. |
@@ -19,11 +19,12 @@ This is the canonical feature-ID inventory. Historical/provisional detail remain
 
 ## `media.spinny-mini-webp`
 
-Committed maintained implementation:
+Maintained standalone implementation:
 
 - file: `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
-- version: `0.3.0`
-- build: `0.3.0-integrated-true3k-short-test`
+- version: `0.5.0`
+- build: `0.5.0-integrated-pause-interaction-guards`
+- compatibility target: `heroforge07.1.9.98`
 
 Validated profiles / behaviors:
 
@@ -31,23 +32,36 @@ Validated profiles / behaviors:
 - 2048 Standard / 250f: PASS
 - 1024 Very Slow / 750f: PASS
 - 2048 Slower / 500f: PASS
-- 3072 Standard / 250f TRUE-3K: PASS
-- 3072 Slower / 500f TRUE-3K: PASS
-- 3072 integrated Short Test / 16f: PASS
+- repaired 3072 Standard / 250f TRUE-3K: PASS
+- repaired 3072 Slower / 500f TRUE-3K: PASS
+- integrated 3072 Short Test / 16f: PASS
 - repeat use / parser / progress / ETA / rotation restore: PASS on tested runs
-- general cancel path: PASS
+- cancel path: PASS
+- frame-boundary Pause/Resume: PASS at native 1024 and repaired 3072
+- cancel while paused / restoration / paused-time ETA accounting: PASS
+- camera/Booth continuity guards: PASS
 
-Local v0.4.0 candidate:
+Native unrepaired 3072 remains rejected because current HeroForge uses repeated 768px Effects phase renders beneath a structurally 3072 final output.
 
-- build `0.4.0-frame-boundary-pause-resume`;
-- Pause/Resume live tests PASS at 1024 and TRUE-3K 3072 Short Test levels;
-- cancel while paused / restoration / ETA pause accounting reported successful;
-- not yet promoted into committed maintained runtime source.
+### Witch Dock consumer status
 
-Interaction protection is now the active investigation target because accidental mouse-wheel input during an earlier long capture caused visible animation jumps.
+Final Dev integration:
 
-4K Spinny remains deferred because square 4096/8192 screenshot requests collide with Witch Dock TRUE-resolution still-provider ownership.
+- service v0.5.1 / build `0.5.1-witch-dock-dev-download-scroll-guard`;
+- UI v0.1.1 / build `0.1.1-dev-download-ux`;
+- commit `fa75a9c1790009b4b4ae1a1162d419982e20545e`;
+- placement/popout/Pause/guards PASS;
+- privileged WebP download PASS;
+- silent wheel/scroll suppression PASS;
+- user approved public rollout.
 
-## Spinny v0.5.0 status
+Public Witch Dock:
 
-`media.spinny-mini-webp`: standalone v0.5.0 validated on `heroforge07.1.9.98`; TRUE-3K 3072, Pause/Resume, cancel-while-paused, and interaction guards passed. Witch Dock Dev integration is the next promotion gate.
+- v1.1.0 promoted at commit `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`;
+- Spinny service/UI vendored as self-contained public modules;
+- public userscript exposes the tested `GM_download` host;
+- Developer Mode and unrelated Dev modules were not promoted;
+- Short Test remains service-owned but hidden in ordinary Stable UI;
+- public clean smoke remains pending.
+
+4K Spinny remains deferred because square 4096/8192 screenshot requests belong to public `media.screenshot-resolution` still-capture ownership.
