@@ -12,161 +12,150 @@ Standalone, Witch Dock Dev and public Witch Dock Stable still-capture gates rema
 
 HeroForge build: `heroforge07.1.9.98`.
 
-### Validated lower-resolution behavior
+Maintained implementation:
 
-Historical maintained profile behavior before v0.3.0 consolidation:
+- file: `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
+- version: `0.3.0`
+- build: `0.3.0-integrated-true3k-short-test`
+
+## Validated profile matrix
 
 - 1024 Standard / 250 frames: PASS
 - 2048 Standard / 250 frames: PASS
 - 1024 Very Slow / 750 frames: PASS
 - 2048 Slower / 500 frames: PASS
-- multiple same-session captures: PASS
-- progress/readout/ETA: PASS
+- 3072 Standard / 250 frames via TRUE-3K: PASS by full-run user validation
+- 3072 Slower / 500 frames via TRUE-3K: PASS by full-run user validation + successful runtime timing-history record
+- 3072 Standard integrated Short Test / 16 frames: PASS
+
+Other validated behavior:
+
+- repeat use: PASS
 - parser validation: PASS
 - rotation restoration: PASS
-- general Cancel path: PASS by user report
+- progress/readout: PASS
+- ETA usefulness: PASS on tested long TRUE-3K run by user report
+- general cancel / starting-rotation restoration: PASS by user report
 
-Bridge-confirmed repeated 1024 Standard reference:
+## Native 3072 failure reference
 
-- 13,565,278-byte output;
-- 1024x1024 / 250 frames / 10,000 ms / 40 ms x250 / loop 0;
-- actual 177.101 s;
-- final estimate 175.614 s;
-- 0.84% total-time error;
+Native un-repaired 3072 is rejected.
+
+Observed baseline:
+
+- structural 3072 output: PASS;
+- source fidelity: FAIL / blurry-upscaled appearance.
+
+Root cause confirmed through runtime trace:
+
+- 3072 capture camera;
+- repeated `CK.Effects.renderToCanvas(768,768,camera3072)` phase requests.
+
+TRUE-3K repairs this by feeding the native compositor from one genuine 3072 Effects source per animation frame.
+
+## Integrated TRUE-3K Short Test — PASS
+
+The maintained v0.3.0 3072 Standard Short Test completed successfully.
+
+Confirmed:
+
+- visual native-size fidelity: PASS;
+- timing key `3072:true3k-phase-feed`;
+- mode `short-test`;
+- frames 16;
+- average frame time ~2123.48 ms;
+- successful timing-history write proves mux/parser/download success because history is written only after those gates.
+
+Earlier repair-companion diagnostics also established the expected current topology:
+
+- 768 native tile;
+- 4x4 grid;
+- 16 expected/supplied/unique phases per frame;
+- one genuine 3072 source render per frame;
+- Effects restoration true.
+
+## Full TRUE-3K validation — PASS
+
+### 3072 Standard / 250 frames
+
+User reported:
+
+- full capture completed;
+- correct/native-looking 3K resolution;
+- clear movement;
+- ETA quite accurate.
+
+Status: PASS.
+
+### 3072 Slower / 500 frames
+
+User reported:
+
+- full capture completed;
+- output looked fantastic;
+- resolution correct;
+- movement clear.
+
+HF-Chat-Bridge issue #491 retained the v0.3.0 timing-history entry:
+
+- key `3072:true3k-phase-feed`;
+- mode `full`;
+- frames 500;
+- frame source `true3k-phase-feed`;
+- average frame time ~3032.4224 ms;
+- tail ~373.7 ms;
+- successful update timestamp `2026-09-06T12:06:28.050Z`.
+
+Because v0.3.0 writes timing history only after mux/parser validation and download succeed, this is runtime evidence that the 500-frame full run completed the maintained success path.
+
+Status: PASS.
+
+## Post-consolidation lower-resolution regression — PASS
+
+Latest 1024 Standard / 250-frame run from HF-Chat-Bridge issue #491:
+
+- status `downloaded`;
+- 250 rendered / 250 encoded;
+- encoded frame bytes 12,152,482;
+- output bytes 12,035,026;
+- parser 1024x1024;
+- frame count 250;
+- total duration 10,000 ms;
+- durations `{40:250}`;
+- loop 0;
+- elapsed 272,058.2 ms;
 - rotation restored true;
 - error null.
 
-### Native 3072 full-run failure
+Status: PASS.
 
-Requested:
+## Current standalone conclusion
 
-- 3072x3072;
-- Standard;
-- 250 frames;
-- 40 ms/frame;
-- 10.0 s animation duration.
+Spinny v0.3.0 is validated for the tested production profiles on `heroforge07.1.9.98`.
 
-Observed:
+This closes the resolution/consolidation validation stage.
 
-- wall-clock approximately 25 minutes;
-- structural 3072x3072 / 250 frames: PASS;
-- individual encoded frame payload dimensions 3072: PASS;
-- user native-size source fidelity: **FAIL / blurry-upscaled appearance**.
+## Next test stage — Pause + interaction guards
 
-A follow-up 1024 control capture visually passed.
+Required standalone tests after implementation:
 
-### Render-path diagnosis
+1. Pause during native 1024 capture; current frame completes, capture stops before next sample.
+2. Pause during TRUE-3K 3072 capture; no partial phase wrapper remains active.
+3. Resume continues at the next angular sample and preserves already-encoded frames.
+4. Multiple pause/resume cycles complete a valid output.
+5. ETA excludes/freeze-adjusts paused duration.
+6. Camera wheel/pointer drag attempt during capture triggers warning before camera mutation.
+7. Booth exit attempt triggers warning before exit.
+8. Booth backdrop/view/overlay/light/effect mutation attempt triggers warning before mutation.
+9. Choosing stay blocks the invalidating action without cancelling capture.
+10. Choosing cancel cancels after the current safe frame, restores state and does not blindly replay the triggering pointer event.
+11. Spinny Pause/Resume/Cancel remain usable while guards are installed.
+12. Validate left/right/mobile HeroForge layouts without coordinate assumptions.
+13. Diagnostics report paused state, pause count, total paused duration and cancellation/guard cause.
 
-HF-Chat-Bridge Power trace confirmed:
+## Short Test Witch Dock policy
 
-- 1024 request → `CK.Effects.renderToCanvas(1024,1024,camera1024)`;
-- 2048 request → repeated `renderToCanvas(1024,1024,camera2048)` phase/tile calls;
-- 3072 request → repeated `renderToCanvas(768,768,camera3072)` calls.
-
-Current native `renderToCanvas` sizes its render target from supplied width/height, explaining the structurally-correct-but-blurry 3072 output.
-
-### TRUE-3K repair principle — PASS
-
-Standalone repaired Short Test result:
-
-- status: PASS
-- elapsed: ~30.448 s
-- frames: 16
-- native tile: 768
-- grid: 4x4
-- expected/supplied/unique phases: 16/16/16 per frame
-- true source renders: one 3072x3072 source per animation frame
-- total phases: 256
-- output: 4,589,972 bytes
-- parser: 3072x3072 / 16 frames / 640 ms / 40 ms x16 / loop 0
-- rotation restored: true
-- Effects method restored: true
-- repair error: null
-- Short Test error: null
-- native-size visual fidelity: PASS by user report
-
-Conclusion: TRUE-3K **frame-source repair** is validated.
-
-## v0.3.0 integrated standalone candidate
-
-File:
-
-`entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
-
-Version: `0.3.0`
-Build: `0.3.0-integrated-true3k-short-test`
-
-### Static tests
-
-- `node --check`: PASS
-- 1024/2048/3072 selections present: PASS
-- Standard/Slow/Slower/Very Slow retain 40 ms/frame: PASS
-- full capture API present: PASS
-- integrated 16-frame Short Test API present: PASS
-- cancel path present: PASS
-- figure rotation restore path present: PASS
-- per-frame Effects restore path present: PASS
-- no `BT.maker.takeScreenshot` reassignment/replacement: PASS
-- TRUE-3K timing history isolated by frame-source path: PASS
-
-### Integrated TRUE-3K Short Test — PASS
-
-Tested profile:
-
-- 3072px — TRUE 3K candidate;
-- Standard;
-- Short Test / 16 contiguous frames.
-
-User result:
-
-- download completed;
-- native-size visual detail: **PASS — looks genuinely 3K**.
-
-HF-Chat-Bridge issue #490 confirmed:
-
-- version/build `0.3.0` / `0.3.0-integrated-true3k-short-test`;
-- successful timing-history entry under `3072:true3k-phase-feed`;
-- history mode `short-test`;
-- history frames 16;
-- frame source `true3k-phase-feed`;
-- average frame time approximately 2123.48 ms.
-
-The successful Short Test `lastCapture` snapshot was later overwritten by a separate full 3072 capture that was cancelled after two frames. The timing-history entry remains significant because v0.3.0 writes it only after the WebP has been muxed, parsed/validated and downloaded successfully.
-
-The later cancelled full run independently showed for both completed frames:
-
-- tile size 768;
-- grid 4x4;
-- expected/supplied/unique phases 16/16/16;
-- one 3072 source render;
-- `effectsRestored: true`;
-- final figure rotation restored true.
-
-Conclusion: integrated v0.3.0 TRUE-3K Short Test **PASS**.
-
-### Full repaired 3072 gate
-
-Next required test:
-
-- select 3072 + Standard;
-- click Capture WebP;
-- require 250 frames / 10,000 ms / `{40:250}` / loop 0;
-- require per-frame TRUE-3K repair diagnostics complete;
-- require figure and Effects restoration;
-- inspect native-size visual fidelity;
-- record file size / elapsed time / ETA accuracy / browser resource behavior.
-
-Using the integrated Short Test's measured ~2123.48 ms/frame, the initial frame-loop estimate for 250 frames is about 531 seconds (~8m51s) before final mux/tail overhead. This is an estimate, not a validation result.
-
-This full run is required before complete 3072 production-profile validation.
-
-### Consolidation regression gate
-
-Because v0.3.0 consolidates previously stacked diagnostic behavior into the maintained script, re-run at least one validated lower-resolution profile before Witch Dock promotion. Preferred regression: 1024 Standard; a quick Short Test may be used first, but full lower-resolution validation history remains the reference.
-
-### Short Test Witch Dock policy
-
-Standalone v0.3.0 exposes Short Test because it is a dev harness.
+Standalone v0.3.0 exposes Short Test because it is a development harness.
 
 Future Witch Dock:
 
@@ -175,10 +164,6 @@ Future Witch Dock:
 - Developer Mode exposes it through the Spinny host using `KWDeveloperMode.enabled` / `onChange()`;
 - Developer Mode must not duplicate media capture logic.
 
-### Interaction guard requirement
-
-Two accidental mouse-wheel camera changes during the original long 3072 run produced visible output jumps. Active-capture guards are therefore required before Witch Dock integration.
-
-### 4K Spinny
+## 4K Spinny
 
 Deferred. Current Witch Dock TRUE-resolution still provider owns square 4096/8192 screenshot requests.

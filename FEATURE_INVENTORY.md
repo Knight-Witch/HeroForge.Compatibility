@@ -5,7 +5,7 @@ This is the canonical feature-ID inventory. Historical/provisional detail remain
 | Feature ID | Purpose | Risk | Status |
 |---|---|---|---|
 | `media.screenshot-resolution` | Restore genuine 4K/8K Photo Booth still-image rendering | Medium | Standalone + Witch Dock Stable validated on `heroforge07.1.9.98`. |
-| `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | Lower-resolution profiles validated. Native 3072 rejected. TRUE-3K repair validated by Short Test. **v0.3.0 integrated standalone candidate pending live integrated Short Test + full repaired 3072 confirmation.** 4K deferred. Public Witch Dock unchanged. |
+| `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | **Standalone v0.3.0 validated for tested production profiles.** 1024/2048 validated; native 3072 rejected; repaired TRUE-3K 3072 validated at Short Test, 250-frame full and 500-frame full. Pause/interaction guards are next. 4K deferred. Public Witch Dock unchanged. |
 | `decals.gizmo.bound-correction` | Correct bound/Project-OFF decal transform gizmo | High | Witch Dock Stable; validated Move/Rotate/Scale, undo/redo, transform-state preservation and fresh-slot normalization. |
 | `character.local-export` | Export character JSON locally | Medium | Standalone reconstruction committed; core Save passed live. |
 | `character.local-import` | Import character JSON locally | Medium | Standalone reconstruction committed; core Load passed live. |
@@ -19,45 +19,26 @@ This is the canonical feature-ID inventory. Historical/provisional detail remain
 
 ## `media.spinny-mini-webp`
 
-Current maintained candidate:
+Maintained standalone implementation:
 
 - file: `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
 - version: `0.3.0`
 - build: `0.3.0-integrated-true3k-short-test`
 
-Validated lower-resolution behavior:
+Validated profiles / behaviors:
 
-- 1024 Standard / 250f: PASS
+- 1024 Standard / 250f: PASS, including post-v0.3.0 regression
 - 2048 Standard / 250f: PASS
 - 1024 Very Slow / 750f: PASS
 - 2048 Slower / 500f: PASS
-- repeat use / parser / progress / ETA / rotation restore: PASS
+- 3072 Standard / 250f TRUE-3K: PASS by full-run user validation
+- 3072 Slower / 500f TRUE-3K: PASS by full-run user validation + post-validation timing record
+- 3072 integrated Short Test / 16f: PASS
+- repeat use / parser / progress / ETA / rotation restore: PASS on tested runs
 - general cancel path: PASS by user report
 
-Native 3072 status:
+Native HeroForge 3072 without the repair remains unsupported because it uses 768px Effects phase renders and visibly loses source detail.
 
-- full native 3072 Standard completed structurally;
-- native-size visual fidelity FAIL;
-- runtime trace: 3072 capture camera + 768px Effects phase renders;
-- native 3072 remains unsupported.
+Interaction protection is the active next requirement because accidental mouse-wheel camera input during an earlier long capture produced visible animation jumps.
 
-TRUE-3K repair status:
-
-- standalone 16-frame repaired Short Test: PASS mechanically and visually;
-- one real 3072 Effects source per frame;
-- 4x4 / 16-phase native topology fully supplied;
-- Effects and figure rotation restored;
-- no repair/Short Test error.
-
-v0.3.0 integration:
-
-- 1024/2048 native frame source retained;
-- 3072 TRUE-3K phase-feed integrated;
-- integrated 16-frame Short Test retained in same capture engine;
-- standalone harness exposes Short Test directly;
-- future Witch Dock host will expose Short Test only when Developer Mode is enabled;
-- integrated live validation pending.
-
-Interaction protection remains required because two accidental mouse-wheel camera changes during a long 3072 capture produced visible animation jumps.
-
-4K Spinny remains explicitly deferred because square 4096/8192 screenshot requests collide with the Witch Dock TRUE-resolution still-provider ownership boundary.
+4K Spinny remains deferred because square 4096/8192 screenshot requests collide with Witch Dock TRUE-resolution still-provider ownership.

@@ -1,54 +1,58 @@
 # Changelog
 
-## HFC-2026-09-06-028 — Validate integrated v0.3.0 TRUE-3K Short Test
+## HFC-2026-09-06-029 — Close Spinny v0.3.0 standalone validation
 
 Date: 2026-09-06
 
 ### Summary
 
-Recorded the first live validation of the consolidated Spinny v0.3.0 capture engine at 3072 TRUE-3K using the integrated 16-frame Short Test.
+Recorded completion of the maintained Spinny v0.3.0 standalone validation stage.
 
-User native-size inspection passed: the downloaded Short Test is visibly sharp and retains the previously validated TRUE-3K detail rather than reproducing the blurry native-3072 baseline.
+Newly closed gates:
 
-### Runtime evidence
+- full TRUE-3K 3072 Standard / 250-frame capture: PASS by user full-run validation;
+- full TRUE-3K 3072 Slower / 500-frame capture: PASS by user full-run validation and successful post-validation runtime timing history;
+- post-consolidation 1024 Standard / 250-frame regression: PASS with parser and restoration diagnostics.
 
-HF-Chat-Bridge read-only issue #490 confirmed the active implementation is:
+The active next development stage is now Pause + interaction guards.
 
-- version `0.3.0`;
-- build `0.3.0-integrated-true3k-short-test`.
+### 1024 regression diagnostics
 
-The successful Short Test had already updated session timing history under the repaired-source key:
+HF-Chat-Bridge issue #491 confirmed:
 
-- timing key: `3072:true3k-phase-feed`;
-- mode: `short-test`;
-- frames: 16;
-- average frame time: approximately 2123.48 ms;
-- frame source: `true3k-phase-feed`;
-- Short Test mux-tail value intentionally stored as 0 for future full-run ETA seeding.
+- v0.3.0 / build `0.3.0-integrated-true3k-short-test`;
+- status `downloaded`;
+- 250/250 rendered and encoded;
+- output 12,035,026 bytes;
+- parser 1024x1024 / 250 frames / 10,000 ms / 40 ms x250 / loop 0;
+- elapsed 272,058.2 ms;
+- rotation restored true;
+- error null.
 
-Because v0.3.0 updates timing history only after WebP mux/parser validation and download succeed, the presence of this 16-frame history record confirms the integrated Short Test reached the successful post-validation path.
+### TRUE-3K 500-frame evidence
 
-### Later overwritten `lastCapture`
+Runtime timing history retained:
 
-A later full 3072 capture was started and cancelled after two frames, overwriting the successful Short Test `lastCapture` record before diagnostics were read.
+- key `3072:true3k-phase-feed`;
+- mode `full`;
+- frames 500;
+- average frame time ~3032.4224 ms;
+- tail ~373.7 ms;
+- successful update at `2026-09-06T12:06:28.050Z`.
 
-That later cancelled run independently confirmed:
+That history is only written after mux/parser validation and download succeed. Combined with the user's report that the 3K/500 animation looked fantastic at correct resolution with clear movement, this validates the high-cost maintained TRUE-3K path.
 
-- full mode used `true3k-phase-feed`;
-- both completed frames used native 768px tiles / 4x4 grid;
-- 16 expected / 16 supplied / 16 unique phases per completed frame;
-- one 3072 source render per completed frame;
-- `effectsRestored: true` for both completed frames;
-- figure rotation restored: true;
-- cancellation error was the expected `Capture cancelled.`
-
-Therefore the detailed Short Test parser snapshot is no longer available in `lastCapture`, but its successful completion is supported by the download observed by the user, visual inspection, and the post-validation timing-history record.
+The preceding 3072 Standard / 250-frame full run had already been reported as correct-resolution, clear-motion output with a quite accurate ETA.
 
 ### Decision
 
-Integrated v0.3.0 TRUE-3K Short Test: **PASS**.
+`media.spinny-mini-webp` v0.3.0 is now **standalone validated for its tested production paths on `heroforge07.1.9.98`**.
 
-The next required gate is one full repaired 3072 Standard / 250-frame capture. Complete 3072 production-profile validation is still pending that full run.
+Native un-repaired HeroForge 3072 remains rejected.
+
+### Next stage
+
+Pause + interaction protection, followed by Witch Dock Dev host/popout/Developer-Mode integration after standalone guard validation.
 
 ### Touched files
 
@@ -57,36 +61,27 @@ Documentation only:
 - `MASTER.md`
 - `PRE_FLIGHT_Check.md`
 - `CHANGELOG.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `OWNERSHIP.md`
 - `TESTING.md`
 - `docs/feature-specs/spinny-mini-webp.md`
 - `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
-- `docs/validation/spinny-mini-webp-v0.3.0-short-test-2026-09-06.md` (new)
+- `docs/validation/spinny-mini-webp-v0.3.0-full-validation-2026-09-06.md` (new)
 
 **Runtime behavior changed:** no. Documentation-only validation checkpoint.
+
+---
+
+## HFC-2026-09-06-028 — Validate integrated v0.3.0 TRUE-3K Short Test
+
+Integrated TRUE-3K Short Test passed mechanically/visually. Full production validation is now closed by HFC-2026-09-06-029.
 
 ---
 
 ## HFC-2026-09-06-027 — Integrate TRUE-3K frame source and Short Test into Spinny v0.3.0
 
 Promoted the validated TRUE-3K frame-source repair into the maintained standalone Spinny profile script as v0.3.0 and folded the 16-frame Short Test into the same capture engine.
-
----
-
-## HFC-2026-09-06-026 — Validate TRUE-3K repaired Short Test
-
-Validated the standalone repair companion's 16-frame TRUE-3K output mechanically and by native-size visual inspection.
-
----
-
-## HFC-2026-09-06-025 — Diagnose 3072 render-source loss and add TRUE-3K repair companion
-
-Confirmed native 3072 uses 768px Effects phase renders and added the standalone phase-feed repair candidate.
-
----
-
-## HFC-2026-09-06-024 — Add Spinny Short Test companion and reject current 3072 fidelity
-
-Recorded the structurally correct but visually blurry native 3072 full run and added the rapid partial-spin diagnostic.
 
 ---
 
