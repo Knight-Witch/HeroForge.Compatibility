@@ -1,91 +1,101 @@
 # Pre-Flight Check Log
 
-## PFC-2026-09-06-020 — Add short partial-spin diagnostic companion after 3072 fidelity failure
+## PFC-2026-09-06-021 — Add TRUE-3K Effects-source repair companion
 
 Date: 2026-09-06
 
 ### Target files
 
-- `entries/tampermonkey-standalone/spinny-mini-webp-short-test.user.js` (new)
+- `entries/tampermonkey-standalone/spinny-mini-webp-3k-repair-companion.user.js` (new)
 - `MASTER.md`
 - `PRE_FLIGHT_Check.md`
 - `CHANGELOG.md`
 - `FEATURE_INVENTORY.md`
 - `COMPATIBILITY.md`
-- `OWNERSHIP.md`
 - `TESTING.md`
 - `docs/feature-specs/spinny-mini-webp.md`
 - `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
-- `docs/validation/spinny-mini-webp-v0.2.2-3072-fidelity-2026-09-06.md` (new)
 
 ### Required material reviewed
 
 - binding `PROJECT_CONTRACT.md`;
-- branch head before this stage: `997f1181af9954262e19ee04723be6137f891b79`;
+- branch head before this stage: `6ea2c5ce3188994016362c8f84abb78c1c17bc44`;
 - `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`;
 - current Spinny feature spec/investigation;
-- current v0.2.2 source and public API;
-- completed 3072 Standard user result and uploaded WebP;
-- follow-up 1024 Standard control capture reported visually correct;
-- user report that two scroll-wheel camera interactions during the 3072 run caused visible jumps in the resulting animation;
-- Witch Dock TRUE-resolution provider ownership of square 4096/8192 requests.
+- v0.2.2 profile source and v0.1.0 Short Test source;
+- validated standalone/Witch Dock TRUE-resolution still-capture implementation;
+- live user result that the 16-frame 3072 baseline Short Test works correctly as a diagnostic but remains visually blurry;
+- HF-Chat-Bridge runtime source read and asynchronous 1024/2048/3072 render-path trace after a clean page reload.
 
-### Confirmed findings
+### Newly confirmed render-path findings
 
-- The completed 3072 Standard run took approximately 25 minutes and produced a structurally 3072x3072 animated WebP with 250 frames.
-- Inspection of the uploaded file confirmed the animation container and individual encoded frame payloads are genuinely 3072-sized; the mux is not merely declaring 3072 around 2048 frame payloads.
-- User visual inspection at native size found the 3072 result blurry and consistent with a lower-resolution render enlarged to 3072. Therefore **true 3K fidelity failed** even though output dimensions passed.
-- A new 1024 Standard control run was visually correct, so the failure is specific to the higher-resolution path rather than a general WebP/mux defect.
-- Current v0.2.2 verifies returned canvas/container dimensions but cannot verify internal HeroForge scene-raster resolution.
-- Two accidental mouse-wheel camera changes during capture produced visible discontinuities, directly validating the need for planned capture interaction guards.
-- HF-Chat-Bridge read-only probe #478 was queued to inspect the current screenshot/render path but had not been picked up at this checkpoint; no runtime result is claimed from it.
+- The Short Test diagnostic itself is live-validated and reproduces the same 3072 blur in a small partial spin.
+- `CK.Effects.renderToCanvas` is the relevant named render seam: it sizes its Effects render target from the width/height passed by the Booth capture path.
+- Live trace confirms a 1024 screenshot calls `CK.Effects.renderToCanvas(1024, 1024, camera1024)`.
+- Live trace confirms a 2048 screenshot uses repeated `renderToCanvas(1024, 1024, camera2048)` phase/tile renders rather than one native 2048 Effects source.
+- Live trace confirms the 3072 screenshot path drops those Effects renders to **768x768** while the capture camera remains 3072x3072.
+- Therefore the current 3072 file can be structurally 3072 while its Effects/model source fidelity is materially lower. This directly explains why canvas/WebP dimension validation passed while visual detail failed.
+- The existing validated TRUE-resolution still provider already repairs this class of tiled/phase capture by feeding native compositor phases from a real high-resolution Effects source.
 
-### Diagnostic implementation intent
+Supported topology inference:
 
-Add a separate disposable companion rather than modifying v0.2.2:
+- 3072 / 768 = 4, matching a 4x4 native phase grid under the existing validated `classifyModelRender` contract;
+- the repair candidate does not hard-code 16 phases: it derives and validates the live grid/tile relationship per run and fails on topology mismatch.
 
-- requires the existing `HFSpinnyMiniWebPProfilesTest` standalone script;
-- injects a `Short Test` button into the existing test panel;
-- captures exactly **16 contiguous frames**;
-- preserves the selected profile's normal angular spacing (`360 / full-profile frame count`), rather than sparsely sampling a full revolution;
-- preserves the selected 40 ms frame timing and current resolution;
-- uses the same HeroForge refresh/occlusion sequence, `BT.maker.takeScreenshot`, static browser WebP encoder, and RIFF mux logic;
-- downloads a labeled `SHORT_TEST` animated WebP;
-- exposes bridge-readable `HFSpinnyMiniWebPShortTest.diagnostics` including selected profile, angular step/arc, returned canvas-size histogram, output/parser data, elapsed time and rotation restoration;
-- uses its own cancel-after-current-frame behavior;
-- disables the base profile controls during a short test;
-- refuses 4096/8192+ sizes to avoid the known TRUE-resolution still-provider collision.
+### Runtime change intent
 
-At Standard / 250-frame angular spacing, 16 frames cover 15 intervals = **21.6 degrees** from first to last sample. Relative to the completed 25-minute 250-frame 3072 run, expected processing time is roughly 1.6 minutes if per-frame cost is similar.
+Add a standalone diagnostic repair companion that:
+
+- requires the existing v0.2.2 profile test and v0.1.0 Short Test companion;
+- adds a separate `TRUE 3K Test` action to the existing panel;
+- invokes the already-working 16-frame Short Test capture/mux path rather than duplicating it;
+- temporarily wraps only `CK.Effects.renderToCanvas` for the duration of that explicit test;
+- when native Booth requests a tiled 3072 frame, renders **one real 3072x3072 Effects source for that animation frame**;
+- derives the native phase canvases by interleaving pixels from that real 3072 source using the same validated phase-feed principle as TRUE 4K;
+- leaves `BT.maker.takeScreenshot` ownership untouched, avoiding collision with the public Witch Dock 4096/8192 provider;
+- restores the exact original `CK.Effects.renderToCanvas` in `finally`;
+- records per-frame tile/grid/phase/source diagnostics under `HFSpinnyMiniWebP3KRepair`;
+- routes cancellation through the already-validated Short Test cancel path.
+
+### Preserved behavior
+
+- main Spinny v0.2.2 source remains unchanged;
+- baseline Short Test v0.1.0 source remains unchanged;
+- validated 1024/2048 profile behavior remains unchanged;
+- existing Short Test rotation, refresh/occlusion, WebP encode/mux, parser, download and cancel mechanics remain the execution path;
+- public Witch Dock 4K/8K provider remains unchanged and retains ownership of `BT.maker.takeScreenshot` for 4096/8192;
+- 4K Spinny remains deferred;
+- no bundle patching or minified/private encoder dependency is introduced.
 
 ### Material risks
 
-- The helper intentionally duplicates a bounded subset of the validated capture/mux mechanics as a diagnostic companion. It is not a production architecture or Witch Dock integration target.
-- Short Test can prove whether a candidate resolution change visibly improves source detail much faster, but it still cannot by itself reveal HeroForge's hidden internal render target size without runtime tracing.
-- The current camera/Booth interaction guards are not yet implemented; users must still avoid camera/Booth changes during the short test.
-- A partial looping WebP necessarily jumps from its final frame back to the first; loop continuity is not an acceptance criterion for this diagnostic.
-- 3072 remains unsupported for true-resolution output until the upstream render-source issue is diagnosed and corrected.
+- `CK.Effects.renderToCanvas` is temporarily wrapped across the 16-frame test; unrelated render calls are passed through unless they match a 3072 capture-camera topology.
+- One real 3072 Effects source is approximately 36 MiB RGBA before phase extraction; only one frame source is retained at a time and it is released after its phase feed completes.
+- Native Booth topology can change. The candidate validates tile size, grid, phase coordinates, duplicate phases and complete phase delivery and fails rather than guessing.
+- Camera/Booth interaction guards are not implemented yet; the user must still avoid camera/Booth changes during the diagnostic.
+- A visual TRUE-3K PASS is still required. This commit does not claim repaired 3072 support before live testing.
 
 ### Test status before commit
 
-- `spinny-mini-webp-short-test.user.js`: local `node --check` **PASS**.
-- Live Short Test: pending.
+- `spinny-mini-webp-3k-repair-companion.user.js`: local `node --check` **PASS**.
+- baseline 3072 Short Test: **PASS as diagnostic / fidelity still FAIL** by user report.
+- TRUE 3K repaired Short Test: pending live validation.
 - Public Witch Dock: untouched.
 
 ### Recommended action
 
-Install the companion alongside v0.2.2 and run **3072 + Standard + Short Test** first. Use the resulting partial WebP only to judge render fidelity and exercise the same per-frame path quickly. Keep 3072 full-spin support rejected until a true-resolution fix passes Short Test and then one full validation run.
+Install the TRUE-3K repair companion alongside the existing profile + Short Test scripts, select **3072px + Standard**, and run **TRUE 3K Test**. Accept the repair only if the downloaded partial WebP shows genuinely improved native-size detail and diagnostics confirm complete per-frame phase feeds with Effects restoration. Do not run another full 3072 spin until this short gate passes.
 
-**Runtime behavior changed:** yes, standalone diagnostic companion only. Existing v0.2.2 and public Witch Dock behavior are unchanged.
-
----
-
-## PFC-2026-09-05-019 — Add 3072 Spinny profile and high-workload warning
-
-v0.2.2 added experimental 3072 plus the long-capture warning while preserving the validated lower-resolution capture/mux core. 4K was deferred due the Witch Dock TRUE-resolution provider collision.
-
-**Runtime behavior changed:** standalone WIP profile/UI only.
+**Runtime behavior changed:** yes, standalone diagnostic repair companion only. Existing profile/Short Test code and public Witch Dock are unchanged.
 
 ---
 
-Historical pre-flight records through PFC-2026-09-05-018 remain preserved in Git history.
+## PFC-2026-09-06-020 — Add short partial-spin diagnostic companion after 3072 fidelity failure
+
+Recorded the 3072 fidelity failure and added the 16-frame Short Test diagnostic companion. That helper has since passed live as a rapid diagnostic and reproduced the expected 3072 blur.
+
+**Runtime behavior changed:** standalone diagnostic companion only.
+
+---
+
+Historical pre-flight records through PFC-2026-09-05-019 remain preserved in Git history.

@@ -4,7 +4,7 @@ This is the canonical high-level source for current project state. Historical de
 
 ## Current Phase
 
-**`media.spinny-mini-webp` v0.2.1 remains the validated configurable behavior target for tested 1024/2048 profiles. v0.2.2 3072 structurally completed but failed true-resolution visual fidelity. A separate 16-frame Short Test companion is now the diagnostic path for high-resolution iteration. Public Witch Dock remains untouched.**
+**`media.spinny-mini-webp` v0.2.1 remains the validated configurable behavior target for tested 1024/2048 profiles. v0.2.2 3072 structurally completes but fails true-resolution fidelity. The 16-frame Short Test is now live-validated as the rapid diagnostic, the native 3072 render-source loss is diagnosed, and a standalone TRUE-3K Effects-source repair companion is ready for live validation. Public Witch Dock remains untouched.**
 
 `media.screenshot-resolution` and the corrected bound decal gizmo remain Witch Dock Stable.
 
@@ -16,17 +16,18 @@ This is the canonical high-level source for current project state. Historical de
 - Public Witch Dock runtime dependency on Compatibility `main`: **none**
 - Validated Spinny parity reference: `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js` v0.1.0
 - Configurable Spinny profile test: `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js` v0.2.2
-- High-resolution diagnostic companion: `entries/tampermonkey-standalone/spinny-mini-webp-short-test.user.js` v0.1.0
+- Rapid partial-spin diagnostic: `entries/tampermonkey-standalone/spinny-mini-webp-short-test.user.js` v0.1.0
+- TRUE-3K repair candidate: `entries/tampermonkey-standalone/spinny-mini-webp-3k-repair-companion.user.js` v0.1.0
 
 ## Spinny Mini animated WebP
 
 Feature ID: `media.spinny-mini-webp`.
 
-Accepted maintained architecture:
+Accepted maintained serialization architecture:
 
 ```text
 HeroForge runtime character rotation + refresh sequencing
-→ BT.maker.takeScreenshot
+→ frame capture surface
 → per-frame browser static WebP encoding
 → deterministic project-owned RIFF animated-WebP mux
 ```
@@ -42,7 +43,7 @@ Validated lower-resolution behavior on `heroforge07.1.9.98`:
 - parser and rotation restoration: PASS;
 - general cancel/restore: PASS by user report.
 
-## 3072 Result — Fidelity FAIL
+## 3072 Result — Structural PASS / Fidelity FAIL
 
 The first 3072 Standard / 250-frame v0.2.2 capture completed in approximately 25 minutes.
 
@@ -51,39 +52,62 @@ Confirmed:
 - final animated WebP is structurally 3072x3072;
 - frame count is 250;
 - individual encoded frame payloads are also 3072-sized;
-- the animation mux is therefore not simply labeling 2048 frame payloads as 3072.
+- the animation mux is not simply labeling 2048 frame payloads as 3072.
 
-However, user inspection at native size found the output visibly blurry and consistent with a lower-resolution scene render enlarged into a 3072 canvas. The current 3072 mode therefore **fails the true-3K fidelity requirement** and is not accepted as supported output.
+However, user inspection at native size found the output visibly blurry and consistent with lower-resolution scene content enlarged into a 3072 canvas. The current native 3072 path therefore **fails the true-3K fidelity requirement**.
 
-A follow-up 1024 Standard control capture was visually correct, narrowing the problem to the higher-resolution HeroForge screenshot/render path rather than the general animated-WebP serialization path.
+A follow-up 1024 Standard control capture was visually correct.
 
-Current v0.2.2 validates returned canvas/container dimensions only; it does not prove the internal scene raster was rendered at the requested resolution.
+## Short Test Diagnostic — LIVE PASS
 
-## Short Test Diagnostic Companion
+`spinny-mini-webp-short-test.user.js` build `0.1.0-short-test-16f-partial-arc` is now live-validated as the rapid diagnostic path.
 
-`spinny-mini-webp-short-test.user.js` build `0.1.0-short-test-16f-partial-arc` is a disposable standalone diagnostic companion.
+It successfully:
 
-It:
+- captured 16 contiguous samples using the selected profile's real angular spacing;
+- downloaded a valid partial animated WebP;
+- restored the figure correctly;
+- reproduced the same blurry 3072 fidelity failure in a short run instead of requiring another ~25-minute full revolution.
 
-- requires the existing profile test;
-- adds a `Short Test` button to that panel;
-- captures 16 contiguous frames using the currently selected resolution and speed;
-- preserves the selected full profile's real angular spacing and 40 ms frame duration;
-- at Standard / 250-frame spacing covers 21.6 degrees from first to last sample;
-- uses the same refresh/occlusion, screenshot, static-WebP encode and RIFF mux mechanics as the full capture;
-- records bridge-readable diagnostics under `HFSpinnyMiniWebPShortTest`;
-- restores starting rotation in `finally`;
-- refuses 4096/8192+ while the TRUE-resolution still provider owns those requests.
+The helper remains diagnostic scaffolding, not the production capture architecture.
 
-Based on the completed 25-minute 3072 full run, a 16-frame 3072 Short Test is expected to take roughly 1.6 minutes if per-frame cost is similar. This is only an estimate until live-tested.
+## 3072 Render-Source Diagnosis — CONFIRMED
+
+After a clean page reload, HF-Chat-Bridge/Power runtime tracing isolated the internal HeroForge screenshot behavior:
+
+- 1024 screenshot: `CK.Effects.renderToCanvas(1024,1024,camera1024)`;
+- 2048 screenshot: repeated `renderToCanvas(1024,1024,camera2048)` phase/tile renders;
+- 3072 screenshot: native capture camera remains 3072x3072 while `CK.Effects.renderToCanvas` drops to **768x768** phase/tile renders.
+
+`CK.Effects.renderToCanvas` itself sizes its Effects render target from the supplied dimensions. Therefore a structurally 3072 output does not imply a 3072 Effects/model source. This directly explains the observed blur and closes the key fault-boundary question.
+
+The 3072 / 768 ratio yields a 4-per-axis phase topology under the already-validated TRUE-resolution classification model. The repair candidate derives/validates this live rather than hard-coding a fixed count.
+
+## TRUE-3K Repair Candidate
+
+New standalone diagnostic:
+
+`spinny-mini-webp-3k-repair-companion.user.js`
+
+Build: `0.1.0-3072-effects-source-phase-feed`.
+
+Design:
+
+- requires the existing profile test + Short Test companion;
+- adds `TRUE 3K Test` to the same diagnostic panel;
+- reuses the already-working Short Test rotation, frame timing, WebP encoding, mux, parser, download and cancel behavior;
+- temporarily wraps only `CK.Effects.renderToCanvas` while the explicit TRUE-3K test runs;
+- for each native 3072 animation frame, produces one genuine 3072x3072 Effects source and derives the native phase canvases from that source;
+- uses the same phase-feed principle already validated by the TRUE 4K/8K still-capture repair;
+- leaves `BT.maker.takeScreenshot` ownership untouched, avoiding collision with the Witch Dock 4096/8192 provider;
+- restores the exact original Effects method in `finally`;
+- records per-frame topology/source diagnostics.
+
+Static syntax check: PASS. Live visual fidelity validation: pending.
 
 ## Interaction Guard Evidence
 
-During the completed 3072 run, two accidental mouse-wheel interactions over the HeroForge canvas changed the Booth camera and produced visible jumps in the WebP. This is now direct validation that the planned capture guard must intercept/warn on camera and Booth-state interactions during active/paused capture.
-
-## Bridge Diagnostic Status
-
-HF-Chat-Bridge read-only issue #478 was queued to inspect the screenshot/effects render path after the page became idle. At the time of this checkpoint it had not been picked up; no runtime result is claimed yet.
+During the completed full 3072 run, two accidental mouse-wheel interactions over the HeroForge canvas changed the Booth camera and produced visible jumps in the WebP. This is direct validation that planned active-capture protection must cover camera and Booth-state interactions.
 
 ## 4K Spinny Decision
 
@@ -95,21 +119,24 @@ HF-Chat-Bridge read-only issue #478 was queued to inspect the screenshot/effects
 - Spinny v0.1.0 Lob parity: validated.
 - Spinny v0.2.1 tested 1024/2048 configurable behavior: validated.
 - Spinny v0.2.2 3072 structural capture: completed.
-- Spinny v0.2.2 **true 3072 fidelity: FAIL / unsupported**.
+- Spinny v0.2.2 native true-3072 fidelity: **FAIL / unsupported**.
 - 1024 post-failure control: PASS by user report.
-- Short Test companion syntax: PASS; live test pending.
+- Short Test diagnostic: **LIVE PASS**.
+- Native 3072 render-source diagnosis: **CONFIRMED — 768px Effects tiles under a 3072 capture camera**.
+- TRUE-3K repair companion syntax: PASS; live visual test pending.
 - 4K Spinny: deferred.
-- Pause/input guards: approved next standalone stage.
+- Pause/input guards: approved next standalone stage after resolution behavior is settled.
 - Witch Dock Spinny integration: not started.
 
 ## Next Gate
 
-1. Install the Short Test companion alongside v0.2.2.
-2. Run 3072 + Standard + Short Test and confirm it produces the expected 16-frame partial WebP quickly.
-3. Resume runtime render-path tracing when HF-Chat-Bridge is responsive; identify the actual source/render size behind a 3072 screenshot request.
-4. Do not run another full 3072 spin until a candidate true-resolution fix passes Short Test visually.
-5. After resolution behavior is settled, implement/test Pause and interaction guards separately.
-6. Begin Witch Dock Dev integration only after the standalone feature gate is explicitly closed.
+1. Install the TRUE-3K repair companion alongside the existing profile + Short Test scripts.
+2. Select **3072px + Standard** and run **TRUE 3K Test**.
+3. Accept only if the partial WebP shows genuinely improved native-size detail and diagnostics confirm complete per-frame phase feeds plus Effects restoration.
+4. If the short repaired result passes, integrate the proven frame-source repair into the maintained Spinny capture service/profile path.
+5. Run one full 3072 Standard confirmation only after the repaired Short Test passes.
+6. Then implement/test Pause and interaction guards separately.
+7. Witch Dock Dev integration remains later and separate.
 
 ## Public Integration Rule
 

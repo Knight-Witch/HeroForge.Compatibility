@@ -5,7 +5,7 @@ This is the canonical feature-ID inventory. Historical/provisional detail remain
 | Feature ID | Purpose | Risk | Status |
 |---|---|---|---|
 | `media.screenshot-resolution` | Restore genuine 4K/8K Photo Booth still-image rendering | Medium | Standalone + Witch Dock Stable validated on `heroforge07.1.9.98`. |
-| `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | **v0.2.1 validated on tested 1024/2048 profiles. v0.2.2 3072 structural capture completed but true-resolution visual fidelity FAILED.** Short Test diagnostic companion v0.1.0 added for rapid partial-spin iteration. 4K deferred. Public Witch Dock unchanged. |
+| `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | **v0.2.1 validated on tested 1024/2048 profiles. v0.2.2 native 3072 structural capture completes but true-resolution fidelity FAILS.** Short Test diagnostic is live-validated; native 3072 Effects source loss is diagnosed; TRUE-3K repair companion v0.1.0 awaits live visual validation. 4K deferred. Public Witch Dock unchanged. |
 | `decals.gizmo.bound-correction` | Correct bound/Project-OFF decal transform gizmo | High | Witch Dock Stable; validated Move/Rotate/Scale, undo/redo, transform-state preservation and fresh-slot normalization. |
 | `character.local-export` | Export character JSON locally | Medium | Standalone reconstruction committed; core Save passed live. |
 | `character.local-import` | Import character JSON locally | Medium | Standalone reconstruction committed; core Load passed live. |
@@ -28,21 +28,29 @@ Validated lower-resolution behavior:
 - progress/ETA, repeat use, parser, rotation restore: PASS;
 - general Cancel path: PASS by user report.
 
-3072 result:
+3072 native result:
 
 - full Standard / 250f completed in ~25 minutes;
 - container/frame payload dimensions are structurally 3072;
-- user visual inspection found native-size detail blurry and consistent with a lower-resolution render enlarged to 3072;
-- **true 3K fidelity is therefore rejected/unsupported pending render-path repair**;
-- follow-up 1024 control visually passed.
+- user visual inspection found native-size detail blurry/upscaled;
+- follow-up 1024 control visually passed;
+- baseline 16-frame 3072 Short Test also completed correctly and reproduced the blur.
 
-Diagnostic helper:
+Render-path diagnosis:
 
-- `entries/tampermonkey-standalone/spinny-mini-webp-short-test.user.js` v0.1.0;
-- 16 contiguous frames using selected profile's real angular spacing and frame duration;
-- designed to validate candidate resolution fixes in roughly minutes rather than a full long spin;
-- live validation pending.
+- 1024 screenshots feed Effects at 1024x1024;
+- 2048 screenshots use repeated 1024x1024 Effects phase/tile renders;
+- 3072 screenshots retain a 3072 capture camera but feed Effects through **768x768** phase/tile renders;
+- output dimensions therefore do not prove true source-raster fidelity.
 
-Two mouse-wheel camera changes during the full 3072 run produced visible output jumps, confirming the need for planned active-capture interaction guards.
+Repair candidate:
+
+- `entries/tampermonkey-standalone/spinny-mini-webp-3k-repair-companion.user.js` v0.1.0;
+- reuses the live-validated 16-frame Short Test;
+- temporarily feeds the native 3K compositor from one real 3072 Effects source per animation frame;
+- leaves `BT.maker.takeScreenshot` ownership untouched;
+- syntax PASS; live visual fidelity pending.
+
+The two mouse-wheel camera changes during the full 3072 run produced visible output jumps, confirming the need for planned active-capture interaction guards.
 
 4K Spinny remains explicitly deferred because square 4096 capture requests collide with the Witch Dock TRUE-resolution still provider.
