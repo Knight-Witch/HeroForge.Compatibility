@@ -24,28 +24,9 @@ HeroForge
 
 `Knight-Witch/HF-Chat-Bridge` is a separate private diagnostic/control-plane repository used during development to request bounded live observations from Amanda's authenticated HeroForge browser session.
 
-It is **not** the shared HeroForge Compatibility Bridge in the feature architecture above.
+It is not the shared HeroForge Compatibility Bridge used by production feature architecture.
 
-Relationship:
-
-```text
-Authorized ChatGPT chat/project
-    ↓
-HF-Chat-Bridge diagnostic transport
-    ↓
-live HeroForge observation
-    ↓
-validated compatibility finding
-    ↓
-HeroForge.Compatibility capability/adapter design
-```
-
-Rules:
-
-- HF-Chat-Bridge must remain chat/project independent.
-- Diagnostic observations do not become stable capability contracts automatically.
-- Public Witch Dock and reconstructed feature modules must not depend on the GitHub mailbox or local diagnostic relay at runtime.
-- A future transport change such as MCP should not require rewriting HeroForge probe semantics or maintained feature modules.
+Public Witch Dock and maintained feature modules must not depend on the GitHub mailbox or local diagnostic relay at runtime.
 
 ## Core Boundaries
 
@@ -53,48 +34,24 @@ Rules:
 
 Own feature-specific behavior and state transitions.
 
-They should not directly know about minified HeroForge identifiers or independently intercept core bundles.
-
 ### Feature services
 
 Expose domain-level operations to UI hosts and test entrypoints.
 
-Examples:
+Examples include:
 
-- set decal transform,
-- export character data,
-- apply camera profile,
-- change kitbash capacity policy,
-- capture an animated Spinny Mini profile.
+- set decal transform;
+- export/import character data;
+- capture a full Spinny profile;
+- capture a Spinny Short Test diagnostic.
 
-### Compatibility bridge
+### Compatibility bridge / adapters
 
-Owns normalized access to HeroForge runtime capabilities.
-
-Feature code should depend on bridge capabilities instead of raw `CK`, `TN`, minified React aliases, or compiled closure-local identifiers wherever practical.
-
-### Capability detection
-
-Reports whether required behavior is:
-
-- available,
-- unavailable,
-- degraded,
-- untested.
-
-A feature must not initialize when a required capability is unavailable.
-
-### Adapters
-
-Translate stable project-facing operations into current HeroForge runtime operations.
-
-A HeroForge internal rename or shape change should ideally require one adapter repair rather than multiple feature rewrites.
+Own normalized access to HeroForge runtime capabilities. HeroForge internal changes should ideally require one adapter repair rather than multiple feature rewrites.
 
 ### Patch engine
 
-Owns unavoidable pre-execution bundle modification.
-
-The patch engine must eventually centralize interception, patch registration, expected match counts, validation, postconditions, failure severity, untouched-bundle fallback, boot coordination, and diagnostics.
+Own unavoidable pre-execution bundle modification. Runtime-accessible named APIs remain preferred where practical.
 
 ## HeroForge Integration Priority
 
@@ -110,17 +67,18 @@ Prefer, where practical:
 
 ## Media Capture / Serialization Boundary
 
-Media features should separate **HeroForge frame production** from **file serialization** when that removes unnecessary dependencies on HeroForge-private encoders.
+Media features separate HeroForge frame production from file serialization.
 
-Current accepted Spinny Mini WebP prototype:
+Current Spinny direction:
 
 ```text
 media.spinny-mini-webp feature/service
     ↓
-HeroForge runtime adapter
-    ├── character display rotation
-    ├── display/occlusion refresh sequencing
-    └── BT.maker.takeScreenshot
+rotation + display refresh sequencing
+    ↓
+frame-source adapter
+    ├── 1024/2048: native BT.maker.takeScreenshot
+    └── 3072: TRUE-3K Effects phase-feed adapter
     ↓
 browser-native static WebP frame encoder
     ↓
@@ -129,121 +87,101 @@ project-owned animated-WebP RIFF mux
 downloaded .webp
 ```
 
-Rules for this boundary:
+Rules:
 
 - Prefer compressed frame payloads over retaining raw RGBA frames.
-- Restore temporary model/camera state in `finally`.
+- Restore temporary model/camera/runtime state in `finally` or equivalent bounded cleanup.
 - Block concurrent long-running captures.
-- Validate generated container dimensions/frame count/timing before download when practical.
-- Do not depend on a closure-local HeroForge animation encoder merely because the native UI uses one.
-- If a future named/native encoder provides a clearly superior stable capability, it can be adapted behind the same feature service rather than changing the UI contract.
+- Validate generated container dimensions/frame count/timing before download.
+- Do not depend on HeroForge's closure-local animation encoder.
+- Do not treat returned canvas dimensions alone as evidence of true source-render resolution.
+
+## Spinny Frame-Source Adapter
+
+### Native lower-resolution path
+
+Validated 1024/2048 profiles use:
+
+```text
+BT.maker.takeScreenshot(size,size)
+```
+
+### TRUE-3K path
+
+Native HeroForge 3072 output is source-fidelity degraded because current capture uses 768x768 `CK.Effects.renderToCanvas` phases under a 3072 capture camera.
+
+The validated repair architecture is:
+
+```text
+explicit 3072 frame capture
+→ temporarily intercept matching CK.Effects.renderToCanvas phase requests
+→ render one genuine 3072x3072 Effects source
+→ classify/validate native tile/grid/phase topology
+→ derive requested phase canvases from that source
+→ native Booth compositor finishes the 3072 frame
+→ restore the exact Effects method immediately
+```
+
+Important ownership rule:
+
+- Do not replace `BT.maker.takeScreenshot` for 3072 repair.
+- Witch Dock TRUE-resolution still capture owns its 4096/8192 wrapper and must not be displaced by Spinny.
+- The 3072 adapter operates below that ownership boundary at the named Effects seam.
+
+The adapter must fail on ambiguous or changed topology rather than guessing.
+
+## Short Test Diagnostic Boundary
+
+Short Test is a feature-service operation, not a separate media implementation.
+
+```text
+captureShortTest(selected profile)
+→ same frame-source adapter
+→ same refresh sequencing
+→ same WebP encoder/mux/parser
+→ same cancellation/restoration lifecycle
+```
+
+Short Test changes only:
+
+- frame count: 16;
+- angular extent: contiguous partial arc using the selected full profile's normal angular step;
+- filename/status metadata indicating diagnostic output.
+
+### UI ownership
+
+Standalone Tampermonkey validation is itself a development harness, so Short Test may be directly visible there.
+
+Future Witch Dock:
+
+- Spinny UI owns the Short Test control;
+- `KWDeveloperMode` controls only whether developer-only controls are visible;
+- Developer Mode does not implement or duplicate capture logic;
+- normal public presentation hides Short Test unless Developer Mode is enabled.
+
+## Memory Behavior
+
+- Do not retain raw RGBA for all animation frames.
+- Encode each frame immediately to static WebP.
+- Retain compressed frame payloads until final mux.
+- Release source canvas backing stores after extraction.
+- TRUE-3K may transiently hold one ~36 MiB 3072 RGBA Effects source for the current frame only.
 
 ## UI Hosts
 
-The same underlying feature module should be reusable by different hosts where practical.
+The same underlying feature/service should be reusable by:
 
-Planned hosts:
+- standalone Tampermonkey test UI;
+- Witch Dock Dev UI;
+- developer-only diagnostic presentation.
 
-- standalone Tampermonkey test UI,
-- Witch Dock Dev UI,
-- possibly no UI for background compatibility utilities.
-
-HeroForge native React UI should not be a dependency merely for presentation parity.
-
-## Expected Source Layout
-
-```text
-src/
-  bridge/
-    capabilities/
-    adapters/
-    discovery/
-    readiness/
-  patch-engine/
-    interceptors/
-    validators/
-    patches/
-    fallback/
-  features/
-    decals/
-    kitbash/
-    character-io/
-    photo-booth/
-    materials/
-    camera/
-    rendering/
-    slots/
-  shared/
-
-entries/
-  tampermonkey-standalone/
-  witch-dock-dev/
-
-tests/
-  fixtures/
-  compatibility/
-  reports/
-
-docs/
-  script-audits/
-  feature-specs/
-  investigations/
-  decisions/
-
-legacy/
-  lob-originals/
-  third-party/
-  tampermonkey-metadata/
-```
-
-The exact directories may evolve. The separation of concerns is the binding requirement.
+HeroForge native React UI should not be required merely for presentation parity.
 
 ## Feature Lifecycle
 
-Where technically possible, features should support:
+Where technically possible, features should support initialize, enable, disable and dispose/restore.
 
-- initialize,
-- enable,
-- disable,
-- dispose/restore.
-
-Disabling should remove or restore owned listeners, observers, timers, DOM, styles, subscriptions, wrappers, and runtime overrides.
-
-Boot-time patch features must explicitly state when reload is required.
-
-## Failure Isolation
-
-One optional feature failure must not intentionally take down unrelated features, Witch Dock core, or unmodified HeroForge.
-
-Preferred initialization flow:
-
-1. Probe dependencies.
-2. Validate capabilities.
-3. Prepare changes.
-4. Apply changes.
-5. Verify postconditions.
-6. Mark active.
-
-On failure, roll back where possible and report the affected capability/feature.
-
-## Bundle Patching Model
-
-Unavoidable patches should be declarative definitions with patch ID, owner, target bundle, dependent feature, discovery strategy, expected match count, required captures, transformation, validation/postconditions, failure severity, and compatibility status.
-
-The desired boot path is:
-
-```text
-intercept original
-→ obtain untouched source
-→ apply registered patches in memory
-→ validate
-→ execute modified source
-
-on failure
-→ execute untouched source when technically possible
-→ disable affected optional feature
-→ report incompatibility
-```
+Temporary runtime wrappers must be bounded and restorable. One optional feature failure must not intentionally take down unrelated HeroForge or Witch Dock behavior.
 
 ## Witch Dock Boundary
 
@@ -258,4 +196,4 @@ standalone validated module
 → explicit stable promotion
 ```
 
-Public Witch Dock must not load the unstable development head of this repository or depend on HF-Chat-Bridge at runtime.
+Public Witch Dock must not load the unstable Compatibility development head or depend on HF-Chat-Bridge at runtime.

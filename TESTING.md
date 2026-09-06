@@ -14,150 +14,172 @@ HeroForge build: `heroforge07.1.9.98`.
 
 ### Validated lower-resolution behavior
 
-`entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
+Historical maintained profile behavior before v0.3.0 consolidation:
 
 - 1024 Standard / 250 frames: PASS
 - 2048 Standard / 250 frames: PASS
 - 1024 Very Slow / 750 frames: PASS
 - 2048 Slower / 500 frames: PASS
 - multiple same-session captures: PASS
-- progress bar/readout/ETA: PASS
+- progress/readout/ETA: PASS
 - parser validation: PASS
 - rotation restoration: PASS
 - general Cancel path: PASS by user report
 
 Bridge-confirmed repeated 1024 Standard reference:
 
-- output: 13,565,278 bytes
-- 1024x1024 / 250 frames / 10,000 ms / 40 ms x250 / loop 0
-- actual: 177.101 s
-- final estimate: 175.614 s
-- ETA total-time error: 0.84%
-- rotation restored: true
-- error: null
+- 13,565,278-byte output;
+- 1024x1024 / 250 frames / 10,000 ms / 40 ms x250 / loop 0;
+- actual 177.101 s;
+- final estimate 175.614 s;
+- 0.84% total-time error;
+- rotation restored true;
+- error null.
 
-### Native 3072 full-run baseline — structural PASS / fidelity FAIL
+### Native 3072 full-run failure
 
 Requested:
 
-- 3072x3072
-- Standard
-- 250 frames
-- 40 ms/frame
-- 10.0 s animation duration
+- 3072x3072;
+- Standard;
+- 250 frames;
+- 40 ms/frame;
+- 10.0 s animation duration.
 
 Observed:
 
-- wall-clock approximately 25 minutes
-- capture completed/downloaded
-- animated container 3072x3072 / 250 frames
-- individual encoded frame payloads also 3072-sized
-- user native-size inspection: blurry / visually consistent with lower-resolution source enlarged to 3072
+- wall-clock approximately 25 minutes;
+- structural 3072x3072 / 250 frames: PASS;
+- individual encoded frame payload dimensions 3072: PASS;
+- user native-size source fidelity: **FAIL / blurry-upscaled appearance**.
 
-Control:
+A follow-up 1024 control capture visually passed.
 
-- follow-up 1024 Standard capture: visual resolution PASS by user report
+### Render-path diagnosis
 
-Result:
+HF-Chat-Bridge Power trace confirmed:
 
-- structural 3072 output: PASS
-- native true-3072 source/render fidelity: **FAIL / rejected**
+- 1024 request → `CK.Effects.renderToCanvas(1024,1024,camera1024)`;
+- 2048 request → repeated `renderToCanvas(1024,1024,camera2048)` phase/tile calls;
+- 3072 request → repeated `renderToCanvas(768,768,camera3072)` calls.
 
-### Interaction evidence
+Current native `renderToCanvas` sizes its render target from supplied width/height, explaining the structurally-correct-but-blurry 3072 output.
 
-Two accidental mouse-wheel interactions over the Booth canvas during the full native 3072 run changed the camera and produced visible jumps in the output. Active-capture interaction protection is therefore a demonstrated requirement.
+### Baseline Short Test diagnostic
 
-### Short Test diagnostic companion — LIVE PASS
+The separate 16-frame Short Test companion was live-validated as diagnostic infrastructure:
 
-File:
+- completed/downloaded correctly;
+- preserved normal profile angular spacing;
+- restored figure rotation;
+- reproduced the native 3072 blur quickly.
 
-`entries/tampermonkey-standalone/spinny-mini-webp-short-test.user.js`
+### TRUE-3K repair companion — PASS
 
-Build: `0.1.0-short-test-16f-partial-arc`.
+Standalone repaired Short Test result:
 
-Live result:
-
-- 16-frame partial animation completed/downloaded correctly
-- normal Standard angular spacing retained: 1.44 degrees/sample, 21.6 degrees first-to-last
-- 40 ms/frame retained
-- starting rotation restored
-- baseline 3072 blur reproduced quickly
-
-Result: PASS as diagnostic infrastructure.
-
-### Native render-path trace — PASS
-
-After a clean reload, HF-Chat-Bridge Power tracing confirmed:
-
-- Power runtime build 0.1.0 idle
-- `CK.Effects.renderToCanvas` restored to native before trace
-- 1024 screenshot → `renderToCanvas(1024,1024,camera1024)`
-- 2048 screenshot → repeated `renderToCanvas(1024,1024,camera2048)` phase renders
-- 3072 screenshot → repeated `renderToCanvas(768,768,camera3072)` phase renders
-
-Native `CK.Effects.renderToCanvas` source confirms it sizes its render target from supplied dimensions.
-
-Conclusion: baseline 3072 fidelity loss is explained by lower-resolution 768px Effects/model phases inside a 3072 compositor path.
-
-### TRUE-3K repair companion — LIVE PASS
-
-File:
-
-`entries/tampermonkey-standalone/spinny-mini-webp-3k-repair-companion.user.js`
-
-Version: `0.1.0`
-Build: `0.1.0-3072-effects-source-phase-feed`
-
-Static validation:
-
-- local `node --check`: PASS
-
-Live repaired Short Test:
-
-- status: `passed`
-- started: `2026-09-06T09:04:26.293Z`
-- completed: `2026-09-06T09:04:56.741Z`
+- status: PASS
 - elapsed: ~30.448 s
-- target: 3072
-- max texture size: 16384
-- max renderbuffer size: 16384
-- 16 animation frames
-- each frame: tile 768 / grid 4 / 16 expected / 16 supplied / 16 unique phases
-- each frame: one real 3072x3072 Effects source render
+- frames: 16
+- native tile: 768
+- grid: 4x4
+- expected/supplied/unique phases: 16/16/16 per frame
+- true source renders: one 3072x3072 source per animation frame
 - total phases: 256
-- native true-resolution passthrough calls: 0
-- output bytes: 4,589,972
-- parser: 3072x3072 / 16 frames / 640 ms total / 40 ms x16 / loop 0
-- frames rendered: 16
-- frames encoded: 16
+- output: 4,589,972 bytes
+- parser: 3072x3072 / 16 frames / 640 ms / 40 ms x16 / loop 0
 - rotation restored: true
 - Effects method restored: true
 - repair error: null
 - Short Test error: null
-- user native-size visual inspection: **PASS — output now appears genuinely 3K rather than blurry/upscaled**
+- native-size visual fidelity: PASS by user report
 
-Acceptance result:
+Conclusion: TRUE-3K **frame-source repair** is validated.
 
-- TRUE-3K frame-source repair mechanics: PASS
-- TRUE-3K repaired Short Test visual fidelity: PASS
+## v0.3.0 integrated standalone candidate
 
-### Remaining full-3K gate
+File:
 
-Do not yet mark the complete 3072 production profile validated. Required next:
+`entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
 
-1. integrate the validated phase-feed repair into the maintained standalone Spinny capture/profile path;
-2. re-run integrated Short Test;
-3. run one full repaired 3072 Standard / 250-frame revolution;
-4. confirm parser/output, rotation restoration, resource behavior and native-size fidelity.
+Version: `0.3.0`
+Build: `0.3.0-integrated-true3k-short-test`
+
+### Static tests
+
+- `node --check`: PASS
+- 1024/2048/3072 selections present: PASS
+- Standard/Slow/Slower/Very Slow retain 40 ms/frame: PASS
+- full capture API present: PASS
+- integrated 16-frame Short Test API present: PASS
+- cancel path present: PASS
+- figure rotation restore path present: PASS
+- per-frame Effects restore path present: PASS
+- no `BT.maker.takeScreenshot` reassignment/replacement: PASS
+- TRUE-3K timing history isolated by frame-source path: PASS
+
+### Integrated Short Test live gate
+
+Before testing:
+
+- disable the older standalone `spinny-mini-webp-short-test.user.js` companion;
+- disable the older `spinny-mini-webp-3k-repair-companion.user.js` companion;
+- install only v0.3.0 for current maintained profile testing.
+
+Test:
+
+1. Open Photo Booth.
+2. Select **3072px — TRUE 3K candidate**.
+3. Select **Standard**.
+4. Click **Short Test**.
+5. Do not manipulate the camera or Booth controls while capture is active.
+
+Required PASS conditions:
+
+- valid partial WebP downloads;
+- visible native-size detail matches the repaired TRUE-3K reference, not the blurry native 3K baseline;
+- `lastCapture.mode === 'short-test'`;
+- `lastCapture.frameSource === 'true3k-phase-feed'`;
+- exactly 16 frames rendered and encoded;
+- parser 3072x3072 / 16 frames / 640 ms / `{40:16}` / loop 0;
+- each repaired frame reports complete phase delivery and one 3072 source render;
+- every repaired frame reports `effectsRestored: true`;
+- figure rotation restored;
+- error null.
+
+### Full repaired 3072 gate
+
+Only after integrated Short Test PASS:
+
+- select 3072 + Standard;
+- click Capture WebP;
+- require 250 frames / 10,000 ms / `{40:250}` / loop 0;
+- require per-frame TRUE-3K repair diagnostics complete;
+- require figure and Effects restoration;
+- inspect native-size visual fidelity;
+- record file size / elapsed time / ETA accuracy / browser resource behavior.
+
+This final full run is required before complete 3072 production-profile validation.
+
+### Consolidation regression gate
+
+Because v0.3.0 consolidates previously stacked diagnostic behavior into the maintained script, re-run at least one validated lower-resolution profile before Witch Dock promotion. Preferred quick regression: 1024 Standard.
+
+### Short Test Witch Dock policy
+
+Standalone v0.3.0 exposes Short Test because it is a dev harness.
+
+Future Witch Dock:
+
+- Spinny service retains `captureShortTest()`;
+- normal UI hides Short Test;
+- Developer Mode exposes it through the Spinny host using `KWDeveloperMode.enabled` / `onChange()`;
+- Developer Mode must not duplicate media capture logic.
+
+### Interaction guard requirement
+
+Two accidental mouse-wheel camera changes during the original long 3072 run produced visible output jumps. Active-capture guards are therefore required before Witch Dock integration.
 
 ### 4K Spinny
 
-Deferred. Current Witch Dock TRUE-resolution still provider owns square 4096/8192 `BT.maker.takeScreenshot` requests.
-
-### Pause/input guards
-
-Approved next isolated stage after full repaired 3072 confirmation. Guards must cover Booth exit, camera interaction and Booth-state changes that can invalidate animation continuity.
-
-### Witch Dock integration
-
-Not started. Standalone gate remains active.
+Deferred. Current Witch Dock TRUE-resolution still provider owns square 4096/8192 screenshot requests.

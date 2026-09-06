@@ -4,98 +4,136 @@ Feature ID: `media.spinny-mini-webp`
 
 ## Purpose
 
-Provide higher-quality animated Spinny Mini export using animated WebP, replacing the broken legacy Higher Quality Spinny Mini GIF behavior and adding higher-resolution plus slower-rotation profiles without brittle compiled-string patching.
+Provide higher-quality animated Spinny Mini export using animated WebP, replacing the broken legacy Higher Quality Spinny Mini GIF behavior while adding higher-resolution and slower-rotation profiles without brittle compiled-string patching.
 
-## Validated behavior
+## Current maintained standalone candidate
 
-Historical Lob-parity reference:
+File:
 
-- 1024x1024
-- 250 frames
-- 40 ms/frame / 25 FPS
-- 10.0-second revolution
-- infinite loop
+`entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
 
-Validated configurable standalone combinations:
+Version: `0.3.0`
+Build: `0.3.0-integrated-true3k-short-test`
 
-- 1024 Standard / 250 frames
-- 2048 Standard / 250 frames
-- 1024 Very Slow / 750 frames
-- 2048 Slower / 500 frames
+## Historical Lob-parity reference
+
+- animated WebP;
+- 1024x1024;
+- 250 frames;
+- 40 ms/frame;
+- 10.0 s revolution;
+- 25 FPS;
+- infinite loop.
+
+## Validated lower-resolution combinations
+
+- 1024 Standard / 250 frames;
+- 2048 Standard / 250 frames;
+- 1024 Very Slow / 750 frames;
+- 2048 Slower / 500 frames.
 
 Resolution and rotation speed are independent. Current speed profiles retain 40 ms/frame so slower motion gains additional angular samples rather than longer frame holds.
 
 ## Resolution policy
 
-Accepted:
+Accepted lower-resolution behavior:
 
-- 1024px — validated Lob-parity baseline
-- 2048px — validated on tested combinations
-- TRUE-3K repaired frame source — validated by 16-frame Short Test; full 3072 production-profile gate still pending
+- 1024px — validated Lob-parity baseline;
+- 2048px — validated on tested combinations.
 
-Rejected:
+Rejected native path:
 
-- native HeroForge 3072 path — structurally 3072 but source-fidelity degraded because native Effects phases are 768px
+- native 3072px — structurally completes but source fidelity FAILS.
+
+Validated repair capability:
+
+- 3072px via TRUE-3K Effects-source phase feed — 16-frame repaired Short Test PASS mechanically and visually.
+
+Current integrated candidate:
+
+- v0.3.0 routes 3072 through the validated repaired frame source;
+- integrated Short Test + full 3072 confirmation still pending.
 
 Deferred:
 
-- 4096/8192 Spinny — current Witch Dock `media.screenshot-resolution` owns square 4096/8192 `BT.maker.takeScreenshot` requests for still-image repair
+- 4096/8192 Spinny — not exposed while Witch Dock `media.screenshot-resolution` owns square 4096/8192 screenshot routing.
 
-## Native 3072 fidelity failure
+## Confirmed native 3072 defect
 
-The first v0.2.2 3072 Standard / 250-frame capture completed in approximately 25 minutes and produced a structurally correct 3072x3072 animation with genuine 3072-sized encoded frames. Native-size inspection was nevertheless visibly blurry.
+The first native 3072 Standard / 250-frame capture completed in approximately 25 minutes.
 
-A 1024 control remained visually correct.
+Confirmed:
 
-Live trace established the cause:
+- final animation 3072x3072;
+- exactly 250 frames;
+- individual encoded frame payloads 3072-sized;
+- custom animated-WebP mux not falsely relabeling lower-size payloads.
 
-- 1024 request → `CK.Effects.renderToCanvas(1024,1024,camera1024)`
-- 2048 request → repeated `renderToCanvas(1024,1024,camera2048)` phases
-- 3072 request → repeated `renderToCanvas(768,768,camera3072)` phases
+Failed requirement:
 
-The current `CK.Effects.renderToCanvas` implementation sizes its actual Effects render target from those supplied dimensions. Therefore returned canvas/WebP dimensions are not sufficient high-resolution postconditions.
+- native-size visual detail was blurry and looked like lower-resolution content enlarged to 3072.
+
+A subsequent 1024 control capture was visually correct.
+
+Runtime trace established:
+
+- 1024 request → `CK.Effects.renderToCanvas(1024,1024,camera1024)`;
+- 2048 request → repeated `renderToCanvas(1024,1024,camera2048)` phases;
+- 3072 request → repeated `renderToCanvas(768,768,camera3072)` phases.
+
+The native `renderToCanvas` implementation sizes its Effects render target from those supplied dimensions. Therefore native 3072 output dimensions do not imply 3072 source-detail fidelity.
 
 ## Required capabilities
 
-Base capture:
+Base feature:
 
-- Photo Booth open with `BT.maker.enabled === true`
-- callable `BT.maker.takeScreenshot(width,height)`
-- writable finite `CK.character.display.rotation.y`
-- established HeroForge display refresh/occlusion/shadow/matrix behavior
-- browser `HTMLCanvasElement.toBlob(..., 'image/webp', quality)`
-- Blob/typed-array APIs
+- Photo Booth open with `BT.maker.enabled === true`;
+- callable `BT.maker.takeScreenshot(width,height)`;
+- writable finite `CK.character.display.rotation.y`;
+- established display/occlusion/shadow/matrix refresh behavior;
+- browser `HTMLCanvasElement.toBlob(..., 'image/webp', quality)`;
+- Blob/typed-array APIs.
 
-TRUE-3K repaired frame source additionally requires:
+TRUE-3K additionally requires:
 
-- callable `CK.Effects.renderToCanvas`
-- GPU texture/renderbuffer support for 3072
-- native tiled capture topology that can be classified unambiguously
-- temporary method replacement/restoration of `CK.Effects.renderToCanvas`
+- callable `CK.Effects.renderToCanvas`;
+- GPU texture/renderbuffer support for a 3072 Effects source;
+- classifiable native tiled capture topology;
+- temporary replace/restore capability for `CK.Effects.renderToCanvas`.
 
-## Accepted serialization architecture
+## Serialization architecture
 
 ```text
 Spinny capture service
     ↓
 HeroForge runtime rotation + refresh adapter
     ↓
-frame source
+frame-source adapter
     ↓
 browser static-WebP encode per frame
     ↓
 project-owned RIFF animated-WebP mux
     ↓
+parser validation
+    ↓
 download
 ```
 
-Lower-resolution frame source:
+The feature does not depend on HeroForge's closure-local animation encoder.
+
+## Frame-source behavior
+
+### 1024 / 2048
+
+Use native:
 
 ```text
 BT.maker.takeScreenshot(size,size)
 ```
 
-Repaired 3072 frame source:
+### 3072 TRUE-3K
+
+For one explicit animation frame:
 
 ```text
 BT.maker.takeScreenshot(3072,3072)
@@ -104,168 +142,192 @@ native Booth requests tiled Effects phases
     ↓
 temporary CK.Effects.renderToCanvas adapter
     ↓
-one true 3072x3072 Effects source per animation frame
+one genuine 3072x3072 Effects source
     ↓
-derive requested native phase canvases from that source
+derive requested phase canvases by interleaving source pixels
     ↓
-native Booth compositor completes 3072 frame
+native Booth compositor finishes 3072 frame
+    ↓
+restore exact CK.Effects.renderToCanvas
 ```
 
-This preserves HeroForge's native Booth compositor while repairing the lower-resolution model/Effects source.
+The adapter:
+
+- derives tile size/grid live;
+- rejects non-square/invalid/ambiguous topology;
+- validates phase offsets against native camera-view geometry;
+- rejects duplicate phases;
+- requires a complete phase feed;
+- requires one true source render for current tiled mode;
+- validates source dimensions;
+- passes unrelated Effects calls through unchanged;
+- supports future native true-3072 passthrough if HeroForge begins providing it directly;
+- restores the exact original Effects method after every repaired frame.
 
 ## Provider ownership boundary
 
-The repaired 3072 frame source must not replace `BT.maker.takeScreenshot`.
+Spinny must not replace `BT.maker.takeScreenshot`.
 
-Public Witch Dock `media.screenshot-resolution` already owns that method for 4096/8192 repair and treats unexpected ownership replacement as degraded provider state.
+Public Witch Dock `media.screenshot-resolution` owns that method for 4096/8192 repair and treats unexpected ownership loss as degraded state.
 
-The 3072 repair therefore temporarily adapts only `CK.Effects.renderToCanvas` during explicit repaired frame capture. Non-matching Effects calls pass through unchanged, and the exact original method restores after completion/failure/cancel.
-
-## Topology contract
-
-Do not hard-code the observed 4x4 grid as an assumed permanent HeroForge API.
-
-Current validated runtime topology on `heroforge07.1.9.98`:
-
-- target: 3072
-- native tile: 768
-- grid: 4 per axis
-- expected phases: 16 per animation frame
-
-Maintained code must derive and validate:
-
-- tile size
-- integral grid
-- phase coordinates from camera offsets
-- duplicate-phase rejection
-- complete phase delivery
-- source dimensions
-- Effects restoration
-
-If HeroForge changes topology ambiguously, repaired 3072 capture must fail rather than guess.
+The 3072 repair therefore operates one level lower at `CK.Effects.renderToCanvas` and only during an explicit repaired frame.
 
 ## Memory behavior
 
-Full Spinny:
+- Do not retain raw RGBA for all frames.
+- Encode each frame immediately to compressed static WebP.
+- Retain compressed image payload chunks only until final mux.
+- Reduce source canvas backing stores after extraction.
+- TRUE-3K retains only the current frame's real 3072 RGBA Effects source (~36 MiB) while deriving its native phases.
+- Release repaired source pixels before the next animation frame.
 
-- do not retain raw RGBA for all animation frames
-- encode each completed frame immediately to compressed static WebP
-- retain compressed payload chunks only until final mux
-- reduce source canvas backing store after extraction
+## Full capture profiles
 
-TRUE-3K frame repair:
+- Standard: 250 frames / 10,000 ms / 40 ms/frame
+- Slow: 375 frames / 15,000 ms / 40 ms/frame
+- Slower: 500 frames / 20,000 ms / 40 ms/frame
+- Very Slow: 750 frames / 30,000 ms / 40 ms/frame
 
-- one 3072x3072 RGBA Effects source is approximately 36 MiB
-- retain only the current animation frame's source pixels
-- release those pixels after all native phases for that frame are supplied
-- never accumulate repaired raw 3072 sources across the animation
+## Short Test diagnostic operation
 
-## Short Test diagnostic — validated
+Short Test is a maintained operation of the same Spinny capture service.
 
-`entries/tampermonkey-standalone/spinny-mini-webp-short-test.user.js`
+Contract:
 
-Build: `0.1.0-short-test-16f-partial-arc`.
+- exactly 16 contiguous frames;
+- same selected resolution;
+- same selected speed profile's angular spacing;
+- same 40 ms frame duration;
+- same refresh/occlusion/shadow/matrix sequence;
+- same frame-source adapter;
+- same static-WebP encoder;
+- same RIFF mux and parser;
+- same cancel-after-current-frame behavior;
+- same starting-rotation restoration;
+- output filename/status labeled `SHORT_TEST`.
 
-- 16 contiguous frames
-- selected profile's normal angular spacing and frame duration
-- Standard / 250-frame selection: 1.44 degrees/sample, 21.6 degrees first-to-last
-- same refresh/occlusion/shadow/matrix sequence
-- same static-WebP encode and RIFF mux semantics
-- parser-gated dimensions/frame count/timing/loop
-- cancellation after current frame
-- starting rotation restored in `finally`
-- 4096/8192+ refused
+For Standard / 250-frame spacing, 16 samples span 21.6 degrees first-to-last.
 
-Live result: PASS as rapid diagnostic infrastructure. Baseline 3072 Short Test reproduced the native blur.
+## Short Test UI policy
 
-## TRUE-3K repair companion — validated Short Test
+Standalone Tampermonkey testing is a development harness, so Short Test is directly visible there.
 
-`entries/tampermonkey-standalone/spinny-mini-webp-3k-repair-companion.user.js`
+Future Witch Dock:
 
-Version: 0.1.0
-Build: `0.1.0-3072-effects-source-phase-feed`
+- normal users: Short Test hidden;
+- Developer Mode ON: Spinny host reveals Short Test and developer diagnostics;
+- Developer Mode OFF: those diagnostic controls disappear;
+- Developer Mode only controls visibility/state and does not own capture logic.
 
-Purpose:
+The expected integration surface is the existing `KWDeveloperMode.enabled` and `KWDeveloperMode.onChange()` API.
 
-Prove that feeding native 3072 phases from a real 3072 Effects source restores native-size detail.
+## Progress / ETA
 
-Live validation:
+Preserve the validated progress/ETA model:
 
-- status: PASS
-- ~30.448 s
-- 16 repaired animation frames
-- tile 768 / grid 4
-- 16/16 expected/supplied/unique phases per frame
-- one 3072 source render per frame
-- 256 total phases
-- output 4,589,972 bytes
-- parsed 3072x3072 / 16 frames / 640 ms / 40 ms x16 / loop 0
-- rotation restored true
-- Effects restored true
-- errors null
-- user native-size visual fidelity: PASS
+- minimum five samples before live-current-run estimate is trusted;
+- EMA alpha 0.18;
+- estimate combines EMA and run average;
+- session-only timing history.
 
-Conclusion: **TRUE-3K frame-source repair is validated.**
+v0.3.0 keys timing history by resolution + frame-source path so native 3072 measurements cannot seed repaired TRUE-3K estimates.
 
-The companion remains diagnostic scaffolding. The proven repair should be integrated into the maintained Spinny capture service/profile path rather than requiring users to keep stacked test scripts.
+Short Test may seed per-frame timing for a later full run using the same frame source, but its small mux/assembly tail must not be reused as the full capture's tail estimate.
 
-## Progress and ETA UX
+## Diagnostics
 
-The existing full-profile progress/ETA remains validated. Integrating repaired 3072 must preserve the current progress/ETA contract unless testing proves a change is needed.
+Each capture should expose:
 
-Because repaired 3072 per-frame cost differs substantially from the old native 3072 path, timing prediction must learn from actual repaired-frame timing rather than reuse stale native-3072 history blindly.
+- version/build;
+- mode (`full` / `short-test`);
+- requested profile;
+- base rotation;
+- frame-source ID;
+- frames rendered/encoded;
+- encoded bytes/output bytes;
+- parsed WebP dimensions/frame timing/loop;
+- timing data;
+- rotation restoration;
+- error.
+
+TRUE-3K repaired frames additionally expose:
+
+- tile size;
+- grid;
+- expected/supplied/unique phases;
+- source-render count;
+- source size;
+- native-true-resolution passthrough flag;
+- Effects restoration state.
 
 ## Interaction protection requirement
 
-Two accidental mouse-wheel camera interactions during the first full native 3072 capture produced visible jumps. Active-capture protection is required before Witch Dock integration:
+Two accidental mouse-wheel camera interactions during the original long 3072 capture changed the Booth camera and produced visible output jumps.
 
-- camera/canvas manipulation
-- leaving Photo Booth
-- Booth view/backdrop/overlay/light/effect changes
-- other state changes that invalidate frame continuity
+Before Witch Dock integration, active capture must guard or warn before:
 
-Guard implementation remains a separate stage from resolution repair.
+- camera/canvas manipulation;
+- leaving Photo Booth;
+- view changes;
+- backdrop/background changes;
+- overlays/frames;
+- lighting/effects;
+- other state changes that invalidate frame continuity.
+
+Guards must use semantic/runtime/DOM evidence rather than hard-coded screen coordinates across HeroForge layouts.
+
+## Pause requirement
+
+Approved future behavior:
+
+- pause only between complete frames;
+- retain already-compressed frames;
+- resume at next angular sample;
+- active processing ETA excludes indefinite pause duration;
+- diagnostics record paused state/count/duration;
+- Pause and interaction guards remain a separate validation stage after v0.3.0 resolution integration closes.
 
 ## Lifecycle
 
-Maintained feature should support:
-
-- initialize
-- capture
-- cancel
-- disable/dispose where practical
-- starting-rotation restoration
-- temporary Effects-adapter restoration
-- concurrent capture blocking
+- capability polling;
+- full capture;
+- Short Test;
+- cancel after current frame;
+- concurrent-capture block;
+- rotation restoration;
+- per-frame TRUE-3K Effects restoration;
+- dispose removes owned UI/style/timers/global when idle.
 
 ## Failure behavior
 
-- stop current capture on render/encode/mux/validation failure
-- restore starting rotation where technically possible
-- restore exact Effects method after repaired 3072 capture
-- fail on unavailable/ambiguous capabilities or topology
-- do not affect unrelated HeroForge behavior
-- public Witch Dock remains untouched during standalone validation
+- Render/encode/mux/validation failure stops current capture.
+- Restore figure rotation where technically possible.
+- Restore temporary Effects adapter after every repaired frame.
+- Fail on unavailable/ambiguous required capabilities.
+- Do not affect unrelated HeroForge behavior.
+- Public Witch Dock remains untouched during standalone validation.
 
 ## Risk
 
-High because sustained media capture relies on undocumented HeroForge screenshot topology and significant GPU/browser resources.
+High because media capture performs sustained render/encode work and depends on undocumented HeroForge screenshot topology.
 
-High-resolution acceptance requires both mechanical diagnostics and human native-size fidelity validation.
+Output dimensions alone are not a sufficient high-resolution postcondition. Higher-resolution acceptance requires mechanical topology/source validation plus human native-size fidelity validation.
 
 ## Ownership
 
-- Primary maintainer: TBD
-- Reviewer: Amanda
-- Backup maintainer: TBD
-- Current disposition: 1024/2048 tested profiles validated; native 3072 rejected; TRUE-3K frame-source repair validated by Short Test; full repaired 3072 Standard pending; no Witch Dock Spinny integration yet
+- Primary maintainer: TBD.
+- Reviewer: Amanda.
+- Backup maintainer: TBD.
+- Current disposition: standalone v0.3.0 candidate; lower-resolution behavior and TRUE-3K repair principle validated; integrated 3K profile pending; no Witch Dock Spinny integration yet.
 
 ## Promotion gate
 
 Do not integrate Spinny into Witch Dock Dev until:
 
-- validated TRUE-3K repair is integrated into the maintained standalone feature
-- integrated Short Test passes
-- one full repaired 3072 Standard run passes if 3072 remains an intended production profile
-- Pause/input guards are separately implemented and validated if still intended
-- public integration is separately approved
+- integrated v0.3.0 Short Test passes;
+- full repaired 3072 Standard passes if 3072 remains an intended production profile;
+- at least one lower-resolution regression smoke passes after consolidation;
+- Pause/input guards are separately implemented and validated if still intended;
+- Witch Dock Dev host is built from the same underlying service;
+- Developer-Mode-only Short Test presentation is validated;
+- public promotion is separately approved.

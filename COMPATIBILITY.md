@@ -7,7 +7,7 @@ Current media validation target: `heroforge07.1.9.98` / 2026-09-06.
 | Component | Current status | Last verified build/date | Notes |
 |---|---|---|---|
 | `media.screenshot-resolution` | Standalone validated; Witch Dock Stable validated | `heroforge07.1.9.98` / 2026-09-05 | Stable still-capture provider remains closed/validated. |
-| `media.spinny-mini-webp` | **1024/2048 validated; native 3072 rejected; TRUE-3K frame-source repair validated by Short Test** | `heroforge07.1.9.98` / 2026-09-06 | Full repaired 3072 Standard remains pending before complete 3K profile validation. |
+| `media.spinny-mini-webp` | Lower-resolution validated; native 3072 rejected; TRUE-3K repair validated at Short Test level; **v0.3.0 integrated candidate pending live** | `heroforge07.1.9.98` / 2026-09-06 | Full repaired 3072 Standard still required before complete 3K profile validation. |
 | `decals.gizmo.bound-correction` | Witch Dock Stable | 2026-09-05 | Validated separately. |
 | Character local JSON | Core Save/Load passed live | 2026-09-03 | Lifecycle/repeated-use pending. |
 | Projected decal state/control | Runtime path confirmed | September 2026 | Renderer dependency audit pending. |
@@ -22,7 +22,7 @@ Confirmed named/runtime capabilities:
 - established display/occlusion/shadow/matrix refresh sequencing;
 - `BT.maker.takeScreenshot(width,height)`;
 - `CK.Effects.renderToCanvas(width,height,camera,aa)`;
-- browser static WebP encoding through `canvas.toBlob('image/webp', quality)`;
+- browser static WebP encoding via `canvas.toBlob('image/webp', quality)`;
 - project-owned RIFF/VP8X/ANIM/ANMF animated WebP mux.
 
 ## Validated lower-resolution results
@@ -36,72 +36,89 @@ Confirmed named/runtime capabilities:
 - parser/rotation restoration: PASS
 - general Cancel path: PASS by user report
 
-## Native 3072 incompatibility — confirmed
+## Native 3072 incompatibility
 
 A full native 3072 Standard capture produced a structurally correct 3072x3072 / 250-frame animated WebP but was visibly blurry at native size.
 
-Live render tracing confirmed:
+Live tracing confirmed:
 
 - 1024 capture uses a 1024 Effects render;
 - 2048 capture uses repeated 1024 Effects phases;
-- 3072 capture uses repeated **768 Effects phases** while retaining a 3072 capture camera.
+- 3072 capture uses repeated **768 Effects phases** under a 3072 capture camera.
 
-The current native `CK.Effects.renderToCanvas` sizes its render target from those supplied dimensions. Therefore native 3072 output dimensions do not imply 3072 scene/Effects fidelity.
+Current native `CK.Effects.renderToCanvas` sizes its render target from the supplied dimensions. Therefore native 3072 output dimensions do not imply 3072 source fidelity.
 
-Status: native 3072 true-resolution output remains **unsupported/rejected**.
+Status: native 3072 remains **unsupported/rejected**.
 
-## Short Test diagnostic — compatible / validated
+## TRUE-3K repaired frame-source capability
 
-`spinny-mini-webp-short-test.user.js` build `0.1.0-short-test-16f-partial-arc` is validated as rapid diagnostic infrastructure. It produces a 16-frame partial animation using normal profile angular spacing/timing and reproduced the native 3072 blur reliably.
-
-## TRUE-3K repair — validated frame-source capability
-
-`spinny-mini-webp-3k-repair-companion.user.js` build `0.1.0-3072-effects-source-phase-feed` passed the repaired Short Test on `heroforge07.1.9.98`.
+The standalone repair companion passed a 16-frame repaired Short Test on `heroforge07.1.9.98`.
 
 Confirmed:
 
-- 16 repaired frames;
-- native topology: 768 tile, 4x4 grid;
-- 16/16 expected/supplied/unique phases per frame;
-- one true 3072x3072 Effects source render per frame;
-- 256 total phases;
-- parsed output: 3072x3072 / 16 frames / 640 ms / 40 ms x16 / loop 0;
+- target 3072x3072;
+- native tile 768;
+- grid 4x4;
+- 16 expected / 16 supplied / 16 unique phases per animation frame;
+- one true 3072x3072 Effects source render per animation frame;
+- 256 total phases across 16 frames;
+- parser: 3072x3072 / 16 frames / 640 ms / 40 ms x16 / loop 0;
 - output bytes: 4,589,972;
-- rotation restoration: true;
-- Effects restoration: true;
-- errors: null;
+- figure rotation restored;
+- Effects method restored;
+- errors null;
 - user native-size fidelity inspection: PASS.
 
 Compatibility conclusion:
 
-**The named `CK.Effects.renderToCanvas` seam can repair 3072 source fidelity without replacing `BT.maker.takeScreenshot`.** This preserves the public Witch Dock 4096/8192 provider's ownership boundary.
+**3072 source fidelity can be repaired at the named `CK.Effects.renderToCanvas` seam without replacing `BT.maker.takeScreenshot`.**
 
-The repair still requires runtime topology validation and must fail safely if HeroForge changes tile/grid/phase behavior.
+This is compatible with the current public Witch Dock still-provider ownership boundary because Spinny does not displace the provider's 4096/8192 screenshot wrapper.
 
-## Remaining 3072 gate
+## v0.3.0 integrated candidate
 
-The repair is validated at the frame-source/Short Test level. A maintained full 3072 profile is not yet closed until:
+`entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
 
-1. the repair is integrated into the maintained standalone Spinny capture path;
-2. integrated Short Test passes;
-3. one full repaired 3072 Standard / 250-frame revolution passes mechanically and visually.
+Version: `0.3.0`
+Build: `0.3.0-integrated-true3k-short-test`
 
-## Interaction protection trigger
+Compatibility behavior:
 
-Two accidental mouse-wheel camera changes during the first full 3072 run produced visible animation jumps. Camera and Booth-state guards are therefore required before Witch Dock integration.
+- 1024/2048: native frame source;
+- 3072: TRUE-3K phase-feed frame source;
+- matching 3072 Effects wrapper exists only during one explicit synchronous frame capture;
+- wrapper validates tile/grid/phase topology and exact source size;
+- wrapper restores immediately after each frame;
+- `BT.maker.takeScreenshot` ownership remains untouched;
+- frame-source diagnostics are retained per repaired frame;
+- Short Test uses the exact same frame-source path as full capture.
 
-## 4K Spinny incompatibility note
+Current status: static checks PASS; live integrated Short Test pending.
 
-Square 4096/8192 `BT.maker.takeScreenshot` requests are currently owned by the Witch Dock TRUE-resolution still provider. 4K Spinny remains deferred until a separate explicit frame-capture capability/bypass is designed and validated.
+## Short Test compatibility policy
+
+Short Test is retained as a supported diagnostic operation of the Spinny service.
+
+- standalone test harness: directly visible;
+- Witch Dock normal mode: hidden;
+- Witch Dock Developer Mode: visible via the Spinny UI consuming `KWDeveloperMode.enabled` / `onChange()`;
+- Developer Mode controls visibility only and does not implement capture behavior.
 
 ## Revalidation triggers
 
-Re-run relevant Spinny gates when:
+Re-run Spinny validation when:
 
-- HeroForge screenshot tile topology changes;
-- `CK.Effects.renderToCanvas` behavior changes;
-- repaired 3072 capture service changes;
-- character rotation/refresh sequencing changes;
-- browser WebP support/container behavior changes;
+- HeroForge screenshot/render tile topology changes;
+- `CK.Effects.renderToCanvas` behavior or camera-view shape changes;
+- a GPU reports limits below the selected repaired source size;
+- character-display rotation/refresh behavior changes;
+- browser WebP support/container validation changes;
 - capture interaction guards are added;
+- Witch Dock host integration changes lifecycle/visibility behavior;
 - high-cost resource limits are observed.
+
+Use integrated Short Test first for 3072 compatibility checks. Reserve a full repaired revolution for final confirmation after the Short Test gate passes.
+
+## 4K Spinny incompatibility note
+
+Do not add 4096 Spinny through the current public `BT.maker.takeScreenshot` surface while Witch Dock TRUE-resolution still repair is enabled. The provider owns square 4096/8192 requests. 4K Spinny remains deferred until a separately designed explicit frame-capture capability/bypass is validated.
