@@ -1,7 +1,7 @@
 # INV-0004 — Spinny Mini animated WebP reconstruction
 
 Date opened: 2026-09-05
-Status: active — standalone parity implementation ready for full test
+Status: active — first 1024/250 parity milestone validated; 2048/speed-profile stage next
 HeroForge build: `heroforge07.1.9.98`
 Feature: `media.spinny-mini-webp`
 
@@ -32,7 +32,7 @@ Output:
 - visible Effects calls: 386 x `CK.Effects.renderToCanvas(512,512,...)`;
 - auxiliary call: one `CK.Capture.renderToImage(512,512,...)`.
 
-No ordinary `HTMLCanvasElement.toBlob()` calls were observed during the native animation export. Native HeroForge therefore uses a specialized encoding path, but that path is no longer required for the first reconstruction.
+No ordinary `HTMLCanvasElement.toBlob()` calls were observed during the native animation export. Native HeroForge therefore uses a specialized encoding path, but that path is not required for the maintained reconstruction.
 
 ## Confirmed Lob HQ historical output
 
@@ -50,7 +50,9 @@ Measured output:
 
 Legacy source/bundle audit also confirms the Higher Quality control called the old Spinny function with resolution 1024 and frame-count argument 250. The historical native GIF path added frames with approximately 41 ms delay.
 
-## First parity target
+## First parity target — validated
+
+Target:
 
 - animated WebP;
 - 1024x1024;
@@ -58,6 +60,20 @@ Legacy source/bundle audit also confirms the Higher Quality control called the o
 - 10.0-second revolution;
 - 25 FPS / 40 ms frame timing;
 - continuous loop.
+
+Full standalone v0.1.0 result:
+
+- user reported: “the webp worked”;
+- active build confirmed: `0.1.0-runtime-rotation-webp-mux`;
+- download path mechanically requires 1024x1024, exactly 250 frames, and exactly 10,000 ms total duration before it will save the file;
+- mux writes every ANMF duration at 40 ms;
+- mux writes loop count 0 / infinite;
+- retained post-capture status recovered through HF-Chat-Bridge: `Downloaded 1024px WebP: 250 frames / 10.0 s / 12.9 MiB`;
+- Photo Booth capture capability remained ready afterward.
+
+Result: **PASS. First Lob-parity milestone closed.**
+
+The 12.9 MiB size is the UI's rounded display value. Exact output bytes from the original run were not recoverable because the current public diagnostic getter is blocked by the bridge safe reader.
 
 ## Discovery findings
 
@@ -71,7 +87,7 @@ No obvious high-level named Spinny/WebP animation function was exposed on `BT`, 
 
 A runtime webpack factory scan found loose WebP/GIF-related factory matches but no already-loaded callable export that cleanly represented the native animated-WebP encoder.
 
-Because a lower-priority module dependency was not necessary after the independent mux proof, deeper private-module binding was stopped rather than turning a closure-local implementation into a maintained API dependency.
+Follow-up issue #467 later found the temporary `HFSpinWebpack` diagnostic object no longer present. This private-module track is now **no longer relevant** to the accepted implementation because the independent mux path has been proven and fully exercised at 1024 parity.
 
 ### Current runtime capabilities
 
@@ -113,7 +129,7 @@ A separate local synthetic three-frame mux was also recognized as animated WebP 
 
 ## Architecture decision
 
-Accepted first maintained path:
+Accepted maintained path:
 
 ```text
 HeroForge runtime character rotation
@@ -137,7 +153,7 @@ This is preferred over private webpack encoder discovery because it:
 
 Entry: `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js`.
 
-Fixed parity profile:
+Validated parity profile:
 
 - size: 1024;
 - frames: 250;
@@ -162,19 +178,46 @@ Behavior:
 - installs no permanent HeroForge method override.
 
 Static JavaScript syntax check: PASS.
+Full 1024/250 live capture: PASS.
 
 ## Supported inference
 
-The first 1024/250 run will be materially heavier than native 512 WebP because each frame contains four times the pixels, but it should remain far more memory-efficient than retaining 250 raw 1024 RGBA frames because each frame is compressed immediately.
+2048 Standard will contain four times the pixels per frame as validated 1024 Standard and is therefore expected to be materially heavier. Slow profiles that preserve 25 FPS will also increase output size roughly with frame count, although WebP inter-frame compression behavior and scene content will affect the actual ratio.
 
 ## Still unproven
 
-- full 1024/250 live completion time and browser/GPU pressure;
-- exact visual rotation direction/alignment relative to the historical Lob GIF;
-- whether quality 0.95 is the ideal maintained static-WebP quality setting;
-- repeated-use behavior after a full 250-frame capture;
-- practical 2048 limits;
-- final speed preset multipliers/frame-count policy.
+- exact full-run orientation-restored diagnostic on the validated 250-frame run;
+- repeated full capture in one session;
+- practical 2048 completion time, output size, browser/GPU pressure, and memory behavior;
+- final practical limits for combined 2048 + long-duration profiles;
+- whether quality 0.95 should remain fixed for all resolutions.
+
+## Next profile architecture
+
+Resolution and speed remain independent.
+
+Initial resolution options:
+
+- 1024 — validated;
+- 2048 — experimental next.
+
+Initial speed presets, preserving 25 FPS temporal density:
+
+- Standard: 10 s / 250 frames;
+- Slow: 15 s / 375 frames;
+- Slower: 20 s / 500 frames;
+- Very Slow: 30 s / 750 frames.
+
+This intentionally increases angular sample count as rotation slows rather than replaying 250 sparse samples for a longer duration.
+
+Validation order:
+
+1. 1024 Standard regression must still match v0.1.0.
+2. 2048 Standard.
+3. 1024 Slow.
+4. 1024 Slower.
+5. 1024 Very Slow.
+6. Expensive 2048 + slow combinations only after the preceding resource behavior is known.
 
 ## Safety / compatibility constraints
 
@@ -184,18 +227,19 @@ The first 1024/250 run will be materially heavier than native 512 WebP because e
 - Block concurrent animated captures.
 - Restore character rotation after success, failure, or cancel where technically possible.
 - `media.screenshot-resolution` provider only intercepts 4096/8192 square still requests, so 1024/2048 Spinny frame requests should pass through untouched.
+- Preserve the exact validated 1024 Standard capture behavior while parameterizing profiles.
 - Public Witch Dock and Stable remain untouched during this investigation.
 
 ## Next gate
 
-Run the standalone v0.1.0 1024/250 parity capture and verify:
+Generalize the standalone capture package without rewriting its validated core:
 
-1. capture finishes and downloads a `.webp`;
-2. output opens/animates correctly;
-3. output is mechanically 1024x1024 / 250 frames / 10,000 ms;
-4. visual spin completes one clean revolution at the intended cadence;
-5. model returns to its original orientation;
-6. HeroForge remains healthy after capture;
-7. repeat capture works.
+1. add 1024/2048 resolution selection;
+2. add Standard/Slow/Slower/Very Slow speed selection;
+3. expose bridge-readable plain diagnostic state including exact output bytes and rotation-restored status;
+4. validate 1024 Standard regression first;
+5. validate 2048 Standard next;
+6. validate slower 1024 profiles and resource behavior;
+7. define practical guardrails before testing the most expensive 2048 + slow combinations.
 
-Only after that gate passes should 2048 and configurable slower-speed profiles begin.
+Only after that expanded standalone suite passes should Witch Dock Dev integration begin.

@@ -1,5 +1,58 @@
 # Pre-Flight Check Log
 
+## PFC-2026-09-05-015 — Record successful 1024 HQ Spinny WebP parity capture
+
+Date: 2026-09-05
+
+### Target files
+
+- `MASTER.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `OWNERSHIP.md`
+- `TESTING.md`
+- `docs/feature-specs/spinny-mini-webp.md`
+- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
+
+### Reviewed
+
+- binding `PROJECT_CONTRACT.md`
+- current branch head `19ea283e670a0a700ee84e7b9d6b2453afb5b17a`
+- standalone v0.1.0 `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js`
+- `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`
+- current Spinny Mini feature spec and investigation
+- historical Lob HQ output baseline and current native HeroForge WebP baseline
+- user live acceptance report: “the webp worked”
+- retained standalone UI status recovered through HF-Chat-Bridge: `Downloaded 1024px WebP: 250 frames / 10.0 s / 12.9 MiB`
+
+### Confirmed
+
+- The successful capture came from standalone v0.1.0 build `0.1.0-runtime-rotation-webp-mux`.
+- v0.1.0 only downloads after mechanically verifying 1024x1024 dimensions, exactly 250 ANMF frames, and exactly 10,000 ms total animation duration.
+- The mux writes every frame at 40 ms and loop count 0/infinite, so the accepted output matches the Lob parity cadence: 25 FPS effective and continuous loop.
+- The retained UI reports an output size of 12.9 MiB (rounded display value).
+- User reported the generated WebP worked; this closes the first 1024/250 parity milestone.
+- Exact output byte count was not recoverable from the safe bridge reader because `lastCapture` is exposed through a getter; the rounded 12.9 MiB UI result is retained.
+- Repeat-use and 2048/resource-limit testing remain separate next-stage work; they do not invalidate the successful first parity capture.
+
+### Material conflict risks for the next runtime stage
+
+- Preserve the now-working 1024/250 capture path exactly while generalizing profiles.
+- 2048 multiplies pixels per frame by four and may materially increase capture time/output size.
+- Slower presets that preserve 25 FPS multiply frame count and must not retain raw RGBA frames.
+- Very slow + 2048 combinations may be expensive enough to require practical guardrails after measurement.
+- Public Witch Dock remains out of scope until standalone profile testing passes.
+
+### Recommended action
+
+Checkpoint the successful parity validation in durable docs, then begin standalone 2048 plus independent speed-profile implementation by parameterizing the validated capture engine rather than replacing it.
+
+**Runtime behavior changed:** no. This checkpoint is documentation-only. No JavaScript changed and public Witch Dock behavior is unchanged.
+
+---
+
 ## PFC-2026-09-05-014 — Spinny Mini animated WebP reconstruction kickoff
 
 Date: 2026-09-05

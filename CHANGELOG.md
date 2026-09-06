@@ -1,5 +1,48 @@
 # Changelog
 
+## HFC-2026-09-05-019 — Validate first 1024 HQ Spinny WebP parity capture
+
+Date: 2026-09-05
+
+### Summary
+
+Documentation-only validation checkpoint for `media.spinny-mini-webp` after the first full standalone 1024/250 capture succeeded live.
+
+### Confirmed live result
+
+- User reported: “the webp worked”.
+- Successful script/build: `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js` v0.1.0 / `0.1.0-runtime-rotation-webp-mux`.
+- The script only downloads after mechanically validating 1024x1024 dimensions, exactly 250 frames, and exactly 10,000 ms total duration.
+- All frames are written at 40 ms, yielding the intended 25 FPS effective cadence.
+- Loop count is 0 / infinite by the deterministic ANIM mux.
+- Retained live UI status reported: `Downloaded 1024px WebP: 250 frames / 10.0 s / 12.9 MiB`.
+- Photo Booth capture capability remained ready after the completed capture.
+- Exact output bytes were not recoverable from the bridge safe reader because `lastCapture` is exposed through a getter; the 12.9 MiB value is the rounded UI display.
+
+### Status
+
+- First Lob-parity milestone: **validated**.
+- 2048 experiment: next standalone stage.
+- Independent speed presets: next standalone stage.
+- Repeat-use/resource-limit testing: remains required during the next standalone stage.
+- Witch Dock Dev/Stable: unchanged and not yet in scope.
+
+### Touched files
+
+- `MASTER.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `OWNERSHIP.md`
+- `TESTING.md`
+- `docs/feature-specs/spinny-mini-webp.md`
+- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
+
+**Runtime behavior changed:** no. No JavaScript changed and public Witch Dock behavior is unchanged.
+
+---
+
 ## HFC-2026-09-05-018 — Add standalone 1024 HQ Spinny WebP parity test
 
 Date: 2026-09-05

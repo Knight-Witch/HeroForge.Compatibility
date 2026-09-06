@@ -5,7 +5,7 @@ This is the canonical feature-ID inventory. Historical/provisional inventory det
 | Feature ID | Purpose | Risk | Status |
 |---|---|---|---|
 | `media.screenshot-resolution` | Restore genuine 4K/8K Photo Booth still-image rendering | Medium | **Standalone validated; Witch Dock Stable validated on `heroforge07.1.9.98`**. 4K = one 4096 source; 8K = four shifted 4096 sources. Public promotion `e155f2c2f961463b4a0e26f7c88f21f603ce1b95`; clean public smoke passed perfectly. |
-| `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | **Standalone 1024/250 parity implementation ready on `spinny-webp-hq-wip`; low-resolution live mux proof passed on `heroforge07.1.9.98`; full human parity capture pending.** Native baseline 512x512 / 386 frames / 17 ms; Lob HQ parity target 1024x1024 / 250 frames / 10 s / 25 FPS. Supersedes provisional `media.spin-gif-quality`. |
+| `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | **Standalone 1024/250 Lob-parity capture validated on `heroforge07.1.9.98`**. Successful v0.1.0 output mechanically gated at 1024x1024 / 250 frames / 10.0 s / 25 FPS / infinite loop; retained UI reported 12.9 MiB. Next: 2048 plus independent speed profiles and repeat/resource testing. Supersedes provisional `media.spin-gif-quality`. |
 | `decals.gizmo.bound-correction` | Correct bound/Project-OFF decal transform gizmo | High | Witch Dock Stable; validated Move/Rotate/Scale, undo/redo, Project state/artwork transform preservation, fresh-slot bad-default normalization. |
 | `character.local-export` | Export character JSON locally | Medium | Standalone reconstruction committed; core Save passed live. |
 | `character.local-import` | Import character JSON locally | Medium | Standalone reconstruction committed; core Load passed live. |
@@ -23,8 +23,8 @@ Maintained 8K does not use a one-shot 8192 Effects target. Four shifted 4096 sou
 
 ## Spinny Mini WebP note
 
-The maintained reconstruction target is animated WebP rather than GIF. The first package intentionally matches the historical Lob HQ output's observable cadence and resolution: 1024x1024, 250 frames, 10 seconds / 25 FPS.
+The maintained reconstruction target is animated WebP rather than GIF. The first package intentionally matched the historical Lob HQ output's observable cadence and resolution: 1024x1024, 250 frames, 10 seconds / 25 FPS. That first parity capture is now validated live.
 
-Accepted first implementation uses current HeroForge runtime rotation and screenshot capture, browser-native static WebP encoding for each frame, and a project-owned RIFF/VP8X/ANIM/ANMF mux. It does not depend on HeroForge closure-local animated-WebP encoder names or legacy compiled-string injection.
+Accepted implementation uses current HeroForge runtime rotation and screenshot capture, browser-native static WebP encoding for each frame, and a project-owned RIFF/VP8X/ANIM/ANMF mux. It does not depend on HeroForge closure-local animated-WebP encoder names or legacy compiled-string injection.
 
-Rotation speed remains independent from resolution. Higher resolutions and slower-speed presets begin only after the 1024 parity gate passes.
+Rotation speed remains independent from resolution. The next standalone stage adds 2048 and slower-speed profiles while keeping the validated 1024 Standard profile unchanged.

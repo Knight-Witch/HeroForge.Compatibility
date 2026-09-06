@@ -7,7 +7,7 @@ Current media validation target: `heroforge07.1.9.98` / 2026-09-05.
 | Component | Current status | Last verified build/date | Notes |
 |---|---|---|---|
 | `media.screenshot-resolution` | **Standalone validated; Witch Dock Stable validated** | `heroforge07.1.9.98` / 2026-09-05 | v0.6 baseline; Stable provider promoted at Witch Dock commit `e155f2c2f961463b4a0e26f7c88f21f603ce1b95`; clean public smoke passed perfectly. |
-| `media.spinny-mini-webp` | **Standalone implementation/testing** | `heroforge07.1.9.98` / 2026-09-05 | Native baseline measured; 128x128 live animated-WebP mux proof passed; 1024x1024 / 250-frame parity package ready for human test. Public Witch Dock unchanged. |
+| `media.spinny-mini-webp` | **Standalone 1024 Lob parity validated; higher-profile testing next** | `heroforge07.1.9.98` / 2026-09-05 | Native baseline measured; 128x128 live mux proof passed; full v0.1.0 1024x1024 / 250-frame / 10 s output worked live and retained UI reported 12.9 MiB. Public Witch Dock unchanged. |
 | `decals.gizmo.bound-correction` | Witch Dock Stable | 2026-09-05 | Validated separately. |
 | Character local JSON | Core Save/Load passed live | 2026-09-03 | Lifecycle/repeated-use pending. |
 | Projected decal state/control | Runtime path confirmed | September 2026 | Renderer dependency audit pending. |
@@ -25,7 +25,7 @@ Current media validation target: `heroforge07.1.9.98` / 2026-09-05.
 - A future already-native full-resolution Effects path passes through unchanged.
 - Only square 4096/8192 provider calls are intercepted in Witch Dock; other captures pass through.
 
-## Spinny Mini WebP capability contract — current standalone prototype
+## Spinny Mini WebP capability contract — validated 1024 standalone path
 
 Confirmed current capabilities used by the prototype:
 
@@ -35,9 +35,16 @@ Confirmed current capabilities used by the prototype:
 - Browser `canvas.toBlob('image/webp', quality)` supplies compressed still-WebP image payloads.
 - Project-owned RIFF/VP8X/ANIM/ANMF assembly creates the animated container without relying on a HeroForge closure-local animation encoder.
 
-Low-resolution live proof on `heroforge07.1.9.98` successfully produced and browser-decoded a 128x128, four-frame animated WebP and restored the original character rotation.
+Validation on `heroforge07.1.9.98`:
 
-Current 1024 parity target remains **pending human acceptance** and must not be treated as validated until a full capture succeeds visually and mechanically.
+- low-resolution 128x128 / four-frame live mux proof: PASS;
+- full standalone v0.1.0 1024/250 capture and download: PASS by user report;
+- pre-download parser confirmed 1024x1024, 250 frames, and 10,000 ms total duration;
+- deterministic mux uses 40 ms on every frame and loop count 0/infinite;
+- retained live UI reported 12.9 MiB output size (rounded display value);
+- Photo Booth capture capability remained ready after the completed run.
+
+The first Lob-parity milestone is therefore closed. Exact byte count, repeat-use behavior, 2048 resource behavior, and slower profile combinations remain next-stage tests rather than parity blockers.
 
 ## Dev/public still integration
 
@@ -51,4 +58,4 @@ Current 1024 parity target remains **pending human acceptance** and must not be 
 
 Photo Booth stills: re-run when HeroForge build changes, named capture/Effects methods change, tile geometry becomes incoherent, Photo Booth effect profiles materially change, or native true-resolution rendering appears.
 
-Spinny Mini WebP: re-run when HeroForge character-display rotation/refresh behavior changes, `BT.maker.takeScreenshot` semantics change, browser WebP encoding support changes, or animated-WebP mux validation fails on a supported browser.
+Spinny Mini WebP: re-run when HeroForge character-display rotation/refresh behavior changes, `BT.maker.takeScreenshot` semantics change, browser WebP encoding support changes, generated RIFF animation validation fails, or higher profiles expose new resource limits.

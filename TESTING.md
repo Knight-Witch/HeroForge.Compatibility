@@ -118,16 +118,42 @@ Static checks:
 - per-frame canvas backing store reduced after compression.
 - final container parser verifies dimensions/frame count/total duration before download.
 
-Full live test status:
+Full live parity result:
 
-- 1024x1024 full render: **pending user test**;
-- 250-frame completion: **pending user test**;
-- visual one-revolution direction/cadence: **pending user test**;
-- downloaded animated WebP playback: **pending user test**;
-- post-capture orientation restoration: **pending user test**;
-- repeated-use acceptance: **pending**.
+- user reported the generated WebP worked: **PASS**;
+- successful runtime build confirmed present: `0.1.0-runtime-rotation-webp-mux`;
+- output downloaded only after parser confirmed **1024x1024**: **PASS**;
+- output downloaded only after parser confirmed **250 frames**: **PASS**;
+- output downloaded only after parser confirmed **10,000 ms total duration**: **PASS**;
+- mux writes **40 ms on every frame / 25 FPS effective**: confirmed by implementation;
+- mux loop count **0 / infinite**: confirmed by implementation;
+- retained post-capture UI status: `Downloaded 1024px WebP: 250 frames / 10.0 s / 12.9 MiB`;
+- Photo Booth capture capability remained ready after the completed capture.
+
+Parity milestone: **closed / validated**.
+
+Still pending as next-stage coverage rather than parity blockers:
+
+- exact output byte count from a future bridge-readable diagnostic snapshot;
+- repeat full capture in the same session;
+- explicit post-capture orientation assertion on a full 250-frame run;
+- 2048 completion/resource behavior;
+- slower-profile completion/resource behavior;
+- combined high-resolution + very-slow practical limits.
 
 Witch Dock integration: **not started**.
+
+### Next standalone profile suite
+
+Preserve the validated 1024 Standard profile exactly. Add independent resolution and speed profile selection, beginning with:
+
+- resolution: 1024, 2048;
+- Standard: 10 s / 250 frames / 25 FPS;
+- Slow: 15 s / 375 frames / 25 FPS;
+- Slower: 20 s / 500 frames / 25 FPS;
+- Very Slow: 30 s / 750 frames / 25 FPS.
+
+The first validation order should be 1024 Standard regression, 2048 Standard, then 1024 slow profiles before attempting the most expensive 2048 + slow combinations.
 
 ## Future regression triggers
 

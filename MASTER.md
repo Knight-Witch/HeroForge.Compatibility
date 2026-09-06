@@ -4,7 +4,7 @@ This is the canonical high-level source for current project state. Historical de
 
 ## Current Phase
 
-**Legacy feature decomposition plus current-runtime compatibility reconstruction, with `media.screenshot-resolution` Witch Dock Stable validated and `media.spinny-mini-webp` now in standalone implementation/testing.**
+**Legacy feature decomposition plus current-runtime compatibility reconstruction, with `media.screenshot-resolution` Witch Dock Stable validated and `media.spinny-mini-webp` 1024/Lob-parity validated standalone.**
 
 The corrected bound decal gizmo is also Witch Dock Stable. Character JSON and projected-decal work remain separate reconstruction tracks.
 
@@ -15,7 +15,7 @@ The corrected bound decal gizmo is also Witch Dock Stable. Character JSON and pr
 - Development-only live transport: private `Knight-Witch/HF-Chat-Bridge`
 - Public Witch Dock runtime dependency on Compatibility `main`: **none**
 - Maintained standalone Photo Booth still baseline: `entries/tampermonkey-standalone/photo-booth-true-resolution.user.js` v0.6
-- Active Spinny Mini WebP test entry: `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js` v0.1.0 on `spinny-webp-hq-wip`
+- Validated Spinny Mini WebP parity entry: `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js` v0.1.0 on `spinny-webp-hq-wip`
 
 ## Photo Booth True Resolution
 
@@ -40,13 +40,16 @@ Confirmed on HeroForge `heroforge07.1.9.98`:
 
 - native HeroForge Spinny Mini WebP is actually 512x512, 386 frames, 17 ms/frame, 6562 ms total / 58.82 FPS, infinite loop;
 - historical Lob Higher Quality Spinny Mini GIF output is 1024x1024, 250 frames, 10.0 seconds / 25 FPS;
-- first parity target is therefore animated WebP at 1024x1024, 250 frames, 40 ms/frame / 10 seconds;
-- a live four-frame runtime proof validated independent animated-WebP assembly from HeroForge screenshots using browser-native static WebP encoding plus project-owned RIFF animation muxing;
-- the proof decoded successfully in-browser and restored the original character rotation;
-- the first standalone parity package is implemented on `spinny-webp-hq-wip`; full 1024/250 human acceptance is pending;
-- rotation speed is a separate future setting from resolution; slower presets should add angular samples/frame count rather than merely stretch sparse frames.
+- the first standalone parity implementation uses runtime rotation/capture plus browser static-WebP encoding and project-owned RIFF animation muxing;
+- low-resolution live mux proof validated the architecture and restored rotation;
+- the full standalone v0.1.0 1024/250 capture **worked live** and downloaded successfully;
+- v0.1.0 mechanically gates download on 1024x1024 dimensions, exactly 250 frames, and 10,000 ms total duration;
+- every frame is muxed at 40 ms and loop count 0/infinite, matching the intended 25 FPS / 10-second Lob parity cadence;
+- retained live UI status reported an output size of **12.9 MiB** (rounded display value);
+- the first 1024/250 Lob-parity milestone is therefore closed/validated;
+- rotation speed remains a separate setting from resolution; slower presets should add angular samples/frame count rather than merely stretch sparse frames.
 
-Accepted first architecture:
+Accepted architecture:
 
 ```text
 HeroForge named/runtime-accessible rotation + screenshot capture
@@ -54,7 +57,7 @@ HeroForge named/runtime-accessible rotation + screenshot capture
 → deterministic project-owned animated-WebP mux
 ```
 
-The current closure-local HeroForge animated-WebP encoder is not required for this first maintained implementation.
+The closure-local HeroForge animated-WebP encoder is not required for this maintained path.
 
 ## Current Gates
 
@@ -62,8 +65,11 @@ The current closure-local HeroForge animated-WebP encoder is not required for th
 - `media.screenshot-resolution` Witch Dock Dev: **validated with Lob present**.
 - `media.screenshot-resolution` Witch Dock Stable: **validated**.
 - `media.spinny-mini-webp` low-resolution live mux proof: **validated**.
-- `media.spinny-mini-webp` standalone 1024/250 package: **implemented; human capture/visual/repeat-use acceptance pending**.
-- Spinny higher resolutions / slower presets: **not started until parity gate passes**.
+- `media.spinny-mini-webp` 1024/250 Lob-parity capture: **validated**.
+- Spinny 2048 profile: **next standalone test stage**.
+- Spinny slower speed presets: **next standalone test stage**; preserve smooth motion by scaling frame count with duration.
+- Spinny repeat-use/resource behavior: **pending during next standalone stage**.
+- Witch Dock Spinny integration: **not started**.
 - Lob-absent injection of 4096/8192 into HeroForge's own still resolution selector: **separate future UI-adapter gate**.
 - Feature primary-maintainer assignments remain unresolved where marked TBD.
 
@@ -72,7 +78,7 @@ The current closure-local HeroForge animated-WebP encoder is not required for th
 | Area | Current state | Next gate |
 |---|---|---|
 | Photo Booth high-resolution still capture | Standalone + Witch Dock Stable validated | Later Lob-absent HF UI adapter; future Foundation extraction; build regression only when triggered |
-| Spinny Mini animated WebP | 1024/250 standalone implementation ready; low-res live mux proof passed | Human parity capture/visual acceptance, then 2048 and configurable speed experiments |
+| Spinny Mini animated WebP | 1024/250 standalone Lob parity validated; observed output 12.9 MiB | Standalone 2048 + configurable-speed profiles, then repeat/resource testing before Witch Dock Dev |
 | Character local JSON | Standalone reconstruction committed; core Save/Load passed live | Finish lifecycle/repeated-use acceptance |
 | Projected decal state/control | Runtime state/control path confirmed | Complete renderer dependency audit then consolidate |
 | Corrected bound decal gizmo | Witch Dock Stable | Keep regression coverage current |
