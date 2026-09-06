@@ -41,17 +41,16 @@ Historical Lob HQ GIF:
 - retained UI: 12.9 MiB;
 - low-resolution independent mux proof and syntax check: PASS.
 
-### Configurable profile validation
+### v0.2.1 validated configurable behavior
 
 `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
 
-Current profiles:
+Speed profiles:
 
 - Standard: 10 s / 250 frames / 25 FPS;
 - Slow: 15 s / 375 frames / 25 FPS;
 - Slower: 20 s / 500 frames / 25 FPS;
-- Very Slow: 30 s / 750 frames / 25 FPS;
-- resolution independent at 1024 or 2048.
+- Very Slow: 30 s / 750 frames / 25 FPS.
 
 Live results reported by user:
 
@@ -61,77 +60,81 @@ Live results reported by user:
 - **2048 Slower / 500 frames: PASS / perfect**;
 - 1024 Very Slow output: approximately **34 MiB**;
 - multiple successful captures in the same session: **PASS**;
-- percent progress readout: **PASS / useful**;
-- Rendering/Encoding phase display: **PASS / useful**;
-- px/frame/FPS/workload info readout: **PASS / useful**.
-
-Test context reported by user:
-
-- very complex figure;
-- many kitbash parts;
-- special paints and heavy special effects;
-- very high decal count;
-- moderate/high Photo Booth complexity without the most extreme background/overlay load.
-
-Under that workload, capture times varied with resolution/frame count as expected but remained acceptable. User reported 1024 Very Slow as roughly comparable in wall-clock time to Lob's historical HQ GIF capture/encode/delivery flow.
+- progress/readout UI: **PASS / useful**.
 
 Scaling coverage relative to 1024 Standard:
 
-- 1024 Standard / 250f = **1x** baseline: PASS;
-- 1024 Very Slow / 750f = **3x** pixel-sample workload: PASS;
-- 2048 Standard / 250f = **4x** pixel-sample workload: PASS;
-- 2048 Slower / 500f = **8x** pixel-sample workload: PASS.
-
-This provides live evidence for both independent axes and a combined high-resolution + increased-frame-count workload.
+- 1024 Standard / 250f = **1x**: PASS;
+- 1024 Very Slow / 750f = **3x**: PASS;
+- 2048 Standard / 250f = **4x**: PASS;
+- 2048 Slower / 500f = **8x**: PASS.
 
 ### v0.2.1 progress/ETA validation
 
 Build: `0.2.1-progress-eta-runtime-rotation-webp-mux`.
 
-Acceptance criteria and results:
+- progress bar: **PASS / works great**;
+- first-run ETA approximately **3m 7s**, user reported accurate/stable throughout;
+- second same-session 1024 Standard estimate approximately **2m 57s**: PASS;
+- repeat capture in one page session: PASS;
+- final completion time visible: PASS.
 
-1. Progress bar tracks capture without affecting output: **PASS / works great**.
-2. First-run ETA begins from live measured frame cost and remains plausible: **PASS**; user reported approximately **3m 7s** and accurate/stable across the process.
-3. Remaining/total estimates adapt rather than using output playback duration: **PASS**.
-4. Second same-resolution capture receives a same-session seed: **PASS**; user reported approximately **2m 57s**.
-5. Repeated capture in one session: **PASS**.
-6. Final completion time remains visible: **PASS**.
-7. Existing 1024 output/playback remains unchanged: **PASS**.
+HF-Chat-Bridge issue #476 confirmed the second 1024 Standard run:
 
-HF-Chat-Bridge issue #476 confirmed the second 1024 Standard run after capture work completed:
-
-- diagnostics build: `0.2.1-progress-eta-runtime-rotation-webp-mux`;
-- busy: false;
-- frames rendered: 250;
-- frames encoded: 250;
-- encoded still-frame bytes: **13,682,734**;
-- output bytes: **13,565,278**;
-- parser width/height: **1024x1024**;
-- parser frame count: **250**;
-- parser total duration: **10,000 ms**;
-- parser duration histogram: **40 ms x 250**;
-- loop count: **0 / infinite**;
+- 250/250 frames rendered and encoded;
+- output: **13,565,278 bytes**;
+- parser: **1024x1024 / 250 frames / 10,000 ms / 40 ms x 250 / loop 0**;
 - actual wall-clock: **177,100.9 ms / 2m 57.1s**;
 - final estimated total: **175,614.0 ms / 2m 55.6s**;
-- absolute error: **1,486.9 ms / 1.49s**;
-- relative error: **0.84%**;
-- average measured frame processing: **706.716 ms**;
-- EMA frame time: **700.434 ms**;
-- blended predicted frame time: **702.319 ms**;
-- final mux/verification tail: **33.5 ms**;
+- error: **1,486.9 ms / 0.84%**;
 - rotation restored: **true**;
-- error: **null**;
-- retained status UI: `Downloaded 1024px Standard: 250 frames / 10.0 s / 12.9 MiB`;
-- retained timing UI: `Completed in 2m 57s`.
+- runtime error: **null**.
 
-Result: **v0.2.1 progress/ETA control regression closed / validated**.
+### Cancel validation
 
-### Still pending before Witch Dock Dev
+User independently tested the existing Cancel action and reported:
 
-- dedicated cancel/failure-path regression under an expensive profile;
-- decide practical warnings/guardrails for high-cost profile combinations;
-- optional 2048 Very Slow / 750-frame 12x stress case if needed to define a ceiling.
+- cancellation completed cleanly;
+- figure returned to the orientation where the capture started;
+- zero follow-on issues were observed.
 
-Specific 1024 Slow / 375 and 1024 Slower / 500 have not been separately exercised, but the tested 1024/750 and 2048/500 endpoints already cover greater frame-count and combined workloads. They are not currently treated as blockers absent a profile-specific regression.
+Result: **general cancel + rotation restore PASS by user report**. The exact cancelled profile was not recorded, so no specific expensive-profile combination is claimed from this result.
 
-Witch Dock integration: **not started**.
+### v0.2.2 3072 candidate
+
+Build: `0.2.2-3k-warning-runtime-rotation-webp-mux`.
+
+Changes under test:
+
+- new 3072px resolution option;
+- no 4096/8192 Spinny options;
+- red `LONG CAPTURE` warning for `size >= 2048` or `frames >= 500`;
+- capture/mux/ETA core otherwise unchanged.
+
+3072 workload matrix:
+
+- 3072 Standard / 250f = **9x** baseline;
+- 3072 Slow / 375f = **13.5x**;
+- 3072 Slower / 500f = **18x**;
+- 3072 Very Slow / 750f = **27x**.
+
+Required first live test:
+
+1. select **3072px**;
+2. select **Standard / 250 frames**;
+3. confirm the red long-capture warning appears;
+4. run one full capture;
+5. verify visual playback and report result/file size;
+6. after completion, inspect bridge-readable diagnostics for 3072x3072, 250 frames, 10,000 ms, 40 ms x 250, loop 0, rotation restored true and error null.
+
+3072 Slow/Slower/Very Slow are not blockers for the first 3K gate and remain unvalidated until explicitly exercised.
+
+### 4K Spinny
+
+**Deferred.** Current Witch Dock TRUE-resolution repair intercepts square 4096/8192 `BT.maker.takeScreenshot` requests. A 4096 Spinny option must not be added through that public surface without an explicit native-frame bypass/capability.
+
+### Pause/input guards
+
+Pause/resume and protective warnings for leaving Photo Booth, moving camera, or editing Booth settings remain a separate planned standalone change after 3072 Standard is isolated and tested.
+
+Witch Dock Spinny integration: **not started**.

@@ -1,5 +1,72 @@
 # Changelog
 
+## HFC-2026-09-05-023 — Add 3072 Spinny profile and long-capture warning
+
+Date: 2026-09-05
+
+### Summary
+
+Advanced the standalone `media.spinny-mini-webp` profile test to v0.2.2 by adding a 3072px experimental resolution and a red high-workload warning. The validated capture/render/encode/mux core remains unchanged. 4K Spinny is deliberately deferred because current Witch Dock TRUE-resolution integration intercepts square 4096 screenshot requests.
+
+### Runtime changes
+
+`entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`:
+
+- `@version` 0.2.2;
+- build `0.2.2-3k-warning-runtime-rotation-webp-mux`;
+- adds `3072px — 3K experimental`;
+- retains 1024 and 2048 profiles;
+- adds red `LONG CAPTURE` text below the timing line for profiles with resolution >=2048 or frame count >=500;
+- warning reports the selected pixel-sample workload multiplier and notes that ETA will refine from live frame timing;
+- validation labels now explicitly include the already-passed 2048 Slower combination.
+
+### Confirmed safety decision
+
+- 3072 Standard is 9x the 1024 Standard pixel-sample workload and does not collide with the Witch Dock TRUE-resolution provider's 4096/8192 interception sizes.
+- 4096 Standard would be 16x baseline and currently routes through the still-capture repair provider; 4K Spinny is not exposed in v0.2.2.
+- Pause/input-guard behavior is intentionally deferred to the next isolated runtime stage.
+
+### Newly recorded user validation
+
+The existing cancel path has already been exercised live by the user and reported to work correctly: capture stopped cleanly, the figure returned to its starting orientation, and no follow-on issues were observed. Exact cancelled profile was not recorded, so this closes the general cancel/restore behavior but is not labeled as a specific high-cost profile test.
+
+### Preserved behavior
+
+- 40 ms/frame / 25 FPS output cadence;
+- independent speed profiles;
+- runtime rotation and HeroForge refresh sequencing;
+- `BT.maker.takeScreenshot` frame production;
+- immediate browser static-WebP encoding;
+- compressed-frame payload retention;
+- deterministic RIFF mux and parser verification;
+- progress/ETA logic;
+- concurrent-capture block, cancel-after-current-frame and rotation restoration;
+- public Witch Dock unchanged.
+
+### Validation status
+
+- v0.2.1 tested profiles and UX remain validated.
+- v0.2.2 3072 Standard: implementation/source review complete; live validation pending.
+- 3072 Slow/Slower/Very Slow: unvalidated.
+- 4K Spinny: deferred by explicit compatibility decision.
+- Pause/input guards: separate next stage.
+
+### Touched files
+
+- `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
+- `MASTER.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `TESTING.md`
+- `docs/feature-specs/spinny-mini-webp.md`
+- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
+
+**Runtime behavior changed:** yes, standalone WIP profile/UI only. Public Witch Dock is unchanged.
+
+---
+
 ## HFC-2026-09-05-022 — Validate Spinny v0.2.1 progress/ETA and repeated capture
 
 Date: 2026-09-05

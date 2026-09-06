@@ -1,7 +1,7 @@
 # INV-0004 — Spinny Mini animated WebP reconstruction
 
 Date opened: 2026-09-05
-Status: active — v0.2.1 configurable standalone and progress/ETA validated; final safety/guardrail decisions remain before Witch Dock Dev
+Status: active — v0.2.1 validated; v0.2.2 3072 candidate next; Pause/input guards separated
 HeroForge build: `heroforge07.1.9.98`
 Feature: `media.spinny-mini-webp`
 
@@ -43,111 +43,119 @@ HeroForge runtime character rotation
 
 This path passed a four-frame browser decode microproof and then full live profile captures.
 
-## v0.1.0 parity result — PASS
+## Validated profile results
 
-`entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js`
+- 1024 Standard / 250f: PASS / perfect;
+- 2048 Standard / 250f: PASS / perfect;
+- 1024 Very Slow / 750f: PASS / perfect;
+- 2048 Slower / 500f: PASS / perfect;
+- multiple captures in one session: PASS;
+- progress/ETA UI: PASS;
+- parser verification and rotation restoration: PASS.
 
-- 1024x1024;
-- 250 frames;
-- 10,000 ms;
-- 40 ms/frame;
-- infinite loop;
-- retained UI: 12.9 MiB;
-- user reported the WebP worked.
-
-The first Lob-parity milestone is closed.
-
-## Configurable profile result — multiple live passes
-
-`entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
-
-Profiles keep resolution independent from rotation duration, with constant 40 ms/frame / 25 FPS:
-
-- Standard: 250 frames / 10 s;
-- Slow: 375 frames / 15 s;
-- Slower: 500 frames / 20 s;
-- Very Slow: 750 frames / 30 s;
-- resolution: 1024 or 2048.
-
-User live results:
-
-- **1024 Standard / 250 frames: PASS / perfect**;
-- **2048 Standard / 250 frames: PASS / perfect**;
-- **1024 Very Slow / 750 frames: PASS / perfect**;
-- **2048 Slower / 500 frames: PASS / perfect**;
-- 1024 Very Slow output approximately **34 MiB**;
-- multiple captures completed successfully in the same session;
-- percentage, Rendering/Encoding display and profile information readout were explicitly reported useful and working well.
-
-Test environment was intentionally demanding: a very complex figure with many kitbash parts, special paints, heavy effects and a very high decal count, with moderately high Booth complexity. User reported capture time/resource behavior remained reasonable; 1024 Very Slow was roughly comparable in wall-clock time to Lob's historical HQ GIF flow.
+User also tested Cancel and reported clean cancellation, return to the starting figure orientation and zero issues. Exact cancelled profile was not recorded.
 
 Scaling evidence relative to 1024 Standard:
 
-- 1024 Standard / 250f = 1x baseline: PASS;
-- 1024 Very Slow / 750f = 3x pixel-sample workload: PASS;
-- 2048 Standard / 250f = 4x pixel-sample workload: PASS;
-- 2048 Slower / 500f = 8x pixel-sample workload: PASS.
+- 1x: 1024 Standard / 250f — PASS;
+- 3x: 1024 Very Slow / 750f — PASS;
+- 4x: 2048 Standard / 250f — PASS;
+- 8x: 2048 Slower / 500f — PASS.
 
-This establishes successful independent scaling along resolution and angular-sample/frame-count axes plus a combined high-resolution + increased-frame-count case.
-
-## v0.2.1 progress/ETA result — PASS
-
-Requested additions:
-
-1. progress bar below the percentage readout;
-2. time-left / total-time estimator adapting to the current device/workload.
-
-Implemented ETA strategy:
-
-- measure real wall-clock render+encode time for each completed frame;
-- do not derive capture ETA from output playback duration;
-- show `estimating…` during initial warm-up when no same-session resolution history exists;
-- maintain current-run average and exponential moving average of frame processing time;
-- blend those values for a continuously adapting prediction;
-- seed later captures from successful same-session timing for the same resolution;
-- keep history in memory only; reload clears it;
-- retain actual completed wall-clock duration and timing data in plain diagnostics.
+## v0.2.1 ETA result — PASS
 
 Human acceptance:
 
-- progress bar: **works great**;
-- first v0.2.1 1024 Standard estimate: approximately **3m 7s**, reported accurate and stable across the entire process;
-- second same-session 1024 Standard estimate: approximately **2m 57s**.
+- progress bar works great;
+- first 1024 Standard ETA approximately 3m 7s and accurate/stable across the run;
+- second same-session estimate approximately 2m 57s.
 
-HF-Chat-Bridge issue #476 read diagnostics after all active capture work was complete.
+HF-Chat-Bridge issue #476 confirmed the second 1024 Standard run:
 
-Second 1024 Standard run:
-
-- build `0.2.1-progress-eta-runtime-rotation-webp-mux`;
-- busy false after completion;
 - 250/250 frames rendered and encoded;
-- encoded still-frame total 13,682,734 bytes;
 - final WebP 13,565,278 bytes;
 - parser 1024x1024 / 250 frames / 10,000 ms / 40 ms x 250 / loop 0;
-- actual wall-clock 177,100.9 ms / 2m 57.1s;
-- final estimated total 175,614.0 ms / 2m 55.6s;
-- absolute estimation error 1,486.9 ms / 1.49s;
-- relative estimation error 0.84%;
-- measured average frame time 706.716 ms;
-- EMA frame time 700.434 ms;
-- blended predicted frame time 702.319 ms;
-- assembly/tail 33.5 ms;
+- actual wall-clock 177,100.9 ms;
+- final estimated total 175,614.0 ms;
+- error 1,486.9 ms / 0.84%;
 - rotation restored true;
-- error null;
-- retained status `Downloaded 1024px Standard: 250 frames / 10.0 s / 12.9 MiB`;
-- retained timing `Completed in 2m 57s`.
+- runtime error null.
 
-Result: the ETA model is not merely plausible; on the bridge-confirmed repeated control it finished within **0.84%** of actual total capture time.
+## 3072 investigation
 
-## Remaining unknowns / decisions
+User requested a 3K/4K extension, then chose to defer 4K and proceed with 3K after compatibility review.
 
-- practical warning/guardrail policy for expensive combinations;
-- dedicated cancel/failure-path regression under an expensive profile;
-- optional 2048 Very Slow / 750-frame 12x stress test if needed to define the upper practical ceiling;
-- whether quality 0.95 should remain fixed for every eventual supported profile;
-- Witch Dock Dev integration shape and UI placement.
+3072 workload relative to 1024 Standard:
 
-Specific intermediate profiles such as 1024 Slow / 375 and 1024 Slower / 500 have not been individually exercised, but higher 1024 frame-count and combined 2048/500 workloads have passed. They are not currently treated as blockers absent profile-specific evidence.
+- Standard / 250f: 9x;
+- Slow / 375f: 13.5x;
+- Slower / 500f: 18x;
+- Very Slow / 750f: 27x.
+
+Supported inference:
+
+- the existing compressed-frame architecture should scale to 3072 without a structural change because it does not retain raw RGBA for all frames;
+- practical browser/GPU/canvas cost is materially higher and must be measured live;
+- one 3072 RGBA canvas is approximately 36 MiB before compression, versus approximately 16 MiB at 2048 and 4 MiB at 1024.
+
+Confirmed compatibility point:
+
+- current Witch Dock TRUE-resolution repair intercepts square **4096 and 8192** `BT.maker.takeScreenshot` requests;
+- **3072 does not match those interception sizes**, so it continues down the normal screenshot path used by current Spinny captures.
+
+v0.2.2 therefore adds `3072px — 3K experimental` and leaves 4096 absent.
+
+## 4K collision — confirmed and deferred
+
+Witch Dock Stable `media.screenshot-resolution` installs a provider wrapper around `BT.maker.takeScreenshot`. When enabled, square 4096/8192 requests are routed into `runTrueResolutionCapture(...)` for repaired still capture.
+
+Therefore a naive 4096 Spinny profile would invoke the TRUE-4K still repair once per animation frame. That is an architectural collision, not merely a performance concern.
+
+Decision: **4K Spinny deferred**. Revisit only if an explicit native/unrepaired frame-capture capability is exposed safely by the provider/compatibility bridge.
+
+## High-workload warning
+
+v0.2.2 adds red advisory text under the timer whenever:
+
+- resolution >= 2048; or
+- frame count >= 500.
+
+The warning reports the workload multiplier. It does not block capture.
+
+## Pause/resume design
+
+User requested a possible Pause button plus protective warnings if a paused/in-progress capture would be invalidated by:
+
+- leaving Photo Booth;
+- moving the Booth camera;
+- changing Booth controls such as view/backdrop/overlays/light.
+
+Design direction:
+
+- pause only between complete frames;
+- retain already-compressed frame payloads;
+- resume at the next angular sample;
+- freeze active-processing ETA while paused;
+- do not use pixel coordinates because HeroForge has left/right split, right-grouped and mobile/bottom layouts and browser resizing changes element positions;
+- classify/intercept semantic DOM/runtime interactions rather than fixed screen locations;
+- warn before an invalidating action and cancel safely rather than silently producing discontinuous animation.
+
+This change is intentionally **not** bundled into v0.2.2. A live DOM probe was attempted through HF-Chat-Bridge issue #477 but the relay did not return a result, so no unverified selector assumptions are being promoted into code.
+
+## v0.2.2 first validation gate
+
+Run exactly one initial 3072 Standard / 250-frame capture.
+
+Accept only if:
+
+- UI shows 3072 and red long-capture warning;
+- capture completes without browser/HeroForge failure;
+- output plays correctly;
+- parser confirms 3072x3072 / 250 frames / 10,000 ms / 40 ms x 250 / loop 0;
+- rotation is restored;
+- no error remains in diagnostics.
+
+Do not treat 3072 Slow/Slower/Very Slow as validated from a Standard pass.
 
 ## Safety / compatibility constraints
 
@@ -156,13 +164,14 @@ Specific intermediate profiles such as 1024 Slow / 375 and 1024 Slower / 500 hav
 - no raw-RGBA accumulation across frames;
 - block concurrent captures;
 - restore character rotation after success/failure/cancel;
-- leave validated still-capture feature untouched;
+- do not route 4096 Spinny frames through the still-capture repair provider;
+- leave validated still-capture behavior untouched;
 - public Witch Dock remains untouched until separate Dev integration.
 
 ## Next gate
 
-1. Preserve v0.2.1 runtime unchanged while recording this validation checkpoint.
-2. Decide whether the 2048 Very Slow 12x case is needed or should simply carry a warning.
-3. Run dedicated cancel/failure-path regression on the current standalone build.
-4. Define practical high-cost profile guardrails.
-5. Only then begin a separate Witch Dock Dev integration stage.
+1. Install/test v0.2.2 at 3072 Standard / 250f.
+2. Record parser/output/ETA/resource result.
+3. If 3072 Standard passes, decide whether any 3072 longer-duration profile merits additional testing.
+4. Separately resume Pause/input-guard probing and implementation.
+5. Only after those standalone decisions begin a separate Witch Dock Dev integration stage.

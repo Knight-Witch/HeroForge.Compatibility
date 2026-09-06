@@ -1,5 +1,74 @@
 # Pre-Flight Check Log
 
+## PFC-2026-09-05-019 — Add 3072 Spinny profile and high-workload warning
+
+Date: 2026-09-05
+
+### Target files
+
+- `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
+- `MASTER.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `TESTING.md`
+- `docs/feature-specs/spinny-mini-webp.md`
+- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
+
+### Reviewed
+
+- binding `PROJECT_CONTRACT.md`
+- branch head `6b15df3233c6c6fae5b63647c8f6f776faa66c73`
+- `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`
+- current Spinny feature spec/investigation and v0.2.1 source
+- Witch Dock Stable `media.screenshot-resolution` provider behavior around square 4096/8192 `BT.maker.takeScreenshot` requests
+- user report that Cancel already works correctly and restores the starting figure orientation without issues
+
+### Confirmed design findings
+
+- 3072x3072 is **9x** the 1024 Standard pixel-sample workload at 250 frames and does not match the Witch Dock TRUE-resolution provider's 4096/8192 interception sizes.
+- 4096x4096 is **16x** baseline at 250 frames and currently collides with the Witch Dock TRUE-4K still-capture provider, which intentionally intercepts square 4096 screenshot requests. 4K Spinny is therefore explicitly deferred rather than added naively.
+- The current animated-WebP mux stores compressed per-frame payloads rather than raw RGBA across the entire run, so 3072 does not require an architecture change; remaining uncertainty is practical browser/GPU/render cost and final compressed output size.
+- Pause/input-guard behavior is a separate lifecycle/input-interception change and will not be bundled into the first 3072 test build.
+
+### Runtime change intent
+
+Advance the standalone profile script to v0.2.2 with only:
+
+- a `3072px — 3K experimental` resolution option;
+- no 4096/8192 Spinny options;
+- red `LONG CAPTURE` text beneath the timer for profiles expected to be materially slower (`size >= 2048` or `frames >= 500`);
+- validation labels updated to reflect already-passed 2048 Standard, 2048 Slower and 1024 Very Slow combinations.
+
+### Preserved behavior
+
+- 1024/2048 capture path and all speed definitions;
+- 40 ms/frame / 25 FPS output cadence;
+- full-revolution runtime rotation stepping;
+- existing HeroForge refresh/occlusion/shadow/matrix sequence;
+- `BT.maker.takeScreenshot(size,size)` frame production;
+- immediate static-WebP encode and compressed-frame retention;
+- deterministic RIFF mux and parser gating;
+- progress/ETA behavior;
+- cancel-after-current-frame and final rotation restoration;
+- public Witch Dock remains untouched.
+
+### Material risks
+
+- 3072 Standard is 9x baseline and may expose browser/GPU/canvas limits that 2048 did not.
+- 3072 Slow/Slower/Very Slow are 13.5x/18x/27x baseline respectively and remain unvalidated even if Standard passes.
+- No claim is made that 3072 is supported until a live capture completes and parser/output behavior is verified.
+- 4K Spinny remains deferred pending an explicit native-frame bypass/capability if it is revisited later.
+
+### Recommended action
+
+Commit v0.2.2 as a standalone candidate, then run **3072 Standard / 250 frames** as the first and only required 3K validation control. Do not mix the first 3K test with Pause/input-guard changes.
+
+**Runtime behavior changed:** yes, standalone WIP profile/UI only. Existing validated capture/mux mechanics and public Witch Dock are unchanged.
+
+---
+
 ## PFC-2026-09-05-018 — Record Spinny v0.2.1 progress/ETA and repeat-use validation
 
 Date: 2026-09-05

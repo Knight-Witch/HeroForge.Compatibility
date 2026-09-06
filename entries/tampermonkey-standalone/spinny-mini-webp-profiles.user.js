@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         HF Compatibility - Spinny Mini WebP Profiles TEST
 // @namespace    https://github.com/Knight-Witch/HeroForge.Compatibility
-// @version      0.2.1
-// @description  Standalone configurable-resolution / configurable-speed animated WebP Spinny Mini test with progress and device-relative ETA.
+// @version      0.2.2
+// @description  Standalone configurable-resolution / configurable-speed animated WebP Spinny Mini test with progress, device-relative ETA, 3K profile, and high-workload warning.
 // @author       Knight Witch
 // @match        https://www.heroforge.com/*
 // @match        https://heroforge.com/*
@@ -17,7 +17,7 @@
   const GLOBAL = 'HFSpinnyMiniWebPProfilesTest';
   const PANEL_ID = 'hfc-spinny-mini-webp-profiles-test';
   const STYLE_ID = `${PANEL_ID}-style`;
-  const BUILD = '0.2.1-progress-eta-runtime-rotation-webp-mux';
+  const BUILD = '0.2.2-3k-warning-runtime-rotation-webp-mux';
 
   const QUALITY = 0.95;
   const LOOP_COUNT = 0;
@@ -25,7 +25,8 @@
   const ETA_EMA_ALPHA = 0.18;
   const RESOLUTIONS = Object.freeze({
     '1024': Object.freeze({ id: '1024', label: '1024px — HQ parity', size: 1024 }),
-    '2048': Object.freeze({ id: '2048', label: '2048px — experimental', size: 2048 })
+    '2048': Object.freeze({ id: '2048', label: '2048px — validated resolution', size: 2048 }),
+    '3072': Object.freeze({ id: '3072', label: '3072px — 3K experimental', size: 3072 })
   });
   const SPEEDS = Object.freeze({
     standard: Object.freeze({ id: 'standard', label: 'Standard', durationMs: 10000, frames: 250, frameDurationMs: 40 }),
@@ -44,6 +45,7 @@
   let progressTrackEl = null;
   let progressFillEl = null;
   let timingEl = null;
+  let warningEl = null;
   let button = null;
   let cancelButton = null;
   let resolutionSelect = null;
@@ -88,6 +90,10 @@
     profile.pixelSamples = profile.size * profile.size * profile.frames;
     profile.workloadMultiplier = profile.pixelSamples / VALIDATED_BASELINE_PIXEL_SAMPLES;
     return profile;
+  }
+
+  function isLongCaptureProfile(profile) {
+    return profile.size >= 2048 || profile.frames >= 500;
   }
 
   function readCapabilities() {
@@ -657,6 +663,8 @@
 #${PANEL_ID} .hfc-progress{height:8px;margin-top:4px;overflow:hidden;border:1px solid #555;border-radius:999px;background:rgba(255,255,255,.09)}
 #${PANEL_ID} .hfc-progress-fill{height:100%;width:0%;border-radius:999px;background:#d8d8dd;transition:width .16s linear}
 #${PANEL_ID} .hfc-timing{min-height:16px;margin-top:5px;opacity:.82;font-size:11px}
+#${PANEL_ID} .hfc-warning{min-height:15px;margin-top:4px;color:#ff7373;font-size:11px;font-weight:700}
+#${PANEL_ID} .hfc-warning[hidden]{display:none}
 #${PANEL_ID} .hfc-actions{display:flex;gap:6px;margin-top:7px}
 #${PANEL_ID} button{flex:1;border:1px solid #666;border-radius:5px;padding:7px 8px;background:#29292d;color:#fff;cursor:pointer}
 #${PANEL_ID} button:hover:not(:disabled){background:#36363b}
@@ -687,6 +695,7 @@
       <div class="hfc-status" data-error="0">Waiting for Photo Booth…</div>
       <div class="hfc-progress" role="progressbar" aria-label="Spinny capture progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="hfc-progress-fill"></div></div>
       <div class="hfc-timing">ETA learns from measured frame time on this device during each capture.</div>
+      <div class="hfc-warning" hidden></div>
       <div class="hfc-meta"></div>
     `;
     document.body.appendChild(panel);
@@ -695,6 +704,7 @@
     progressTrackEl = panel.querySelector('.hfc-progress');
     progressFillEl = panel.querySelector('.hfc-progress-fill');
     timingEl = panel.querySelector('.hfc-timing');
+    warningEl = panel.querySelector('.hfc-warning');
     metaEl = panel.querySelector('.hfc-meta');
     button = panel.querySelector('.hfc-capture');
     cancelButton = panel.querySelector('.hfc-cancel');
@@ -719,10 +729,18 @@
     if (cancelButton) cancelButton.disabled = !busy;
     if (resolutionSelect) resolutionSelect.disabled = busy;
     if (speedSelect) speedSelect.disabled = busy;
+    if (warningEl) {
+      const showWarning = isLongCaptureProfile(profile);
+      warningEl.hidden = !showWarning;
+      warningEl.textContent = showWarning
+        ? `LONG CAPTURE — ${profile.workloadMultiplier.toFixed(1)}× baseline workload; ETA will refine from live frame timing.`
+        : '';
+    }
     if (metaEl) {
       let validationLabel = 'Experimental profile';
       if (profile.size === 1024 && profile.speedId === 'standard') validationLabel = 'Validated Lob-parity baseline';
       else if (profile.size === 2048 && profile.speedId === 'standard') validationLabel = 'Validated 2048 Standard';
+      else if (profile.size === 2048 && profile.speedId === 'slower') validationLabel = 'Validated 2048 Slower';
       else if (profile.size === 1024 && profile.speedId === 'verySlow') validationLabel = 'Validated 1024 Very Slow';
       metaEl.textContent = `${validationLabel}\n${profile.size}px · ${profile.frames} frames · ${profile.fps.toFixed(0)} FPS · ${(profile.durationMs / 1000).toFixed(1)} s · workload ${profile.workloadMultiplier.toFixed(1)}× baseline`;
     }
