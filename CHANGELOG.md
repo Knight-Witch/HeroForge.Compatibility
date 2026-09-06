@@ -1,5 +1,77 @@
 # Changelog
 
+## HFC-2026-09-05-018 — Add standalone 1024 HQ Spinny WebP parity test
+
+Date: 2026-09-05
+
+### Summary
+
+Added the first standalone runtime implementation for `media.spinny-mini-webp`.
+
+The implementation does not depend on HeroForge's closure-local animated-WebP encoder. A live proof established that a standards-compliant animated WebP can be built from current named/runtime-accessible HeroForge capture behavior plus browser-native still-WebP encoding.
+
+### Runtime implementation
+
+- Added `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js` v0.1.0.
+- First target is fixed to Lob HQ parity: 1024x1024, 250 frames, 40 ms/frame, 10.0-second revolution, infinite loop.
+- Rotates `CK.character.display.rotation.y` through a full revolution and uses the historically established HeroForge display refresh sequence before each frame.
+- Captures each frame through `BT.maker.takeScreenshot(1024,1024)`.
+- Encodes each frame immediately with browser `canvas.toBlob('image/webp', 0.95)` and retains compressed WebP image payload chunks rather than raw RGBA frame buffers.
+- Assembles RIFF/VP8X/ANIM/ANMF animated WebP deterministically in-browser.
+- Mechanically verifies final dimensions, frame count, and total duration before download.
+- Blocks concurrent captures, supports cancel-after-current-frame, restores the original character rotation in `finally`, and exposes `HFSpinnyMiniWebPHQTest.lastCapture` diagnostics.
+
+### Proof before packaging
+
+Live microproof on HeroForge `heroforge07.1.9.98`:
+
+- four rotated 128x128 HeroForge frames captured;
+- each frame browser-encoded as static WebP;
+- custom RIFF animation mux produced a 4-frame / 400 ms animated WebP;
+- browser `Image.decode()` accepted the result at 128x128;
+- base character rotation restored successfully.
+
+Local synthetic proof also produced a valid 3-frame animated WebP recognized by independent image tooling.
+
+Static validation:
+
+- `node --check entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js`: PASS locally before repository commit.
+
+### Architecture decision
+
+For this feature, the accepted first maintained path is:
+
+```text
+named HeroForge rotation/capture state
+→ browser-native static WebP encode per frame
+→ project-owned deterministic animated-WebP mux
+```
+
+This avoids a dependency on closure-local minified encoder/module identifiers and avoids resurrecting Lob's compiled-string GIF patch.
+
+### Test status
+
+- low-resolution live mux proof: PASS;
+- standalone 1024/250 package syntax: PASS;
+- full 1024/250 human capture/visual/repeat-use acceptance: pending.
+
+### Touched files
+
+- `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js`
+- `MASTER.md`
+- `ARCHITECTURE.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `OWNERSHIP.md`
+- `TESTING.md`
+- `docs/feature-specs/spinny-mini-webp.md`
+- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
+- `CHANGELOG.md`
+
+**Runtime behavior changed:** yes, on the standalone WIP branch only. Public Witch Dock is unchanged.
+
+---
+
 ## HFC-2026-09-05-017 — Start Spinny Mini animated WebP reconstruction
 
 Date: 2026-09-05
@@ -17,7 +89,7 @@ Documentation-only kickoff for `media.spinny-mini-webp`, a standalone-first reco
 
 ### Architecture direction
 
-- Prefer named runtime capture/render capabilities and reuse of HeroForge's native animated-WebP encoder.
+- Prefer named runtime capture/render capabilities and reuse of HeroForge's native animated-WebP encoder when a stable seam exists.
 - Use runtime/module discovery before bundle transformation.
 - Do not restore the legacy exact compiled-string Spinny patch unless runtime access is proven insufficient.
 - Standalone Tampermonkey validation precedes Witch Dock integration.

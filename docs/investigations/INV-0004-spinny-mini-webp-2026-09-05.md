@@ -1,17 +1,17 @@
 # INV-0004 — Spinny Mini animated WebP reconstruction
 
 Date opened: 2026-09-05
-Status: active
+Status: active — standalone parity implementation ready for full test
 HeroForge build: `heroforge07.1.9.98`
 Feature: `media.spinny-mini-webp`
 
 ## Question
 
-How does the new HeroForge Spinny Mini WebP pipeline generate frames and encode the final animated WebP, and what is the least brittle runtime seam for producing a higher-resolution / configurable-speed version?
+How can HeroForge's new Spinny Mini WebP capability be reconstructed into a higher-resolution, configurable-speed feature without depending on brittle compiled-string injection or a huge PNG-series ZIP workflow?
 
 ## User goal
 
-Replace the broken legacy Higher Quality Spinny Mini GIF behavior with animated WebP. First milestone is parity with the historical Lob HQ output. After parity, add higher-resolution options and independent slower-rotation presets without falling back to GIF or a huge zipped PNG sequence.
+Replace the broken legacy Higher Quality Spinny Mini GIF behavior with animated WebP. First milestone is parity with the historical Lob HQ output. After parity, add higher-resolution options and independent slower-rotation presets.
 
 ## Confirmed native WebP output
 
@@ -32,7 +32,7 @@ Output:
 - visible Effects calls: 386 x `CK.Effects.renderToCanvas(512,512,...)`;
 - auxiliary call: one `CK.Capture.renderToImage(512,512,...)`.
 
-No ordinary `HTMLCanvasElement.toBlob()` calls were observed during the animation export. The final WebP therefore uses a more specialized encoding path.
+No ordinary `HTMLCanvasElement.toBlob()` calls were observed during the native animation export. Native HeroForge therefore uses a specialized encoding path, but that path is no longer required for the first reconstruction.
 
 ## Confirmed Lob HQ historical output
 
@@ -48,7 +48,7 @@ Measured output:
 - approximately 40 ms/frame;
 - 145,375,926-byte GIF.
 
-This confirms that the previously audited Lob argument `250` corresponds at least to the delivered 250-frame result. The broken current caller is not required to define output parity.
+Legacy source/bundle audit also confirms the Higher Quality control called the old Spinny function with resolution 1024 and frame-count argument 250. The historical native GIF path added frames with approximately 41 ms delay.
 
 ## First parity target
 
@@ -56,53 +56,146 @@ This confirms that the previously audited Lob argument `250` corresponds at leas
 - 1024x1024;
 - 250 frames;
 - 10.0-second revolution;
-- 25 FPS / ~40 ms frame timing;
+- 25 FPS / 40 ms frame timing;
 - continuous loop.
 
-## Runtime discovery so far
+## Discovery findings
 
-### Named-runtime object scan
+### Named runtime scan
 
-Top-level runtime scan found no obvious named `spin` / `webp` function on `BT`, `HF`, or `HFUI`.
+No obvious high-level named Spinny/WebP animation function was exposed on `BT`, `HF`, or `HFUI`.
 
-`CK.encoder` exists, but observed members such as base64/UTF-8 helpers are unrelated to animated WebP encoding.
+`CK.encoder` exists but observed helpers were unrelated base64/UTF utilities.
 
-Conclusion: the current animation encoder is not yet identified as a named high-level runtime API.
+### Webpack scan
 
-### Current UI DOM handler probe
+A runtime webpack factory scan found loose WebP/GIF-related factory matches but no already-loaded callable export that cleanly represented the native animated-WebP encoder.
 
-A direct DOM search for visible `Spinny Mini WebP` controls returned no matches at probe time, so no React handler was available to inspect. This does not prove the handler is inaccessible; it only means the relevant Photo Booth control was not mounted in the DOM at that moment.
+Because a lower-priority module dependency was not necessary after the independent mux proof, deeper private-module binding was stopped rather than turning a closure-local implementation into a maintained API dependency.
 
-### Webpack discovery
+### Current runtime capabilities
 
-Active next probe: inspect current webpack module factories / loaded exports for WebP, GIF, spin, and animation encoder signatures. Module discovery is permitted here because a named runtime seam has not yet been found.
+While Photo Booth was open, the following current capabilities were confirmed callable/available:
 
-## Supported inferences
+- `BT.maker.takeScreenshot`;
+- `CK.character.display.requestAnimationRefresh`;
+- `CK.character.display.animation`;
+- `CK.renderManager.requestShadowUpdate`;
+- `CK.scene.updateMatrixWorld`.
 
-- The native WebP path renders one screenshot per animation frame.
-- Frame count/angular sampling and encoded frame timing are likely separate controls because the native output uses 386 frames at 17 ms while the historical Lob GIF uses 250 frames at ~40 ms.
-- Reusing HeroForge's current animated-WebP encoder is preferable to introducing an external encoder if the module can be discovered and called with stable shape-based validation.
+The legacy HeroForge Spinny implementation independently confirms direct `CK.character.display.rotation.y` stepping plus this display-refresh family as the established rotation mechanism.
 
-## Unproven hypotheses
+## Decisive independent animated-WebP mux proof
 
-- The native WebP encoder may be a closure-local module export rather than attached to `CK`/`BT`.
-- The spin-loop function may accept resolution, sample count, and format flags similar to the previous Spinny Mini implementation, but current parameter semantics are not yet proven.
-- Native export may encode frames incrementally rather than retaining hundreds of full RGBA frames, which would be desirable for a maintained 1024/2048 implementation.
+A live browser-side proof was run without HeroForge's private animation encoder:
+
+1. Save current `CK.character.display.rotation.y`.
+2. Rotate through four test angles.
+3. Refresh HeroForge display/occlusion/shadow/matrix state.
+4. Capture each frame via `BT.maker.takeScreenshot(128,128)`.
+5. Encode each canvas immediately with browser `toBlob('image/webp', 0.9)`.
+6. Parse each still WebP and retain compressed `ALPH` / `VP8 ` / `VP8L` image chunks.
+7. Assemble a new animated WebP with RIFF + VP8X + ANIM + full-frame ANMF chunks.
+8. Decode the result through browser `Image.decode()`.
+9. Restore original character rotation.
+
+Result:
+
+- status: PASS;
+- 128x128;
+- 4 frames;
+- 400 ms total;
+- blob size 9,590 bytes;
+- browser decode PASS;
+- original rotation restoration PASS.
+
+A separate local synthetic three-frame mux was also recognized as animated WebP by independent image tooling.
+
+## Architecture decision
+
+Accepted first maintained path:
+
+```text
+HeroForge runtime character rotation
+→ established display/occlusion refresh sequence
+→ BT.maker.takeScreenshot(frameSize, frameSize)
+→ browser-native static WebP encoding per frame
+→ project-owned animated-WebP RIFF mux
+```
+
+This is preferred over private webpack encoder discovery because it:
+
+- stays at a higher integration-priority layer;
+- does not freeze minified/closure-local identifiers;
+- reuses HeroForge's rendered frame output;
+- avoids GIF color/codec limitations;
+- avoids PNG-series ZIP growth;
+- allows frame timing and frame count to be controlled independently;
+- allows compressed frame payloads to be retained instead of raw RGBA buffers.
+
+## Standalone v0.1.0 implementation
+
+Entry: `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js`.
+
+Fixed parity profile:
+
+- size: 1024;
+- frames: 250;
+- frame duration: 40 ms;
+- WebP static-frame quality: 0.95;
+- loop count: 0 / infinite.
+
+Behavior:
+
+- requires Photo Booth open;
+- blocks concurrent captures;
+- rotates one full revolution evenly across 250 samples;
+- preserves established refresh/occlusion timing before capture;
+- immediately static-WebP encodes each captured frame;
+- retains compressed payload chunks only;
+- reduces each source canvas backing store after extraction;
+- assembles a deterministic animated WebP;
+- parses/validates output dimensions, frame count, and total duration before download;
+- supports cancel-after-current-frame;
+- restores original rotation in `finally`;
+- exposes `HFSpinnyMiniWebPHQTest.lastCapture` diagnostics;
+- installs no permanent HeroForge method override.
+
+Static JavaScript syntax check: PASS.
+
+## Supported inference
+
+The first 1024/250 run will be materially heavier than native 512 WebP because each frame contains four times the pixels, but it should remain far more memory-efficient than retaining 250 raw 1024 RGBA frames because each frame is compressed immediately.
+
+## Still unproven
+
+- full 1024/250 live completion time and browser/GPU pressure;
+- exact visual rotation direction/alignment relative to the historical Lob GIF;
+- whether quality 0.95 is the ideal maintained static-WebP quality setting;
+- repeated-use behavior after a full 250-frame capture;
+- practical 2048 limits;
+- final speed preset multipliers/frame-count policy.
 
 ## Safety / compatibility constraints
 
 - Do not hard-code current minified module-local names as APIs.
-- Do not reintroduce the legacy exact compiled-string patch unless runtime/module access proves insufficient.
-- Do not allocate or retain all uncompressed high-resolution frame buffers simultaneously.
+- Do not reintroduce the legacy exact compiled-string patch unless higher-priority runtime access becomes insufficient.
+- Do not retain all uncompressed high-resolution frames simultaneously.
 - Block concurrent animated captures.
-- Ensure compatibility with the already-Stable `media.screenshot-resolution` provider: ordinary 1024/2048 spin frames must not be mistaken for square 4096/8192 still-capture repair requests.
+- Restore character rotation after success, failure, or cancel where technically possible.
+- `media.screenshot-resolution` provider only intercepts 4096/8192 square still requests, so 1024/2048 Spinny frame requests should pass through untouched.
 - Public Witch Dock and Stable remain untouched during this investigation.
 
-## Next probes
+## Next gate
 
-1. Complete webpack factory/export scan for the current encoder/spin implementation.
-2. If necessary, mount/open the Photo Booth control and inspect its actual event handler / call stack.
-3. Identify the native frame-loop callable seam and the animated-WebP encoder callable seam.
-4. Reproduce one native 512 WebP from a direct test caller without using the UI.
-5. Change only one variable at a time: resolution -> 1024, then frame count/timing -> 250 / 40 ms.
-6. Package the first standalone parity userscript only after the runtime proof is stable enough to reuse.
+Run the standalone v0.1.0 1024/250 parity capture and verify:
+
+1. capture finishes and downloads a `.webp`;
+2. output opens/animates correctly;
+3. output is mechanically 1024x1024 / 250 frames / 10,000 ms;
+4. visual spin completes one clean revolution at the intended cadence;
+5. model returns to its original orientation;
+6. HeroForge remains healthy after capture;
+7. repeat capture works.
+
+Only after that gate passes should 2048 and configurable slower-speed profiles begin.

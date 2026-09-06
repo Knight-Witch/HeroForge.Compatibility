@@ -19,10 +19,10 @@ Observable parity with a historical Lob HQ output:
 - format: animated WebP;
 - resolution: 1024x1024;
 - frame count: 250;
-- frame delay: approximately 40 ms;
+- frame delay: 40 ms;
 - total revolution duration: 10.0 s;
 - effective frame rate: 25 FPS;
-- loop: continuous/infinite unless live parity testing proves a different requirement.
+- loop: continuous/infinite.
 
 ## Native current baseline
 
@@ -41,30 +41,54 @@ Measured on HeroForge `heroforge07.1.9.98` from a real native Spinny Mini WebP:
 
 ## Required capabilities
 
-Initial required capabilities are intentionally provisional until the encoder seam is confirmed:
+Current standalone implementation requires:
 
-- native Booth/spin frame capture through runtime-accessible HeroForge functions;
-- a stable animated-WebP encoding/export capability, preferably HeroForge's current encoder;
-- camera/orbit stepping or access to the current spin loop;
-- reversible temporary runtime hooks for diagnostics/testing only.
+- Photo Booth open with `BT.maker.enabled === true`;
+- callable `BT.maker.takeScreenshot(width,height)`;
+- writable finite `CK.character.display.rotation.y`;
+- current HeroForge display refresh behavior (`requestAnimationRefresh`, `animation`, occlusion refresh/render where present, matrix/shadow refresh);
+- browser `HTMLCanvasElement.toBlob(..., 'image/webp', quality)` support;
+- standard Blob/typed-array APIs.
 
-A maintained feature must not initialize if the required encoder/capture capability is unavailable.
+The feature must not begin capture if required capabilities are unavailable.
 
-## Architecture
+## Accepted implementation architecture
 
-Target layering:
+The first maintained implementation deliberately does **not** depend on HeroForge's closure-local animated-WebP encoder.
 
 ```text
 Standalone test UI
     ↓
-media.spinny-mini-webp service
+media.spinny-mini-webp capture service
     ↓
-spin capture adapter + animated-WebP encoder adapter
+HeroForge runtime frame adapter
+    ├── set character display Y rotation
+    ├── preserve established refresh/occlusion sequencing
+    └── BT.maker.takeScreenshot
     ↓
-HeroForge named runtime / discovered module capability
+browser-native static WebP encode per frame
+    ↓
+project-owned RIFF animated-WebP mux
+    ↓
+download
 ```
 
-Do not couple the maintained feature to closure-local minified names.
+The mux writes:
+
+- RIFF/WEBP container;
+- VP8X animation canvas flags/dimensions;
+- ANIM background/loop metadata;
+- one full-frame ANMF chunk per compressed still-WebP payload.
+
+A live four-frame proof decoded successfully in the browser and restored model rotation, establishing this architecture before the full package was written.
+
+## Memory behavior
+
+- Never retain all frame RGBA buffers.
+- Each HeroForge frame is encoded immediately to compressed static WebP.
+- Only compressed image payload chunks are retained until final mux.
+- The source canvas backing store is reduced after frame extraction to encourage prompt release.
+- Final 1024 parity currently reads the completed compressed output once for structural verification; this should be revisited before materially larger 2048+ profiles if output sizes become excessive.
 
 ## Resolution and speed model
 
@@ -79,22 +103,38 @@ Planned later resolutions after validation:
 - 2048;
 - higher sizes only after render/memory behavior is measured.
 
-Planned speed behavior:
+Initial parity cadence:
 
-- parity/standard speed first;
-- slower presets should increase angular samples/frame count with total duration rather than simply stretching a sparse frame sequence;
-- exact preset names and multipliers remain a UI decision after the parity engine works.
+- 250 angular samples;
+- 40 ms/frame;
+- 10.0-second revolution.
+
+Planned slower behavior:
+
+- slower presets should generally increase total angular samples/frame count and total duration while preserving reasonably smooth playback;
+- do not implement slower rotation merely by holding a sparse frame set for much longer;
+- exact names/multipliers remain a post-parity UI decision.
 
 ## Lifecycle
 
-Maintained standalone implementation should support where practical:
+Standalone v0.1.0 supports:
 
-- `initialize()`;
-- `capture(options)`;
-- `enable()` / `disable()` if a provider hook is installed;
-- `dispose()` / `restore()` for listeners, UI, temporary wrappers, and globals.
+- capability polling/refresh;
+- `capture()`;
+- `cancel()` after current frame;
+- concurrency blocking;
+- original rotation restoration in `finally`;
+- `dispose()` when idle, removing timer/UI/style/global;
+- `lastCapture` diagnostics.
 
-Concurrent animated captures must be blocked.
+No persistent HeroForge runtime method override is installed by the standalone implementation.
+
+## Failure behavior
+
+- Any frame/render/encode/mux failure stops the capture.
+- Original character rotation is restored in `finally` where technically possible.
+- The feature does not intentionally alter unrelated HeroForge behavior.
+- Public Witch Dock is not touched during standalone validation.
 
 ## Risk
 
@@ -103,17 +143,16 @@ High.
 Reasons:
 
 - hundreds of high-resolution frame renders per export;
-- large encoded output and potential memory pressure;
-- current WebP encoder seam is not yet confirmed as a named runtime API;
-- native spin/export implementation may be closure-local;
-- current Lob caller is broken and cannot provide live parity behavior.
+- large compressed output and sustained capture time;
+- current runtime rotation/refresh sequence remains sensitive to HeroForge renderer behavior;
+- higher resolutions and very slow presets can multiply render count/file size substantially.
 
 ## Ownership
 
 - Primary maintainer: TBD.
 - Reviewer: Amanda.
 - Backup maintainer: TBD.
-- Current disposition: standalone reconstruction / experimental until parity validation.
+- Current disposition: standalone experimental until parity validation.
 
 ## Promotion gate
 
@@ -121,7 +160,8 @@ Do not integrate into Witch Dock Dev until standalone 1024 parity has:
 
 - mechanically verified output dimensions;
 - mechanically verified frame count/timing;
-- visual acceptance;
+- downloaded WebP playback acceptance;
+- visual one-revolution/cadence acceptance;
+- post-capture model orientation restoration acceptance;
 - repeat-use acceptance;
-- clean post-capture HeroForge state;
-- disable/dispose behavior where applicable.
+- acceptable resource behavior.

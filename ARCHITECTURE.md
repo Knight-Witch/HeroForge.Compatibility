@@ -43,7 +43,6 @@ HeroForge.Compatibility capability/adapter design
 Rules:
 
 - HF-Chat-Bridge must remain chat/project independent.
-- Its initial command set is read-only and allowlisted; arbitrary remote `eval` is not part of the approved design.
 - Diagnostic observations do not become stable capability contracts automatically.
 - Public Witch Dock and reconstructed feature modules must not depend on the GitHub mailbox or local diagnostic relay at runtime.
 - A future transport change such as MCP should not require rewriting HeroForge probe semantics or maintained feature modules.
@@ -65,7 +64,8 @@ Examples:
 - set decal transform,
 - export character data,
 - apply camera profile,
-- change kitbash capacity policy.
+- change kitbash capacity policy,
+- capture an animated Spinny Mini profile.
 
 ### Compatibility bridge
 
@@ -94,17 +94,7 @@ A HeroForge internal rename or shape change should ideally require one adapter r
 
 Owns unavoidable pre-execution bundle modification.
 
-The patch engine must eventually centralize:
-
-- interception,
-- patch registration,
-- expected match counts,
-- validation,
-- postconditions,
-- failure severity,
-- untouched-bundle fallback,
-- boot coordination,
-- diagnostics.
+The patch engine must eventually centralize interception, patch registration, expected match counts, validation, postconditions, failure severity, untouched-bundle fallback, boot coordination, and diagnostics.
 
 ## HeroForge Integration Priority
 
@@ -117,6 +107,36 @@ Prefer, where practical:
 5. Semantic/AST bundle transformation.
 6. Contextual regex transformation with captured identifiers.
 7. Exact compiled-string replacement only as a last resort.
+
+## Media Capture / Serialization Boundary
+
+Media features should separate **HeroForge frame production** from **file serialization** when that removes unnecessary dependencies on HeroForge-private encoders.
+
+Current accepted Spinny Mini WebP prototype:
+
+```text
+media.spinny-mini-webp feature/service
+    ↓
+HeroForge runtime adapter
+    ├── character display rotation
+    ├── display/occlusion refresh sequencing
+    └── BT.maker.takeScreenshot
+    ↓
+browser-native static WebP frame encoder
+    ↓
+project-owned animated-WebP RIFF mux
+    ↓
+downloaded .webp
+```
+
+Rules for this boundary:
+
+- Prefer compressed frame payloads over retaining raw RGBA frames.
+- Restore temporary model/camera state in `finally`.
+- Block concurrent long-running captures.
+- Validate generated container dimensions/frame count/timing before download when practical.
+- Do not depend on a closure-local HeroForge animation encoder merely because the native UI uses one.
+- If a future named/native encoder provides a clearly superior stable capability, it can be adapted behind the same feature service rather than changing the UI contract.
 
 ## UI Hosts
 
@@ -208,19 +228,7 @@ On failure, roll back where possible and report the affected capability/feature.
 
 ## Bundle Patching Model
 
-Unavoidable patches should be declarative definitions with:
-
-- patch ID,
-- owner,
-- target bundle,
-- dependent feature,
-- discovery strategy,
-- expected match count,
-- required captures,
-- transformation,
-- validation/postconditions,
-- failure severity,
-- compatibility status.
+Unavoidable patches should be declarative definitions with patch ID, owner, target bundle, dependent feature, discovery strategy, expected match count, required captures, transformation, validation/postconditions, failure severity, and compatibility status.
 
 The desired boot path is:
 
