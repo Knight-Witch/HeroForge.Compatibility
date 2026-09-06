@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         HF Compatibility - Spinny Mini WebP Profiles TEST
 // @namespace    https://github.com/Knight-Witch/HeroForge.Compatibility
-// @version      0.3.0
-// @description  Standalone configurable animated WebP Spinny Mini test with TRUE-3K frame repair, Short Test, progress, and device-relative ETA.
+// @version      0.5.0
+// @description  Standalone configurable animated WebP Spinny Mini test with TRUE-3K frame repair, Short Test, safe Pause/Resume, interaction guards, progress, and device-relative ETA.
 // @author       Knight Witch
 // @match        https://www.heroforge.com/*
 // @match        https://heroforge.com/*
@@ -17,8 +17,10 @@
   const GLOBAL = 'HFSpinnyMiniWebPProfilesTest';
   const PANEL_ID = 'hfc-spinny-mini-webp-profiles-test';
   const STYLE_ID = `${PANEL_ID}-style`;
-  const VERSION = '0.3.0';
-  const BUILD = '0.3.0-integrated-true3k-short-test';
+  const GUARD_MODAL_ID = `${PANEL_ID}-guard-modal`;
+  const GUARD_EVENT_TYPES = Object.freeze(['pointerdown','mousedown','touchstart','wheel','click','change','input','keydown']);
+  const VERSION = '0.5.0';
+  const BUILD = '0.5.0-integrated-pause-interaction-guards';
 
   const QUALITY = 0.95;
   const LOOP_COUNT = 0;
@@ -32,7 +34,7 @@
   const RESOLUTIONS = Object.freeze({
     '1024': Object.freeze({ id: '1024', label: '1024px — HQ parity', size: 1024 }),
     '2048': Object.freeze({ id: '2048', label: '2048px — validated resolution', size: 2048 }),
-    '3072': Object.freeze({ id: '3072', label: '3072px — TRUE 3K candidate', size: 3072 })
+    '3072': Object.freeze({ id: '3072', label: '3072px — TRUE 3K validated', size: 3072 })
   });
   const SPEEDS = Object.freeze({
     standard: Object.freeze({ id: 'standard', label: 'Standard', durationMs: 10000, frames: 250, frameDurationMs: 40 }),
@@ -45,6 +47,14 @@
   let busy = false;
   let cancelled = false;
   let activeMode = null;
+
+  // Pause state is intentionally capture-local/session-local. A pause request is
+  // honored only after the current frame is fully captured + encoded.
+  let pauseRequested = false;
+  let paused = false;
+  let pauseResolve = null;
+  let pauseBoundaryFrame = null;
+
   let panel = null;
   let statusEl = null;
   let capabilityEl = null;
@@ -55,10 +65,15 @@
   let warningEl = null;
   let button = null;
   let shortButton = null;
+  let pauseButton = null;
   let cancelButton = null;
   let resolutionSelect = null;
   let speedSelect = null;
   let refreshTimer = null;
+  let guardModal = null;
+  let guardInstalled = false;
+  let guardAttempts = 0;
+  let lastGuardAttempt = null;
   let lastCapture = null;
   let activeTiming = null;
 
@@ -70,6 +85,9 @@
     build: BUILD,
     busy: false,
     activeMode: null,
+    paused: false,
+    pauseRequested: false,
+    pauseBoundaryFrame: null,
     selectedProfile: null,
     activeTiming: null,
     timingHistory,
@@ -220,8 +238,32 @@
       tailEstimateMs,
       estimatedTotalMs: initialFrameMs === null ? null : initialFrameMs * profile.frames + tailEstimateMs,
       estimateSource: initialFrameMs === null ? 'warming-up' : 'same-session-frame-source-history',
-      lastSampleMs: null
+      lastSampleMs: null,
+      pausedTotalMs: 0,
+      pauseStartedPerfMs: null,
+      pauseCount: 0
     };
+  }
+
+  function currentPauseMs() {
+    if (!activeTiming || !Number.isFinite(activeTiming.pauseStartedPerfMs)) return 0;
+    return Math.max(0, performance.now() - activeTiming.pauseStartedPerfMs);
+  }
+
+  function activeElapsedMs() {
+    if (!activeTiming) return null;
+    return Math.max(
+      0,
+      performance.now()
+        - activeTiming.startedPerfMs
+        - activeTiming.pausedTotalMs
+        - currentPauseMs()
+    );
+  }
+
+  function totalPausedMs() {
+    if (!activeTiming) return 0;
+    return Math.max(0, activeTiming.pausedTotalMs + currentPauseMs());
   }
 
   function updateTimingAfterFrame(profile, sampleMs) {
@@ -244,18 +286,34 @@
   function renderTimingDisplay() {
     if (!timingEl) return;
     if (busy && activeTiming) {
-      const elapsed = performance.now() - activeTiming.startedPerfMs;
+      const elapsed = activeElapsedMs();
+      const pausedMs = totalPausedMs();
+
+      if (paused) {
+        if (!Number.isFinite(activeTiming.predictedFrameMs)
+          || (activeTiming.completedFrames < ETA_MIN_SAMPLES && activeTiming.estimateSource === 'warming-up')) {
+          timingEl.textContent = `Paused · ${formatDuration(elapsed)} active · ${formatDuration(pausedMs)} paused · ETA frozen while paused`;
+          return;
+        }
+        const remaining = Math.max(0, activeTiming.estimatedTotalMs - elapsed);
+        timingEl.textContent = `Paused · ${formatDuration(elapsed)} active · ${formatDuration(pausedMs)} paused · ~${formatDuration(remaining)} active work left`;
+        return;
+      }
+
       if (!Number.isFinite(activeTiming.predictedFrameMs)
         || (activeTiming.completedFrames < ETA_MIN_SAMPLES && activeTiming.estimateSource === 'warming-up')) {
-        timingEl.textContent = `Time: ${formatDuration(elapsed)} elapsed · estimating…`;
+        timingEl.textContent = `Time: ${formatDuration(elapsed)} active · estimating…`;
         return;
       }
       const remaining = Math.max(0, activeTiming.estimatedTotalMs - elapsed);
-      timingEl.textContent = `Time: ${formatDuration(elapsed)} elapsed · ~${formatDuration(remaining)} left · ~${formatDuration(activeTiming.estimatedTotalMs)} total`;
+      timingEl.textContent = `Time: ${formatDuration(elapsed)} active · ~${formatDuration(remaining)} left · ~${formatDuration(activeTiming.estimatedTotalMs)} active total`;
       return;
     }
     if (lastCapture && Number.isFinite(lastCapture.elapsedMs)) {
-      timingEl.textContent = `Completed in ${formatDuration(lastCapture.elapsedMs)}`;
+      const pauseSuffix = Number(lastCapture.pausedTotalMs) > 0
+        ? ` · ${formatDuration(lastCapture.pausedTotalMs)} paused`
+        : '';
+      timingEl.textContent = `Completed in ${formatDuration(lastCapture.elapsedMs)}${pauseSuffix}`;
       return;
     }
     timingEl.textContent = 'ETA learns from measured frame time on this device and frame-source path.';
@@ -675,6 +733,100 @@
     window.setTimeout(() => URL.revokeObjectURL(url), 10000);
   }
 
+  function requestPause() {
+    if (!busy || cancelled || paused || pauseRequested) return false;
+    pauseRequested = true;
+    diagnostics.pauseRequested = true;
+    setStatus('Pause requested — finishing current frame…');
+    refresh();
+    return true;
+  }
+
+  function finishPauseAccounting() {
+    if (!activeTiming || !Number.isFinite(activeTiming.pauseStartedPerfMs)) return 0;
+    const duration = Math.max(0, performance.now() - activeTiming.pauseStartedPerfMs);
+    activeTiming.pausedTotalMs += duration;
+    activeTiming.pauseStartedPerfMs = null;
+    if (lastCapture) lastCapture.pausedTotalMs = activeTiming.pausedTotalMs;
+    return duration;
+  }
+
+  function resumeCapture() {
+    if (!busy || !paused) return false;
+    const duration = finishPauseAccounting();
+    paused = false;
+    pauseBoundaryFrame = null;
+    diagnostics.paused = false;
+    diagnostics.pauseBoundaryFrame = null;
+    if (lastCapture) {
+      lastCapture.paused = false;
+      lastCapture.lastResumeAt = new Date().toISOString();
+      lastCapture.lastPauseDurationMs = duration;
+    }
+    const resolve = pauseResolve;
+    pauseResolve = null;
+    if (resolve) resolve();
+    refresh();
+    return true;
+  }
+
+  function togglePause() {
+    if (paused) return resumeCapture();
+    return requestPause();
+  }
+
+  function releasePauseForCancellation() {
+    pauseRequested = false;
+    diagnostics.pauseRequested = false;
+    if (!paused) return;
+    finishPauseAccounting();
+    paused = false;
+    pauseBoundaryFrame = null;
+    diagnostics.paused = false;
+    diagnostics.pauseBoundaryFrame = null;
+    if (lastCapture) {
+      lastCapture.paused = false;
+      lastCapture.lastResumeAt = new Date().toISOString();
+    }
+    const resolve = pauseResolve;
+    pauseResolve = null;
+    if (resolve) resolve();
+  }
+
+  async function pauseAtSafeBoundary(completedFrame, frameCount) {
+    if (!pauseRequested || cancelled || completedFrame >= frameCount) {
+      if (completedFrame >= frameCount && pauseRequested) {
+        pauseRequested = false;
+        diagnostics.pauseRequested = false;
+      }
+      return;
+    }
+
+    pauseRequested = false;
+    paused = true;
+    pauseBoundaryFrame = completedFrame;
+    diagnostics.pauseRequested = false;
+    diagnostics.paused = true;
+    diagnostics.pauseBoundaryFrame = completedFrame;
+
+    if (activeTiming) {
+      activeTiming.pauseCount += 1;
+      activeTiming.pauseStartedPerfMs = performance.now();
+    }
+    if (lastCapture) {
+      lastCapture.paused = true;
+      lastCapture.pauseCount = activeTiming ? activeTiming.pauseCount : (lastCapture.pauseCount + 1);
+      lastCapture.lastPauseAt = new Date().toISOString();
+      lastCapture.pauseBoundaryFrame = completedFrame;
+    }
+
+    const prefix = activeMode === 'short-test' ? 'Short Test · ' : '';
+    setStatus(`${prefix}Paused after frame ${completedFrame}/${frameCount}.`);
+    refresh();
+
+    await new Promise((resolve) => { pauseResolve = resolve; });
+  }
+
   async function captureProfile(shortTest = false) {
     if (busy) return false;
     const selectedProfile = getSelectedProfile();
@@ -695,8 +847,16 @@
     busy = true;
     cancelled = false;
     activeMode = profile.mode;
+    pauseRequested = false;
+    paused = false;
+    pauseResolve = null;
+    pauseBoundaryFrame = null;
+
     diagnostics.busy = true;
     diagnostics.activeMode = activeMode;
+    diagnostics.paused = false;
+    diagnostics.pauseRequested = false;
+    diagnostics.pauseBoundaryFrame = null;
     diagnostics.selectedProfile = { ...selectedProfile };
     activeTiming = createTimingState(profile);
     diagnostics.activeTiming = activeTiming;
@@ -720,7 +880,17 @@
       outputBytes: null,
       parsed: null,
       elapsedMs: null,
+      activeElapsedMs: null,
       timing: null,
+      paused: false,
+      pauseCount: 0,
+      pausedTotalMs: 0,
+      pauseBoundaryFrame: null,
+      lastPauseAt: null,
+      lastResumeAt: null,
+      lastPauseDurationMs: null,
+      cancellationCause: null,
+      guardedAction: null,
       rotationRestored: false,
       error: null
     };
@@ -729,6 +899,15 @@
     try {
       for (let index = 0; index < profile.frames; index += 1) {
         if (cancelled) throw new Error('Capture cancelled.');
+
+        // Re-check the safe boundary immediately before each new angular sample.
+        // This catches a Pause click that arrived during an inter-frame RAF/yield
+        // after the previous frame had already completed.
+        await pauseAtSafeBoundary(index, profile.frames);
+        if (cancelled) throw new Error('Capture cancelled.');
+
+        // A new angular sample is not started until any previous boundary pause has
+        // resolved, so pause can never leave a partial TRUE-3K phase feed active.
         const frameStartedPerfMs = performance.now();
         const angularDenominator = profile.mode === 'short-test' ? profile.fullFrames : profile.frames;
         display.rotation.y = baseRotation + (2 * Math.PI * index / angularDenominator);
@@ -759,6 +938,12 @@
         updateTimingAfterFrame(profile, performance.now() - frameStartedPerfMs);
         setProgress(index + 1, profile.frames, 'render', 0);
         renderTimingDisplay();
+
+        // Safe boundary: the frame is fully encoded and any temporary TRUE-3K
+        // Effects wrapper has already been restored by captureFrameCanvas().
+        await pauseAtSafeBoundary(index + 1, profile.frames);
+        if (cancelled) throw new Error('Capture cancelled.');
+
         if ((index + 1) % 5 === 0) await nextFrame();
       }
 
@@ -776,6 +961,8 @@
       lastCapture.status = 'downloaded';
       lastCapture.completedAt = new Date().toISOString();
       lastCapture.elapsedMs = performance.now() - activeTiming.startedPerfMs;
+      lastCapture.activeElapsedMs = activeElapsedMs();
+      lastCapture.pausedTotalMs = totalPausedMs();
       const tailMs = Math.max(0, performance.now() - activeTiming.frameLoopCompletedPerfMs);
       lastCapture.timing = {
         timingKey: activeTiming.timingKey,
@@ -785,7 +972,10 @@
         predictedFrameMs: activeTiming.predictedFrameMs,
         tailMs,
         estimatedTotalMs: activeTiming.estimatedTotalMs,
-        actualTotalMs: lastCapture.elapsedMs
+        actualTotalMs: lastCapture.elapsedMs,
+        actualActiveMs: lastCapture.activeElapsedMs,
+        pausedTotalMs: lastCapture.pausedTotalMs,
+        pauseCount: activeTiming.pauseCount
       };
       timingHistory[profile.timingKey] = {
         frameMs: activeTiming.sampleAverageFrameMs,
@@ -805,12 +995,17 @@
         lastCapture.status = cancelled ? 'cancelled' : 'failed';
         lastCapture.completedAt = new Date().toISOString();
         lastCapture.elapsedMs = activeTiming ? performance.now() - activeTiming.startedPerfMs : null;
+        lastCapture.activeElapsedMs = activeTiming ? activeElapsedMs() : null;
+        lastCapture.pausedTotalMs = activeTiming ? totalPausedMs() : lastCapture.pausedTotalMs;
+        lastCapture.paused = false;
         lastCapture.error = message;
       }
       setStatus(message, !cancelled);
       console.error('[HF Spinny Mini WebP Profiles TEST]', error);
       return false;
     } finally {
+      // Do not permit a stranded pause waiter during cleanup.
+      releasePauseForCancellation();
       try {
         display.rotation.y = baseRotation;
         refreshScene(CK);
@@ -822,10 +1017,18 @@
       busy = false;
       cancelled = false;
       activeMode = null;
+      pauseRequested = false;
+      paused = false;
+      pauseResolve = null;
+      pauseBoundaryFrame = null;
       diagnostics.busy = false;
       diagnostics.activeMode = null;
+      diagnostics.paused = false;
+      diagnostics.pauseRequested = false;
+      diagnostics.pauseBoundaryFrame = null;
       diagnostics.activeTiming = null;
       activeTiming = null;
+      closeGuardModal();
       refresh();
     }
   }
@@ -833,11 +1036,160 @@
   function captureSelectedProfile() { return captureProfile(false); }
   function captureShortTest() { return captureProfile(true); }
 
-  function cancelCapture() {
+  function cancelCapture(cause = 'user') {
     if (!busy) return false;
     cancelled = true;
-    setStatus('Cancelling after current frame…');
+    if (lastCapture && !lastCapture.cancellationCause) lastCapture.cancellationCause = String(cause || 'user');
+    releasePauseForCancellation();
+    setStatus('Cancelling after current safe frame…');
     refresh();
+    return true;
+  }
+
+
+
+  function isInsideOwnedUi(target) {
+    if (!(target instanceof Node)) return false;
+    if (panel && panel.contains(target)) return true;
+    const guard = document.getElementById(GUARD_MODAL_ID);
+    if (guard && guard.contains(target)) return true;
+    return false;
+  }
+
+  function nearestCanvas(target) {
+    if (!(target instanceof Element)) return null;
+    if (target.tagName === 'CANVAS') return target;
+    return target.closest('canvas');
+  }
+
+  function classifyGuardAttempt(event) {
+    const canvas = nearestCanvas(event.target);
+    if (canvas) {
+      if (event.type === 'wheel') {
+        return {
+          category: 'camera-wheel',
+          label: 'Mouse-wheel camera movement',
+          detail: 'Scrolling over the HeroForge canvas can move the camera and create a visible jump in the animation.'
+        };
+      }
+      return {
+        category: 'camera-canvas',
+        label: 'Camera/canvas interaction',
+        detail: 'Dragging or clicking the HeroForge canvas can alter the camera and break animation continuity.'
+      };
+    }
+    if (event.type === 'keydown') {
+      return {
+        category: 'keyboard-input',
+        label: 'Keyboard interaction',
+        detail: 'Keyboard input outside the Spinny controls is locked during capture because it may alter HeroForge camera or Booth state.'
+      };
+    }
+    if (event.type === 'wheel') {
+      return {
+        category: 'hero-forge-wheel',
+        label: 'HeroForge scroll interaction',
+        detail: 'HeroForge interaction outside the Spinny controls is locked during capture to prevent state changes.'
+      };
+    }
+    return {
+      category: 'hero-forge-ui',
+      label: 'HeroForge / Photo Booth interaction',
+      detail: 'Changing Photo Booth controls, leaving the Booth, or interacting with HeroForge during capture can invalidate animation continuity.'
+    };
+  }
+
+  function suppressGuardEvent(event) {
+    try { if (event.cancelable) event.preventDefault(); } catch (_) {}
+    try { event.stopImmediatePropagation(); } catch (_) {}
+    try { event.stopPropagation(); } catch (_) {}
+  }
+
+  function closeGuardModal() {
+    if (guardModal) guardModal.hidden = true;
+  }
+
+  function ensureGuardModal() {
+    if (guardModal && guardModal.isConnected) return guardModal;
+    guardModal = document.createElement('div');
+    guardModal.id = GUARD_MODAL_ID;
+    guardModal.hidden = true;
+    guardModal.innerHTML = `
+      <div class="hfc-guard-card" role="dialog" aria-modal="true" aria-labelledby="hfc-spinny-guard-title">
+        <div class="hfc-guard-title" id="hfc-spinny-guard-title">Spinny capture protection</div>
+        <div class="hfc-guard-detail"></div>
+        <div class="hfc-guard-note">The attempted action was blocked before HeroForge received it. If you cancel, repeat the action after capture cancellation finishes.</div>
+        <div class="hfc-guard-actions">
+          <button type="button" class="hfc-guard-stay">Keep Capture</button>
+          <button type="button" class="hfc-guard-cancel">Cancel Capture</button>
+        </div>
+      </div>`;
+    document.body.appendChild(guardModal);
+    guardModal.querySelector('.hfc-guard-stay').addEventListener('click', closeGuardModal);
+    guardModal.querySelector('.hfc-guard-cancel').addEventListener('click', () => {
+      const action = lastGuardAttempt ? lastGuardAttempt.category : 'guarded-action';
+      closeGuardModal();
+      cancelCapture(`guard:${action}`);
+    });
+    return guardModal;
+  }
+
+  function showGuardWarning(info) {
+    const guard = ensureGuardModal();
+    guard.querySelector('.hfc-guard-detail').textContent = `${info.label}: ${info.detail}`;
+    guard.hidden = false;
+  }
+
+  function shouldIgnoreGuardKeyboard(event) {
+    return !!(event.ctrlKey || event.metaKey || event.altKey);
+  }
+
+  function onGuardEvent(event) {
+    if (!busy) return;
+    if (isInsideOwnedUi(event.target)) return;
+    if (event.type === 'keydown' && shouldIgnoreGuardKeyboard(event)) return;
+
+    const info = classifyGuardAttempt(event);
+    suppressGuardEvent(event);
+    guardAttempts += 1;
+    lastGuardAttempt = {
+      number: guardAttempts,
+      category: info.category,
+      label: info.label,
+      eventType: event.type,
+      targetTag: event.target && event.target.tagName ? String(event.target.tagName) : null,
+      targetId: event.target && event.target.id ? String(event.target.id) : null,
+      targetClass: event.target && event.target.className && typeof event.target.className === 'string'
+        ? event.target.className.slice(0, 240)
+        : null,
+      capturePaused: paused,
+      at: new Date().toISOString()
+    };
+    if (lastCapture) lastCapture.guardedAction = { ...lastGuardAttempt };
+    diagnostics.lastGuardAttempt = { ...lastGuardAttempt };
+    if (!guardModal || guardModal.hidden) showGuardWarning(info);
+  }
+
+  function installInteractionGuards() {
+    if (guardInstalled) return true;
+    ensureGuardModal();
+    for (const type of GUARD_EVENT_TYPES) {
+      const options = type === 'wheel' || type === 'touchstart'
+        ? { capture: true, passive: false }
+        : { capture: true };
+      document.addEventListener(type, onGuardEvent, options);
+    }
+    guardInstalled = true;
+    return true;
+  }
+
+  function disposeInteractionGuards() {
+    if (guardInstalled) {
+      for (const type of GUARD_EVENT_TYPES) document.removeEventListener(type, onGuardEvent, true);
+      guardInstalled = false;
+    }
+    if (guardModal) guardModal.remove();
+    guardModal = null;
     return true;
   }
 
@@ -846,7 +1198,7 @@
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-#${PANEL_ID}{position:fixed;left:12px;bottom:12px;z-index:2147483646;width:350px;padding:10px;border:1px solid #555;border-radius:8px;background:rgba(18,18,20,.95);color:#eee;font:12px/1.35 Arial,sans-serif;box-shadow:0 5px 18px rgba(0,0,0,.45)}
+#${PANEL_ID}{position:fixed;left:12px;bottom:12px;z-index:2147483646;width:370px;padding:10px;border:1px solid #555;border-radius:8px;background:rgba(18,18,20,.95);color:#eee;font:12px/1.35 Arial,sans-serif;box-shadow:0 5px 18px rgba(0,0,0,.45)}
 #${PANEL_ID} .hfc-title{font-size:13px;font-weight:700;margin-bottom:6px}
 #${PANEL_ID} .hfc-cap{opacity:.78;margin-bottom:7px}
 #${PANEL_ID} .hfc-row{display:grid;grid-template-columns:86px 1fr;gap:6px;align-items:center;margin-bottom:6px}
@@ -864,7 +1216,23 @@
 #${PANEL_ID} button:disabled,#${PANEL_ID} select:disabled{opacity:.42;cursor:not-allowed}
 #${PANEL_ID} .hfc-short{border-color:#7769a8}
 #${PANEL_ID} .hfc-short:hover:not(:disabled){background:#40395a}
+#${PANEL_ID} .hfc-pause{border-color:#8b7c55}
+#${PANEL_ID} .hfc-pause:hover:not(:disabled){background:#554b32}
+#${PANEL_ID} .hfc-pause[data-paused="1"]{border-color:#65a77d}
+#${PANEL_ID} .hfc-pause[data-paused="1"]:hover:not(:disabled){background:#31503b}
 #${PANEL_ID} .hfc-meta{opacity:.72;margin-top:7px;font-size:11px;white-space:pre-line}
+
+#${GUARD_MODAL_ID}{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.58);font:13px/1.4 Arial,sans-serif;color:#eee}
+#${GUARD_MODAL_ID}[hidden]{display:none}
+#${GUARD_MODAL_ID} .hfc-guard-card{width:min(460px,calc(100vw - 32px));padding:16px;border:1px solid #666;border-radius:10px;background:#1a1a1e;box-shadow:0 12px 40px rgba(0,0,0,.55)}
+#${GUARD_MODAL_ID} .hfc-guard-title{font-size:15px;font-weight:700;margin-bottom:8px}
+#${GUARD_MODAL_ID} .hfc-guard-detail{opacity:.9;margin-bottom:12px}
+#${GUARD_MODAL_ID} .hfc-guard-note{opacity:.72;font-size:11px;margin-bottom:13px}
+#${GUARD_MODAL_ID} .hfc-guard-actions{display:flex;gap:8px}
+#${GUARD_MODAL_ID} button{flex:1;border:1px solid #666;border-radius:6px;padding:8px 10px;background:#29292d;color:#fff;cursor:pointer}
+#${GUARD_MODAL_ID} button:hover{background:#393940}
+#${GUARD_MODAL_ID} .hfc-guard-cancel{border-color:#a56565}
+#${GUARD_MODAL_ID} .hfc-guard-cancel:hover{background:#573434}
 `;
     document.head.appendChild(style);
   }
@@ -886,6 +1254,7 @@
       <div class="hfc-actions">
         <button type="button" class="hfc-capture">Capture WebP</button>
         <button type="button" class="hfc-short">Short Test</button>
+        <button type="button" class="hfc-pause" data-paused="0">Pause</button>
         <button type="button" class="hfc-cancel">Cancel</button>
       </div>
       <div class="hfc-status" data-error="0">Waiting for Photo Booth…</div>
@@ -904,6 +1273,7 @@
     metaEl = panel.querySelector('.hfc-meta');
     button = panel.querySelector('.hfc-capture');
     shortButton = panel.querySelector('.hfc-short');
+    pauseButton = panel.querySelector('.hfc-pause');
     cancelButton = panel.querySelector('.hfc-cancel');
     resolutionSelect = panel.querySelector('.hfc-resolution');
     speedSelect = panel.querySelector('.hfc-speed');
@@ -911,7 +1281,8 @@
     speedSelect.value = 'standard';
     button.addEventListener('click', () => { captureSelectedProfile(); });
     shortButton.addEventListener('click', () => { captureShortTest(); });
-    cancelButton.addEventListener('click', cancelCapture);
+    pauseButton.addEventListener('click', togglePause);
+    cancelButton.addEventListener('click', () => cancelCapture('user'));
     resolutionSelect.addEventListener('change', refresh);
     speedSelect.addEventListener('change', refresh);
     return panel;
@@ -925,6 +1296,16 @@
     if (capabilityEl) capabilityEl.textContent = capability.reason;
     if (button) button.disabled = busy || !capability.ok;
     if (shortButton) shortButton.disabled = busy || !capability.ok;
+    if (pauseButton) {
+      pauseButton.disabled = !busy || pauseRequested;
+      pauseButton.textContent = paused ? 'Resume' : pauseRequested ? 'Pausing…' : 'Pause';
+      pauseButton.dataset.paused = paused ? '1' : '0';
+      pauseButton.title = paused
+        ? 'Resume at the next angular sample.'
+        : pauseRequested
+          ? 'Current frame will finish before pausing.'
+          : 'Pause after the current frame finishes.';
+    }
     if (cancelButton) cancelButton.disabled = !busy;
     if (resolutionSelect) resolutionSelect.disabled = busy;
     if (speedSelect) speedSelect.disabled = busy;
@@ -941,9 +1322,10 @@
       else if (profile.size === 2048 && profile.speedId === 'standard') validationLabel = 'Validated 2048 Standard';
       else if (profile.size === 2048 && profile.speedId === 'slower') validationLabel = 'Validated 2048 Slower';
       else if (profile.size === 1024 && profile.speedId === 'verySlow') validationLabel = 'Validated 1024 Very Slow';
-      else if (profile.size === TRUE_3K_SIZE) validationLabel = 'TRUE 3K frame repair validated; integrated full profile pending';
+      else if (profile.size === TRUE_3K_SIZE) validationLabel = 'Validated TRUE 3K frame source';
       const sourceLabel = profile.frameSource === 'true3k-phase-feed' ? 'TRUE-3K phase-feed' : 'native frame source';
-      metaEl.textContent = `${validationLabel}\n${profile.size}px · ${profile.frames} frames · ${profile.fps.toFixed(0)} FPS · ${(profile.durationMs / 1000).toFixed(1)} s · workload ${profile.workloadMultiplier.toFixed(1)}× baseline · ${sourceLabel}`;
+      metaEl.textContent = `${validationLabel}
+${profile.size}px · ${profile.frames} frames · ${profile.fps.toFixed(0)} FPS · ${(profile.durationMs / 1000).toFixed(1)} s · workload ${profile.workloadMultiplier.toFixed(1)}× baseline · ${sourceLabel}`;
     }
     renderTimingDisplay();
   }
@@ -951,6 +1333,7 @@
   function dispose() {
     if (busy) return false;
     if (refreshTimer !== null) { clearInterval(refreshTimer); refreshTimer = null; }
+    disposeInteractionGuards();
     if (panel) panel.remove();
     panel = null;
     const style = document.getElementById(STYLE_ID);
@@ -969,10 +1352,18 @@
     timingHistory,
     capture: captureSelectedProfile,
     captureShortTest,
+    pause: requestPause,
+    resume: resumeCapture,
+    togglePause,
     cancel: cancelCapture,
     get busy() { return busy; },
+    get paused() { return paused; },
+    get pauseRequested() { return pauseRequested; },
     get activeMode() { return activeMode; },
     get lastCapture() { return lastCapture; },
+    get guardInstalled() { return guardInstalled; },
+    get guardAttempts() { return guardAttempts; },
+    get lastGuardAttempt() { return lastGuardAttempt ? { ...lastGuardAttempt } : null; },
     refresh,
     dispose
   };
@@ -982,6 +1373,7 @@
   }
   window[GLOBAL] = api;
   ensurePanel();
+  installInteractionGuards();
   refresh();
   refreshTimer = window.setInterval(refresh, 1000);
 })();
