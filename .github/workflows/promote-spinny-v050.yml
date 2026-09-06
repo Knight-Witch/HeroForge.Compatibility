@@ -1,0 +1,70 @@
+name: Promote validated Spinny v0.5.0
+on:
+  push:
+    branches: [spinny-v050-materialize]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: spinny-webp-hq-wip
+          fetch-depth: 0
+      - name: Promote exact validated source and docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://raw.githubusercontent.com/Knight-Witch/HeroForge.Compatibility/spinny-v050-materialize/entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js -o /tmp/spinny.js
+          echo '4d450bd18c427e31ea8a38825ed9c8223045a4834a526ec041ca04256d654ce3  /tmp/spinny.js' | sha256sum -c -
+          node --check /tmp/spinny.js
+          cp /tmp/spinny.js entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js
+          python - <<'PY'
+          from pathlib import Path
+          def prepend(path, text):
+              p=Path(path); old=p.read_text(); p.write_text(text.rstrip()+"\n\n---\n\n"+old)
+          prepend('CHANGELOG.md', '''# Changelog
+
+## HFC-2026-09-06-031 — Promote validated Spinny v0.5.0
+
+Date: 2026-09-06
+
+Promoted the exact live-tested consolidated Spinny source as maintained v0.5.0 / build `0.5.0-integrated-pause-interaction-guards`.
+
+Validated live before promotion: 1024 and TRUE-3K 3072 capture paths, frame-boundary Pause/Resume, cancel while paused, ETA pause accounting, camera wheel/drag blocking, Booth-control blocking, Keep Capture, guard-triggered cancel, protection while paused, and restoration.
+
+Public Witch Dock remains unchanged by this Compatibility commit. Next disposition: Witch Dock Dev candidate.
+
+**Runtime behavior changed:** yes — maintained standalone runtime advances from v0.3.0 to validated v0.5.0.''')
+          prepend('PRE_FLIGHT_Check.md', '''# Pre-Flight Check Log
+
+## PFC-2026-09-06-027 — Promote validated Spinny v0.5.0
+
+Date: 2026-09-06
+
+Reviewed `PROJECT_CONTRACT.md`, `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`, the Spinny feature spec/investigation, maintained v0.3.0 source, and the exact v0.5.0 live-tested candidate.
+
+Target runtime: `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`.
+
+Material risks checked: TRUE-3K frame-source parity, provider ownership, pause boundaries, cancel-while-paused, ETA accounting, interaction-guard false positives/negatives, restoration, and no 4096/8192 Spinny collision.
+
+Decision: promote the exact checksum-verified v0.5.0 source. Witch Dock integration remains a separate Dev stage.''')
+          updates={
+          'MASTER.md': '''\n## Spinny v0.5.0 validated standalone checkpoint\n\n`media.spinny-mini-webp` maintained runtime is now v0.5.0 / `0.5.0-integrated-pause-interaction-guards`. Pause/Resume and capture-invalidating interaction guards passed live testing. Disposition advances to Witch Dock Dev candidate; public Stable remains untouched until integrated Dev smoke.\n''',
+          'FEATURE_INVENTORY.md': '''\n## Spinny v0.5.0 status\n\n`media.spinny-mini-webp`: standalone v0.5.0 validated on `heroforge07.1.9.98`; TRUE-3K 3072, Pause/Resume, cancel-while-paused, and interaction guards passed. Witch Dock Dev integration is the next gate.\n''',
+          'COMPATIBILITY.md': '''\n## Spinny v0.5.0 compatibility checkpoint\n\nValidated on `heroforge07.1.9.98`: maintained v0.5.0 preserves validated 1024/2048/TRUE-3K behavior and adds live-validated frame-boundary Pause/Resume plus interaction guards. Native unrepaired 3072 remains rejected; 4096 animated WebP remains deferred.\n''',
+          'OWNERSHIP.md': '''\n## Spinny v0.5.0 maintenance note\n\nPause/Resume and interaction guards are now part of the maintained `media.spinny-mini-webp` feature lifecycle rather than separate companion utilities. Long-term primary maintainer assignment remains unchanged/TBD.\n''',
+          'TESTING.md': '''\n## Spinny v0.5.0 integrated standalone gate — PASS\n\nUser-reported live validation passed for: 1024 Short Test pause/resume, TRUE-3K 3072 Short Test, cancel while paused, camera wheel/drag guard, Booth-control guard, Keep Capture, guard-triggered cancel requiring repeat action, and guard behavior while paused. Exact source checksum before promotion: `4d450bd18c427e31ea8a38825ed9c8223045a4834a526ec041ca04256d654ce3`.\n''',
+          'docs/feature-specs/spinny-mini-webp.md': '''\n## Maintained v0.5.0 lifecycle / guard status\n\nVersion `0.5.0`, build `0.5.0-integrated-pause-interaction-guards`, is the maintained standalone implementation. Pause occurs only after a completed encoded frame; paused wall-clock time is separated from active ETA; cancel while paused restores state; capture-invalidating HeroForge interaction is blocked before mutation with Keep Capture / Cancel Capture choices. Standalone guard integration passed live.\n'''
+          }
+          for path, text in updates.items():
+              p=Path(path); p.write_text(p.read_text().rstrip()+"\n"+text)
+          Path('docs/validation/spinny-mini-webp-v0.5.0-pause-guards-2026-09-06.md').write_text('''# Spinny Mini WebP v0.5.0 — Pause + Interaction Guard Validation\n\nDate: 2026-09-06\nHeroForge: `heroforge07.1.9.98`\nBuild: `0.5.0-integrated-pause-interaction-guards`\n\n## Result\n\nPASS.\n\nLive user validation confirmed the consolidated script preserved capture behavior and passed frame-boundary Pause/Resume, cancel while paused, ETA pause accounting, camera wheel/drag protection, Booth-control protection, Keep Capture, guard-triggered cancellation, protection while paused, and TRUE-3K 3072 output.\n\nExact promoted source SHA-256: `4d450bd18c427e31ea8a38825ed9c8223045a4834a526ec041ca04256d654ce3`.\n\nNext gate: Witch Dock Dev integration; public Stable unchanged until separate smoke/approval.\n''')
+          PY
+          git config user.name 'Knight Witch'
+          git config user.email 'amanda.m.ivans@gmail.com'
+          git add entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js MASTER.md PRE_FLIGHT_Check.md CHANGELOG.md FEATURE_INVENTORY.md COMPATIBILITY.md OWNERSHIP.md TESTING.md docs/feature-specs/spinny-mini-webp.md docs/validation/spinny-mini-webp-v0.5.0-pause-guards-2026-09-06.md
+          git commit -m 'Promote validated Spinny v0.5.0'
+          git push origin HEAD:spinny-webp-hq-wip
