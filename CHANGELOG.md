@@ -1,46 +1,39 @@
 # Changelog
 
-## HFC-2026-09-05-016 — Record Photo Booth Stable acceptance
+## HFC-2026-09-05-017 — Start Spinny Mini animated WebP reconstruction
 
 Date: 2026-09-05
 
 ### Summary
 
-Documentation-only status update recording final public Witch Dock Stable acceptance of `media.screenshot-resolution`.
+Documentation-only kickoff for `media.spinny-mini-webp`, a standalone-first reconstruction of higher-quality Spinny Mini export using HeroForge's new animated WebP path.
 
-### Confirmed public result
+### Confirmed baselines
 
-- Temporary standalone v0.6 and WITCH_DEV_PHOTO test scripts were disabled for the clean public test.
-- Public readiness adapter worked without requiring the repair toggle to be cycled.
-- Public HeroForge/Lob 4096 capture routed through Witch Dock and passed perfectly.
-- Public HeroForge/Lob 8192 grouped capture routed through Witch Dock and passed perfectly.
-- Public Witch Dock direct TRUE 4K capture passed perfectly.
-- Public Witch Dock direct TRUE 8K capture passed perfectly.
-- Amanda reported the public integration works perfectly.
+- Native HeroForge Spinny Mini WebP on `heroforge07.1.9.98`: 512x512, 386 frames, 17 ms/frame, 6562 ms total, 58.82 FPS effective, infinite loop, 11,331,110-byte `image/webp` blob.
+- Historical Lob Higher Quality Spinny Mini GIF measured from original output: 1024x1024, 250 frames, 10.0 s total, 25 FPS effective, ~40 ms/frame, 145,375,926 bytes.
+- First WebP parity target: 1024x1024, 250 frames, 10.0-second revolution / 25 FPS.
+- Future rotation-speed presets will be modeled independently from resolution.
 
-### Status
+### Architecture direction
 
-- standalone: validated;
-- Witch Dock Dev: validated with Lob present;
-- Witch Dock Stable: **validated**;
-- Lob-absent native HeroForge resolution-menu adapter: pending separately;
-- primary feature maintainer: unresolved; Amanda is not silently assigned feature maintenance by this validation.
+- Prefer named runtime capture/render capabilities and reuse of HeroForge's native animated-WebP encoder.
+- Use runtime/module discovery before bundle transformation.
+- Do not restore the legacy exact compiled-string Spinny patch unless runtime access is proven insufficient.
+- Standalone Tampermonkey validation precedes Witch Dock integration.
 
 ### Runtime impact
 
-**No Compatibility runtime behavior changed.** `entries/tampermonkey-standalone/photo-booth-true-resolution.user.js` remains the validated v0.6 regression baseline. This commit updates durable documentation only.
+**No runtime behavior changed.** This commit records pre-flight, feature scope, parity evidence, and the active investigation only.
 
 ### Touched files
 
-- `MASTER.md`
-- `FEATURE_INVENTORY.md`
-- `COMPATIBILITY.md`
-- `TESTING.md`
-- `docs/feature-specs/photo-booth-screenshot-resolution.md`
-- `docs/investigations/INV-0003-photo-booth-high-res-capture-2026-09-05.md`
 - `PRE_FLIGHT_Check.md`
 - `CHANGELOG.md`
+- `FEATURE_INVENTORY.md`
+- `docs/feature-specs/spinny-mini-webp.md`
+- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
 
 ---
 
-Historical changelog entries through HFC-2026-09-05-015 remain preserved in Git history at/before `94289f9dcb8364fb94cd19e8c8a9838c9c616d95`.
+Historical changelog entries through HFC-2026-09-05-016 remain preserved in Git history at/before `732dae09e83d712a26ac383f7b64ce9e27e07a59`.
