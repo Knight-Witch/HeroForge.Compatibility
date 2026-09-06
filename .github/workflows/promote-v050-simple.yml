@@ -1,0 +1,35 @@
+name: Promote Spinny v050 Simple
+on:
+  push:
+    branches:
+      - spinny-v050-materialize
+permissions:
+  contents: write
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout maintained target
+        uses: actions/checkout@v4
+        with:
+          ref: spinny-webp-hq-wip
+          path: target
+          fetch-depth: 0
+      - name: Checkout validated staging source
+        uses: actions/checkout@v4
+        with:
+          ref: spinny-v050-materialize
+          path: stage
+      - name: Prepare and validate
+        run: |
+          python stage/staging/promote_v050.py target stage
+          node --check target/entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js
+          echo '4d450bd18c427e31ea8a38825ed9c8223045a4834a526ec041ca04256d654ce3  target/entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js' | sha256sum -c -
+          git -C target diff --check
+      - name: Commit maintained v050
+        run: |
+          git -C target config user.name 'Knight Witch'
+          git -C target config user.email 'amanda.m.ivans@gmail.com'
+          git -C target add entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js MASTER.md PRE_FLIGHT_Check.md CHANGELOG.md FEATURE_INVENTORY.md COMPATIBILITY.md OWNERSHIP.md TESTING.md docs/feature-specs/spinny-mini-webp.md docs/validation/spinny-mini-webp-v0.5.0-pause-guards-2026-09-06.md
+          git -C target commit -m 'Promote validated Spinny v0.5.0'
+          git -C target push origin HEAD:spinny-webp-hq-wip
