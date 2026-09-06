@@ -1,95 +1,74 @@
 # Changelog
 
-## HFC-2026-09-06-027 — Integrate TRUE-3K frame source and Short Test into Spinny v0.3.0
+## HFC-2026-09-06-028 — Validate integrated v0.3.0 TRUE-3K Short Test
 
 Date: 2026-09-06
 
 ### Summary
 
-Promoted the validated TRUE-3K frame-source repair into the maintained standalone Spinny profile script as v0.3.0 and folded the 16-frame Short Test into the same capture engine.
+Recorded the first live validation of the consolidated Spinny v0.3.0 capture engine at 3072 TRUE-3K using the integrated 16-frame Short Test.
 
-The goal is to eliminate the permanent stacked-test architecture while preserving one canonical capture path for full capture, Short Test, WebP encoding/mux, cancellation, timing and restoration.
+User native-size inspection passed: the downloaded Short Test is visibly sharp and retains the previously validated TRUE-3K detail rather than reproducing the blurry native-3072 baseline.
 
-### Runtime changes
+### Runtime evidence
 
-`entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
+HF-Chat-Bridge read-only issue #490 confirmed the active implementation is:
 
-Version: `0.3.0`
-Build: `0.3.0-integrated-true3k-short-test`
+- version `0.3.0`;
+- build `0.3.0-integrated-true3k-short-test`.
 
-Changes:
+The successful Short Test had already updated session timing history under the repaired-source key:
 
-- 1024 and 2048 continue using native `BT.maker.takeScreenshot(size,size)` frame capture.
-- 3072 now uses the validated TRUE-3K phase-feed repair.
-- Each repaired 3072 animation frame temporarily wraps `CK.Effects.renderToCanvas` only for that frame's synchronous screenshot call.
-- The wrapper classifies the live native tile/grid topology, renders one genuine 3072x3072 Effects source, derives the requested native phases, validates complete delivery, and restores the exact Effects method immediately afterward.
-- `BT.maker.takeScreenshot` is not replaced or reassigned, preserving the Witch Dock 4096/8192 still-provider ownership boundary.
-- Added integrated `captureShortTest()` using 16 contiguous frames and the selected full profile's normal angular step.
-- Short Test uses the same frame source, refresh sequencing, browser static-WebP encode, RIFF mux, parser and figure-rotation lifecycle as full capture.
-- Added per-frame frame-source diagnostics for repaired 3072 output.
-- Timing history is keyed by resolution + frame-source path, preventing old blurry/native 3072 timing from contaminating TRUE-3K estimates.
-- Short Test can teach per-frame timing for a later full capture but does not seed the full capture with its small mux-tail cost.
-- 3072 label now identifies the integrated TRUE-3K candidate rather than the rejected native 3K path.
+- timing key: `3072:true3k-phase-feed`;
+- mode: `short-test`;
+- frames: 16;
+- average frame time: approximately 2123.48 ms;
+- frame source: `true3k-phase-feed`;
+- Short Test mux-tail value intentionally stored as 0 for future full-run ETA seeding.
 
-### Short Test product decision
+Because v0.3.0 updates timing history only after WebP mux/parser validation and download succeed, the presence of this 16-frame history record confirms the integrated Short Test reached the successful post-validation path.
 
-Short Test remains a maintained diagnostic capability.
+### Later overwritten `lastCapture`
 
-- Standalone dev harness: visible directly.
-- Future Witch Dock normal UI: hidden.
-- Future Witch Dock Developer Mode: exposes Short Test and relevant diagnostics through the existing `KWDeveloperMode` visibility/state contract.
-- Developer Mode does not own or duplicate Spinny capture logic.
+A later full 3072 capture was started and cancelled after two frames, overwriting the successful Short Test `lastCapture` record before diagnostics were read.
 
-### Preserved behavior
+That later cancelled run independently confirmed:
 
-- Standard: 250 frames / 10 s / 40 ms
-- Slow: 375 frames / 15 s / 40 ms
-- Slower: 500 frames / 20 s / 40 ms
-- Very Slow: 750 frames / 30 s / 40 ms
-- browser static-WebP frame encoding
-- deterministic project-owned animated-WebP RIFF mux
-- parser validation
-- cancel after current frame
-- figure starting-rotation restoration
-- long-capture warning / progress / ETA UI
-- public Witch Dock unchanged
-- 4K Spinny still deferred
+- full mode used `true3k-phase-feed`;
+- both completed frames used native 768px tiles / 4x4 grid;
+- 16 expected / 16 supplied / 16 unique phases per completed frame;
+- one 3072 source render per completed frame;
+- `effectsRestored: true` for both completed frames;
+- figure rotation restored: true;
+- cancellation error was the expected `Capture cancelled.`
 
-### Static validation
+Therefore the detailed Short Test parser snapshot is no longer available in `lastCapture`, but its successful completion is supported by the download observed by the user, visual inspection, and the post-validation timing-history record.
 
-- `node --check`: PASS
-- all speed-profile frame durations retained: PASS
-- full capture / Short Test / cancel APIs present: PASS
-- rotation restoration path present: PASS
-- per-frame Effects restoration path present: PASS
-- `BT.maker.takeScreenshot` ownership replacement absent: PASS
-- TRUE-3K timing history separated from native path: PASS
+### Decision
 
-### Live validation status
+Integrated v0.3.0 TRUE-3K Short Test: **PASS**.
 
-Pending:
-
-- integrated 3072 Standard Short Test;
-- integrated full repaired 3072 Standard / 250 frames;
-- optional lower-resolution regression smoke after consolidation.
-
-The previously separate TRUE-3K repair principle itself is already validated mechanically and visually; this entry does not yet claim the complete integrated v0.3.0 3072 profile has passed.
+The next required gate is one full repaired 3072 Standard / 250-frame capture. Complete 3072 production-profile validation is still pending that full run.
 
 ### Touched files
 
-- `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
+Documentation only:
+
 - `MASTER.md`
 - `PRE_FLIGHT_Check.md`
 - `CHANGELOG.md`
-- `ARCHITECTURE.md`
-- `FEATURE_INVENTORY.md`
-- `COMPATIBILITY.md`
-- `OWNERSHIP.md`
 - `TESTING.md`
 - `docs/feature-specs/spinny-mini-webp.md`
 - `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
+- `docs/validation/spinny-mini-webp-v0.3.0-short-test-2026-09-06.md` (new)
 
-**Runtime behavior changed:** yes — standalone Spinny v0.3.0 candidate only. Public Witch Dock unchanged.
+**Runtime behavior changed:** no. Documentation-only validation checkpoint.
+
+---
+
+## HFC-2026-09-06-027 — Integrate TRUE-3K frame source and Short Test into Spinny v0.3.0
+
+Promoted the validated TRUE-3K frame-source repair into the maintained standalone Spinny profile script as v0.3.0 and folded the 16-frame Short Test into the same capture engine.
 
 ---
 

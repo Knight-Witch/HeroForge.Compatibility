@@ -65,16 +65,7 @@ HF-Chat-Bridge Power trace confirmed:
 
 Current native `renderToCanvas` sizes its render target from supplied width/height, explaining the structurally-correct-but-blurry 3072 output.
 
-### Baseline Short Test diagnostic
-
-The separate 16-frame Short Test companion was live-validated as diagnostic infrastructure:
-
-- completed/downloaded correctly;
-- preserved normal profile angular spacing;
-- restored figure rotation;
-- reproduced the native 3072 blur quickly.
-
-### TRUE-3K repair companion — PASS
+### TRUE-3K repair principle — PASS
 
 Standalone repaired Short Test result:
 
@@ -118,38 +109,44 @@ Build: `0.3.0-integrated-true3k-short-test`
 - no `BT.maker.takeScreenshot` reassignment/replacement: PASS
 - TRUE-3K timing history isolated by frame-source path: PASS
 
-### Integrated Short Test live gate
+### Integrated TRUE-3K Short Test — PASS
 
-Before testing:
+Tested profile:
 
-- disable the older standalone `spinny-mini-webp-short-test.user.js` companion;
-- disable the older `spinny-mini-webp-3k-repair-companion.user.js` companion;
-- install only v0.3.0 for current maintained profile testing.
+- 3072px — TRUE 3K candidate;
+- Standard;
+- Short Test / 16 contiguous frames.
 
-Test:
+User result:
 
-1. Open Photo Booth.
-2. Select **3072px — TRUE 3K candidate**.
-3. Select **Standard**.
-4. Click **Short Test**.
-5. Do not manipulate the camera or Booth controls while capture is active.
+- download completed;
+- native-size visual detail: **PASS — looks genuinely 3K**.
 
-Required PASS conditions:
+HF-Chat-Bridge issue #490 confirmed:
 
-- valid partial WebP downloads;
-- visible native-size detail matches the repaired TRUE-3K reference, not the blurry native 3K baseline;
-- `lastCapture.mode === 'short-test'`;
-- `lastCapture.frameSource === 'true3k-phase-feed'`;
-- exactly 16 frames rendered and encoded;
-- parser 3072x3072 / 16 frames / 640 ms / `{40:16}` / loop 0;
-- each repaired frame reports complete phase delivery and one 3072 source render;
-- every repaired frame reports `effectsRestored: true`;
-- figure rotation restored;
-- error null.
+- version/build `0.3.0` / `0.3.0-integrated-true3k-short-test`;
+- successful timing-history entry under `3072:true3k-phase-feed`;
+- history mode `short-test`;
+- history frames 16;
+- frame source `true3k-phase-feed`;
+- average frame time approximately 2123.48 ms.
+
+The successful Short Test `lastCapture` snapshot was later overwritten by a separate full 3072 capture that was cancelled after two frames. The timing-history entry remains significant because v0.3.0 writes it only after the WebP has been muxed, parsed/validated and downloaded successfully.
+
+The later cancelled full run independently showed for both completed frames:
+
+- tile size 768;
+- grid 4x4;
+- expected/supplied/unique phases 16/16/16;
+- one 3072 source render;
+- `effectsRestored: true`;
+- final figure rotation restored true.
+
+Conclusion: integrated v0.3.0 TRUE-3K Short Test **PASS**.
 
 ### Full repaired 3072 gate
 
-Only after integrated Short Test PASS:
+Next required test:
 
 - select 3072 + Standard;
 - click Capture WebP;
@@ -159,11 +156,13 @@ Only after integrated Short Test PASS:
 - inspect native-size visual fidelity;
 - record file size / elapsed time / ETA accuracy / browser resource behavior.
 
-This final full run is required before complete 3072 production-profile validation.
+Using the integrated Short Test's measured ~2123.48 ms/frame, the initial frame-loop estimate for 250 frames is about 531 seconds (~8m51s) before final mux/tail overhead. This is an estimate, not a validation result.
+
+This full run is required before complete 3072 production-profile validation.
 
 ### Consolidation regression gate
 
-Because v0.3.0 consolidates previously stacked diagnostic behavior into the maintained script, re-run at least one validated lower-resolution profile before Witch Dock promotion. Preferred quick regression: 1024 Standard.
+Because v0.3.0 consolidates previously stacked diagnostic behavior into the maintained script, re-run at least one validated lower-resolution profile before Witch Dock promotion. Preferred regression: 1024 Standard; a quick Short Test may be used first, but full lower-resolution validation history remains the reference.
 
 ### Short Test Witch Dock policy
 

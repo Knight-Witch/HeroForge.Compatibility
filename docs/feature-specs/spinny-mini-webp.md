@@ -47,12 +47,13 @@ Rejected native path:
 
 Validated repair capability:
 
-- 3072px via TRUE-3K Effects-source phase feed — 16-frame repaired Short Test PASS mechanically and visually.
+- 3072px via TRUE-3K Effects-source phase feed — PASS mechanically and visually.
 
 Current integrated candidate:
 
 - v0.3.0 routes 3072 through the validated repaired frame source;
-- integrated Short Test + full 3072 confirmation still pending.
+- integrated 3072 Standard Short Test: **PASS**;
+- full repaired 3072 Standard / 250-frame confirmation: pending.
 
 Deferred:
 
@@ -164,6 +165,21 @@ The adapter:
 - supports future native true-3072 passthrough if HeroForge begins providing it directly;
 - restores the exact original Effects method after every repaired frame.
 
+## Integrated v0.3.0 Short Test validation
+
+The maintained v0.3.0 engine has now passed the integrated 3072 Standard Short Test.
+
+Confirmed evidence:
+
+- user native-size visual result: sharp/genuine 3K PASS;
+- session timing key: `3072:true3k-phase-feed`;
+- mode: `short-test`;
+- frames: 16;
+- average measured frame time: ~2123.48 ms;
+- successful timing-history write proves the run passed mux/parser validation and download, because v0.3.0 writes that history only after those gates succeed.
+
+A later full 3072 capture was started and cancelled after two frames, overwriting `lastCapture`. Both completed frames still reported complete 768px / 4x4 / 16-phase repaired topology, one 3072 source render and Effects restoration true, with final figure rotation restored.
+
 ## Provider ownership boundary
 
 Spinny must not replace `BT.maker.takeScreenshot`.
@@ -219,115 +235,13 @@ Future Witch Dock:
 - Developer Mode OFF: those diagnostic controls disappear;
 - Developer Mode only controls visibility/state and does not own capture logic.
 
-The expected integration surface is the existing `KWDeveloperMode.enabled` and `KWDeveloperMode.onChange()` API.
+## Remaining validation gate
 
-## Progress / ETA
+Before complete 3072 production-profile validation:
 
-Preserve the validated progress/ETA model:
-
-- minimum five samples before live-current-run estimate is trusted;
-- EMA alpha 0.18;
-- estimate combines EMA and run average;
-- session-only timing history.
-
-v0.3.0 keys timing history by resolution + frame-source path so native 3072 measurements cannot seed repaired TRUE-3K estimates.
-
-Short Test may seed per-frame timing for a later full run using the same frame source, but its small mux/assembly tail must not be reused as the full capture's tail estimate.
-
-## Diagnostics
-
-Each capture should expose:
-
-- version/build;
-- mode (`full` / `short-test`);
-- requested profile;
-- base rotation;
-- frame-source ID;
-- frames rendered/encoded;
-- encoded bytes/output bytes;
-- parsed WebP dimensions/frame timing/loop;
-- timing data;
-- rotation restoration;
-- error.
-
-TRUE-3K repaired frames additionally expose:
-
-- tile size;
-- grid;
-- expected/supplied/unique phases;
-- source-render count;
-- source size;
-- native-true-resolution passthrough flag;
-- Effects restoration state.
-
-## Interaction protection requirement
-
-Two accidental mouse-wheel camera interactions during the original long 3072 capture changed the Booth camera and produced visible output jumps.
-
-Before Witch Dock integration, active capture must guard or warn before:
-
-- camera/canvas manipulation;
-- leaving Photo Booth;
-- view changes;
-- backdrop/background changes;
-- overlays/frames;
-- lighting/effects;
-- other state changes that invalidate frame continuity.
-
-Guards must use semantic/runtime/DOM evidence rather than hard-coded screen coordinates across HeroForge layouts.
-
-## Pause requirement
-
-Approved future behavior:
-
-- pause only between complete frames;
-- retain already-compressed frames;
-- resume at next angular sample;
-- active processing ETA excludes indefinite pause duration;
-- diagnostics record paused state/count/duration;
-- Pause and interaction guards remain a separate validation stage after v0.3.0 resolution integration closes.
-
-## Lifecycle
-
-- capability polling;
-- full capture;
-- Short Test;
-- cancel after current frame;
-- concurrent-capture block;
-- rotation restoration;
-- per-frame TRUE-3K Effects restoration;
-- dispose removes owned UI/style/timers/global when idle.
-
-## Failure behavior
-
-- Render/encode/mux/validation failure stops current capture.
-- Restore figure rotation where technically possible.
-- Restore temporary Effects adapter after every repaired frame.
-- Fail on unavailable/ambiguous required capabilities.
-- Do not affect unrelated HeroForge behavior.
-- Public Witch Dock remains untouched during standalone validation.
-
-## Risk
-
-High because media capture performs sustained render/encode work and depends on undocumented HeroForge screenshot topology.
-
-Output dimensions alone are not a sufficient high-resolution postcondition. Higher-resolution acceptance requires mechanical topology/source validation plus human native-size fidelity validation.
-
-## Ownership
-
-- Primary maintainer: TBD.
-- Reviewer: Amanda.
-- Backup maintainer: TBD.
-- Current disposition: standalone v0.3.0 candidate; lower-resolution behavior and TRUE-3K repair principle validated; integrated 3K profile pending; no Witch Dock Spinny integration yet.
-
-## Promotion gate
-
-Do not integrate Spinny into Witch Dock Dev until:
-
-- integrated v0.3.0 Short Test passes;
-- full repaired 3072 Standard passes if 3072 remains an intended production profile;
-- at least one lower-resolution regression smoke passes after consolidation;
-- Pause/input guards are separately implemented and validated if still intended;
-- Witch Dock Dev host is built from the same underlying service;
-- Developer-Mode-only Short Test presentation is validated;
-- public promotion is separately approved.
+1. run one full repaired 3072 Standard / 250-frame capture;
+2. require 3072x3072 / 250 frames / 10,000 ms / 40 ms x250 / loop 0;
+3. require complete per-frame TRUE-3K repair diagnostics and restoration;
+4. verify native-size fidelity and browser/resource behavior;
+5. record elapsed time / ETA accuracy / output size;
+6. run a lower-resolution regression smoke before Witch Dock integration.
