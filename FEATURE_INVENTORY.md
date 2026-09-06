@@ -5,7 +5,7 @@ This is the canonical feature-ID inventory. Historical/provisional detail remain
 | Feature ID | Purpose | Risk | Status |
 |---|---|---|---|
 | `media.screenshot-resolution` | Restore genuine 4K/8K Photo Booth still-image rendering | Medium | Standalone + Witch Dock Stable validated on `heroforge07.1.9.98`. |
-| `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | **Standalone v0.3.0 validated for tested production profiles.** 1024/2048 validated; native 3072 rejected; repaired TRUE-3K 3072 validated at Short Test, 250-frame full and 500-frame full. Pause/interaction guards are next. 4K deferred. Public Witch Dock unchanged. |
+| `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | Committed maintained runtime v0.3.0 validated for tested production profiles. Local v0.4.0 Pause/Resume candidate live PASS; source promotion pending. Interaction-guard discovery active. 4K deferred. Public Witch Dock unchanged. |
 | `decals.gizmo.bound-correction` | Correct bound/Project-OFF decal transform gizmo | High | Witch Dock Stable; validated Move/Rotate/Scale, undo/redo, transform-state preservation and fresh-slot normalization. |
 | `character.local-export` | Export character JSON locally | Medium | Standalone reconstruction committed; core Save passed live. |
 | `character.local-import` | Import character JSON locally | Medium | Standalone reconstruction committed; core Load passed live. |
@@ -19,7 +19,7 @@ This is the canonical feature-ID inventory. Historical/provisional detail remain
 
 ## `media.spinny-mini-webp`
 
-Maintained standalone implementation:
+Committed maintained implementation:
 
 - file: `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
 - version: `0.3.0`
@@ -27,18 +27,23 @@ Maintained standalone implementation:
 
 Validated profiles / behaviors:
 
-- 1024 Standard / 250f: PASS, including post-v0.3.0 regression
+- 1024 Standard / 250f: PASS
 - 2048 Standard / 250f: PASS
 - 1024 Very Slow / 750f: PASS
 - 2048 Slower / 500f: PASS
-- 3072 Standard / 250f TRUE-3K: PASS by full-run user validation
-- 3072 Slower / 500f TRUE-3K: PASS by full-run user validation + post-validation timing record
+- 3072 Standard / 250f TRUE-3K: PASS
+- 3072 Slower / 500f TRUE-3K: PASS
 - 3072 integrated Short Test / 16f: PASS
 - repeat use / parser / progress / ETA / rotation restore: PASS on tested runs
-- general cancel path: PASS by user report
+- general cancel path: PASS
 
-Native HeroForge 3072 without the repair remains unsupported because it uses 768px Effects phase renders and visibly loses source detail.
+Local v0.4.0 candidate:
 
-Interaction protection is the active next requirement because accidental mouse-wheel camera input during an earlier long capture produced visible animation jumps.
+- build `0.4.0-frame-boundary-pause-resume`;
+- Pause/Resume live tests PASS at 1024 and TRUE-3K 3072 Short Test levels;
+- cancel while paused / restoration / ETA pause accounting reported successful;
+- not yet promoted into committed maintained runtime source.
+
+Interaction protection is now the active investigation target because accidental mouse-wheel input during an earlier long capture caused visible animation jumps.
 
 4K Spinny remains deferred because square 4096/8192 screenshot requests collide with Witch Dock TRUE-resolution still-provider ownership.

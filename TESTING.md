@@ -12,7 +12,7 @@ Standalone, Witch Dock Dev and public Witch Dock Stable still-capture gates rema
 
 HeroForge build: `heroforge07.1.9.98`.
 
-Maintained implementation:
+Committed maintained implementation:
 
 - file: `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
 - version: `0.3.0`
@@ -24,8 +24,8 @@ Maintained implementation:
 - 2048 Standard / 250 frames: PASS
 - 1024 Very Slow / 750 frames: PASS
 - 2048 Slower / 500 frames: PASS
-- 3072 Standard / 250 frames via TRUE-3K: PASS by full-run user validation
-- 3072 Slower / 500 frames via TRUE-3K: PASS by full-run user validation + successful runtime timing-history record
+- 3072 Standard / 250 frames via TRUE-3K: PASS
+- 3072 Slower / 500 frames via TRUE-3K: PASS
 - 3072 Standard integrated Short Test / 16 frames: PASS
 
 Other validated behavior:
@@ -34,134 +34,73 @@ Other validated behavior:
 - parser validation: PASS
 - rotation restoration: PASS
 - progress/readout: PASS
-- ETA usefulness: PASS on tested long TRUE-3K run by user report
-- general cancel / starting-rotation restoration: PASS by user report
+- ETA usefulness: PASS on tested long TRUE-3K run
+- general cancel / starting-rotation restoration: PASS
 
 ## Native 3072 failure reference
 
-Native un-repaired 3072 is rejected.
+Native un-repaired 3072 is rejected. Runtime trace confirmed a 3072 capture camera paired with repeated 768px Effects phase renders; structural dimensions pass while source fidelity fails.
 
-Observed baseline:
+## TRUE-3K repair
 
-- structural 3072 output: PASS;
-- source fidelity: FAIL / blurry-upscaled appearance.
+TRUE-3K is validated through Short Test, 250-frame full and 500-frame full capture. The maintained v0.3.0 adapter feeds the native compositor from one genuine 3072 Effects source per animation frame and restores `CK.Effects.renderToCanvas` after each repaired frame.
 
-Root cause confirmed through runtime trace:
+## Local v0.4.0 Pause/Resume candidate — LIVE PASS
 
-- 3072 capture camera;
-- repeated `CK.Effects.renderToCanvas(768,768,camera3072)` phase requests.
+Candidate build: `0.4.0-frame-boundary-pause-resume`.
 
-TRUE-3K repairs this by feeding the native compositor from one genuine 3072 Effects source per animation frame.
+Requested live tests and user result:
 
-## Integrated TRUE-3K Short Test — PASS
+1. 1024 Standard Short Test — pause/resume: PASS.
+2. Pause request waits for current frame completion: PASS.
+3. Frame count remains stopped while paused: PASS.
+4. Resume continues normally and output completes: PASS.
+5. 3072 TRUE-3K Standard Short Test pause/resume: PASS.
+6. Cancel while paused: PASS.
+7. Starting-state restoration after pause/cancel path: PASS.
+8. ETA/pause-time behavior: PASS by user observation.
 
-The maintained v0.3.0 3072 Standard Short Test completed successfully.
+Prior static/mock checks for the same candidate had already passed:
 
-Confirmed:
+- syntax;
+- frame-boundary pause sequencing;
+- TRUE-3K Effects restoration before entering paused state;
+- cancel-while-paused deadlock avoidance;
+- paused-time exclusion from active timing;
+- API/state exposure for `pause`, `resume`, and diagnostics.
 
-- visual native-size fidelity: PASS;
-- timing key `3072:true3k-phase-feed`;
-- mode `short-test`;
-- frames 16;
-- average frame time ~2123.48 ms;
-- successful timing-history write proves mux/parser/download success because history is written only after those gates.
+Conclusion: Pause/Resume behavior is validated at standalone test level on the current HeroForge build.
 
-Earlier repair-companion diagnostics also established the expected current topology:
+Important source-status distinction: the committed maintained runtime file is still v0.3.0 until the tested v0.4.0 source is promoted atomically with its docs.
 
-- 768 native tile;
-- 4x4 grid;
-- 16 expected/supplied/unique phases per frame;
-- one genuine 3072 source render per frame;
-- Effects restoration true.
+## Interaction-guard investigation — ACTIVE
 
-## Full TRUE-3K validation — PASS
+An earlier long 3072 run demonstrated a real failure mode: accidental mouse-wheel camera changes caused visible jumps in the animation.
 
-### 3072 Standard / 250 frames
+Required guard tests after implementation:
 
-User reported:
+1. Camera wheel attempt during active capture warns before camera mutation.
+2. Pointer/camera drag attempt during active capture warns before camera mutation.
+3. Same camera guards work while paused.
+4. Photo Booth exit attempt warns before exit.
+5. Booth backdrop/view/overlay/light/effect changes warn before mutation.
+6. Choosing stay blocks the invalidating action without cancelling.
+7. Choosing cancel cancels safely first; original pointer sequence is not blindly replayed.
+8. Spinny Pause/Resume/Cancel remain usable while guards are installed.
+9. Left/right/mobile HeroForge layouts pass without coordinate assumptions.
+10. Diagnostics record cancellation cause / guarded action.
 
-- full capture completed;
-- correct/native-looking 3K resolution;
-- clear movement;
-- ETA quite accurate.
-
-Status: PASS.
-
-### 3072 Slower / 500 frames
-
-User reported:
-
-- full capture completed;
-- output looked fantastic;
-- resolution correct;
-- movement clear.
-
-HF-Chat-Bridge issue #491 retained the v0.3.0 timing-history entry:
-
-- key `3072:true3k-phase-feed`;
-- mode `full`;
-- frames 500;
-- frame source `true3k-phase-feed`;
-- average frame time ~3032.4224 ms;
-- tail ~373.7 ms;
-- successful update timestamp `2026-09-06T12:06:28.050Z`.
-
-Because v0.3.0 writes timing history only after mux/parser validation and download succeed, this is runtime evidence that the 500-frame full run completed the maintained success path.
-
-Status: PASS.
-
-## Post-consolidation lower-resolution regression — PASS
-
-Latest 1024 Standard / 250-frame run from HF-Chat-Bridge issue #491:
-
-- status `downloaded`;
-- 250 rendered / 250 encoded;
-- encoded frame bytes 12,152,482;
-- output bytes 12,035,026;
-- parser 1024x1024;
-- frame count 250;
-- total duration 10,000 ms;
-- durations `{40:250}`;
-- loop 0;
-- elapsed 272,058.2 ms;
-- rotation restored true;
-- error null.
-
-Status: PASS.
-
-## Current standalone conclusion
-
-Spinny v0.3.0 is validated for the tested production profiles on `heroforge07.1.9.98`.
-
-This closes the resolution/consolidation validation stage.
-
-## Next test stage — Pause + interaction guards
-
-Required standalone tests after implementation:
-
-1. Pause during native 1024 capture; current frame completes, capture stops before next sample.
-2. Pause during TRUE-3K 3072 capture; no partial phase wrapper remains active.
-3. Resume continues at the next angular sample and preserves already-encoded frames.
-4. Multiple pause/resume cycles complete a valid output.
-5. ETA excludes/freeze-adjusts paused duration.
-6. Camera wheel/pointer drag attempt during capture triggers warning before camera mutation.
-7. Booth exit attempt triggers warning before exit.
-8. Booth backdrop/view/overlay/light/effect mutation attempt triggers warning before mutation.
-9. Choosing stay blocks the invalidating action without cancelling capture.
-10. Choosing cancel cancels after the current safe frame, restores state and does not blindly replay the triggering pointer event.
-11. Spinny Pause/Resume/Cancel remain usable while guards are installed.
-12. Validate left/right/mobile HeroForge layouts without coordinate assumptions.
-13. Diagnostics report paused state, pause count, total paused duration and cancellation/guard cause.
+Broad read-only DOM probe #492 completed but exceeded the bridge result limit and returned only a truncation summary. Follow-up discovery must use narrower selectors/queries.
 
 ## Short Test Witch Dock policy
 
-Standalone v0.3.0 exposes Short Test because it is a development harness.
+Standalone exposes Short Test because it is a development harness.
 
 Future Witch Dock:
 
 - Spinny service retains `captureShortTest()`;
 - normal UI hides Short Test;
-- Developer Mode exposes it through the Spinny host using `KWDeveloperMode.enabled` / `onChange()`;
+- Developer Mode exposes it through the Spinny host;
 - Developer Mode must not duplicate media capture logic.
 
 ## 4K Spinny

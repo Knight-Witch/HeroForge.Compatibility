@@ -7,7 +7,7 @@ Current media validation target: `heroforge07.1.9.98` / 2026-09-06.
 | Component | Current status | Last verified build/date | Notes |
 |---|---|---|---|
 | `media.screenshot-resolution` | Standalone validated; Witch Dock Stable validated | `heroforge07.1.9.98` / 2026-09-05 | Stable still-capture provider remains closed/validated. |
-| `media.spinny-mini-webp` | **Standalone v0.3.0 validated for tested production profiles** | `heroforge07.1.9.98` / 2026-09-06 | 1024/2048 validated; native 3072 rejected; repaired TRUE-3K validated through 16f Short Test, 250f full and 500f full. Pause/interaction guards next. |
+| `media.spinny-mini-webp` | Committed maintained v0.3.0 validated for tested production profiles; local v0.4.0 Pause/Resume candidate live PASS | `heroforge07.1.9.98` / 2026-09-06 | Native 3072 rejected; repaired TRUE-3K validated. Interaction-guard discovery active. v0.4.0 source promotion pending. |
 | `decals.gizmo.bound-correction` | Witch Dock Stable | 2026-09-05 | Validated separately. |
 | Character local JSON | Core Save/Load passed live | 2026-09-03 | Lifecycle/repeated-use pending. |
 | Projected decal state/control | Runtime path confirmed | September 2026 | Renderer dependency audit pending. |
@@ -27,30 +27,20 @@ Confirmed named/runtime capabilities:
 
 ## Validated production profiles / behaviors
 
-- 1024 Standard / 250 frames: PASS, including v0.3.0 post-consolidation regression
+- 1024 Standard / 250 frames: PASS
 - 2048 Standard / 250 frames: PASS
 - 1024 Very Slow / 750 frames: PASS
 - 2048 Slower / 500 frames: PASS
-- 3072 Standard / 250 frames via TRUE-3K: PASS by full-run user validation
-- 3072 Slower / 500 frames via TRUE-3K: PASS by full-run user validation and successful runtime timing-history write
+- 3072 Standard / 250 frames via TRUE-3K: PASS
+- 3072 Slower / 500 frames via TRUE-3K: PASS
 - integrated 3072 Short Test / 16 frames: PASS
 - repeated captures / parser / rotation restoration: PASS
 - progress/ETA: PASS on tested captures
-- general Cancel path: PASS by user report
+- general Cancel path: PASS
 
 ## Native 3072 incompatibility
 
-A native un-repaired 3072 capture can be structurally 3072 while visibly losing source fidelity.
-
-Live tracing confirmed:
-
-- 1024 capture uses a 1024 Effects render;
-- 2048 capture uses repeated 1024 Effects phases;
-- 3072 capture uses repeated 768 Effects phases under a 3072 capture camera.
-
-Current native `CK.Effects.renderToCanvas` sizes its render target from the supplied dimensions. Therefore native 3072 output dimensions do not imply 3072 source fidelity.
-
-Status: native 3072 remains **unsupported/rejected**.
+Native un-repaired 3072 remains rejected. Runtime tracing confirmed a 3072 capture camera with repeated 768px `CK.Effects.renderToCanvas` phase renders, producing structurally 3072 output with degraded source fidelity.
 
 ## TRUE-3K repaired frame-source capability
 
@@ -59,32 +49,36 @@ Maintained v0.3.0 behavior:
 - 1024/2048 use native frame source;
 - 3072 uses a temporary `CK.Effects.renderToCanvas` phase-feed adapter;
 - one genuine 3072x3072 Effects source feeds the native compositor's validated phase topology;
-- the adapter validates tile/grid/phase completeness and source size;
-- the exact Effects method is restored after each repaired frame;
+- adapter validates tile/grid/phase completeness and restores the exact Effects method after each frame;
 - `BT.maker.takeScreenshot` ownership is never displaced.
 
-This remains compatible with Witch Dock's current still-provider ownership boundary because the still provider owns square 4096/8192 screenshot routing while Spinny repairs 3072 one layer lower.
+## Local v0.4.0 Pause/Resume validation
 
-## Final v0.3.0 runtime evidence
+Candidate build: `0.4.0-frame-boundary-pause-resume`.
 
-HF-Chat-Bridge issue #491 confirmed the post-consolidation 1024 Standard run:
+User reported all requested live tests successful:
 
-- 250/250 rendered and encoded;
-- parser 1024x1024 / 250 frames / 10,000 ms / 40 ms x250 / loop 0;
-- output 12,035,026 bytes;
-- rotation restored true;
-- error null.
+- native 1024 Short Test pause/resume;
+- TRUE-3K 3072 Short Test pause/resume;
+- pause after current-frame completion;
+- resume continuation;
+- cancel while paused;
+- restoration behavior;
+- paused-time/ETA behavior.
 
-The same runtime retained a successful `3072:true3k-phase-feed` history record for a 500-frame full run with average frame time ~3032.42 ms and tail ~373.7 ms. v0.3.0 writes that history only after successful mux/parser/download. User native-size inspection of the 500-frame output passed.
+Compatibility conclusion: frame-boundary Pause/Resume is supported by the tested candidate on the current HeroForge build. The committed maintained runtime remains v0.3.0 until the candidate source is promoted atomically.
 
-## Short Test compatibility policy
+## Interaction-guard compatibility investigation
 
-Short Test is retained as a supported diagnostic operation of the Spinny service.
+Required next coverage:
 
-- standalone test harness: directly visible;
-- Witch Dock normal mode: hidden;
-- Witch Dock Developer Mode: visible through the Spinny UI consuming `KWDeveloperMode.enabled` / `onChange()`;
-- Developer Mode controls visibility only and does not implement capture behavior.
+- camera/canvas wheel and drag;
+- Photo Booth exit;
+- Booth view/backdrop/background/overlay/frame/lighting/effects edits;
+- same behavior while paused;
+- no coordinate assumptions across left/right/mobile layouts.
+
+Broad DOM probe #492 exceeded the bridge result-size limit. Follow-up probes must be narrower and semantic.
 
 ## Revalidation triggers
 
@@ -95,11 +89,9 @@ Re-run Spinny validation when:
 - a GPU reports limits below the selected repaired source size;
 - character-display rotation/refresh behavior changes;
 - browser WebP support/container validation changes;
-- capture Pause/interaction guards are added;
+- Pause/interaction guard implementation changes;
 - Witch Dock host integration changes lifecycle/visibility behavior;
 - high-cost resource limits are observed.
-
-Use the integrated Short Test first for future 3072 compatibility checks.
 
 ## 4K Spinny incompatibility note
 
