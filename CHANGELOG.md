@@ -1,5 +1,77 @@
 # Changelog
 
+## HFC-2026-09-05-021 — Validate configurable Spinny profiles and add progress/ETA UX
+
+Date: 2026-09-05
+
+### Summary
+
+Recorded the first successful v0.2.0 configurable-profile validation results and advanced the standalone profile test to v0.2.1 with progress-bar and device-relative ETA UI. Capture/render/mux behavior remains unchanged.
+
+### Newly validated v0.2.0 results
+
+On HeroForge `heroforge07.1.9.98`, user live testing reported:
+
+- 1024 Standard / 250 frames / 25 FPS: **works perfectly**;
+- 2048 Standard / 250 frames / 25 FPS: **works perfectly**;
+- 1024 Very Slow / 750 frames / 25 FPS: **works perfectly**;
+- 1024 Very Slow output: approximately **34 MiB**;
+- multiple successful captures in the same session;
+- percentage progress, Rendering/Encoding phase display, and px/frame/FPS/workload readout all working and useful;
+- acceptable capture/resource behavior on a high-complexity figure with many kitbash parts, effects, special paints and a high decal count.
+
+A 2048 / 500-frame capture was still running when this checkpoint was written and is not claimed as passed here. HF-Chat-Bridge was intentionally not inspected during that active run.
+
+### v0.2.1 UX additions
+
+`entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js` now adds:
+
+- progress bar directly below the existing phase/frame/percentage status;
+- elapsed time;
+- estimated time remaining;
+- estimated total capture time;
+- ETA warm-up using measured current-capture frame processing time;
+- continuously adapting smoothed prediction after five completed frames;
+- same-session timing history keyed by resolution to improve later captures on the same page/session;
+- completed wall-clock capture time in diagnostics/UI.
+
+ETA history is intentionally not persisted across reloads, preventing one figure/session from becoming a stale predictor for another.
+
+### Preserved runtime behavior
+
+- 1024/2048 resolution and Standard/Slow/Slower/Very Slow profile definitions;
+- constant 40 ms output frame timing / 25 FPS;
+- runtime model rotation and refresh/occlusion sequencing;
+- `BT.maker.takeScreenshot` frame production;
+- immediate static-WebP encoding;
+- compressed-frame payload retention;
+- deterministic RIFF animation mux;
+- dimensions/frame-count/duration/loop/timing verification;
+- cancel/concurrency behavior and rotation restoration.
+
+### Status
+
+- v0.1.0 1024 parity reference: validated.
+- v0.2.0 configurable core: **validated at 1024 Standard, 2048 Standard, and 1024 Very Slow**.
+- v0.2.1 progress/ETA UI: implementation complete; live UX validation pending.
+- public Witch Dock: unchanged.
+
+### Touched files
+
+- `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
+- `MASTER.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `TESTING.md`
+- `docs/feature-specs/spinny-mini-webp.md`
+- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
+
+**Runtime behavior changed:** standalone test UI/diagnostics only. Public Witch Dock is unchanged.
+
+---
+
 ## HFC-2026-09-05-020 — Add configurable Spinny WebP profile test
 
 Date: 2026-09-05
@@ -35,9 +107,7 @@ The candidate deliberately preserves the validated v0.1.0 frame-production and m
 ### Validation status
 
 - v0.1.0 1024 Standard: **validated live and remains canonical fallback**.
-- v0.2.0 source: implementation/source review complete; live validation pending.
-- First required v0.2.0 live test: **1024 Standard regression**.
-- 2048 Standard and slower profiles: **not yet validated**.
+- v0.2.0 source: implementation/source review complete; live validation pending at time of this commit.
 - Public Witch Dock: unchanged.
 
 ### Touched files
@@ -73,27 +143,11 @@ Documentation-only validation checkpoint for `media.spinny-mini-webp` after the 
 - Loop count is 0 / infinite by the deterministic ANIM mux.
 - Retained live UI status reported: `Downloaded 1024px WebP: 250 frames / 10.0 s / 12.9 MiB`.
 - Photo Booth capture capability remained ready after the completed capture.
-- Exact output bytes were not recoverable from the bridge safe reader because `lastCapture` is exposed through a getter; the 12.9 MiB value is the rounded UI display.
 
 ### Status
 
 - First Lob-parity milestone: **validated**.
-- 2048 experiment: next standalone stage.
-- Independent speed presets: next standalone stage.
-- Repeat-use/resource-limit testing: remains required during the next standalone stage.
 - Witch Dock Dev/Stable: unchanged and not yet in scope.
-
-### Touched files
-
-- `MASTER.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-- `FEATURE_INVENTORY.md`
-- `COMPATIBILITY.md`
-- `OWNERSHIP.md`
-- `TESTING.md`
-- `docs/feature-specs/spinny-mini-webp.md`
-- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
 
 **Runtime behavior changed:** no. No JavaScript changed and public Witch Dock behavior is unchanged.
 
@@ -103,71 +157,9 @@ Documentation-only validation checkpoint for `media.spinny-mini-webp` after the 
 
 Date: 2026-09-05
 
-### Summary
+Added the first standalone runtime implementation for `media.spinny-mini-webp`, including the independent browser static-WebP encode plus project-owned animated-WebP RIFF mux path. Low-resolution proof and syntax passed; full parity validation was completed later in HFC-2026-09-05-019.
 
-Added the first standalone runtime implementation for `media.spinny-mini-webp`.
-
-The implementation does not depend on HeroForge's closure-local animated-WebP encoder. A live proof established that a standards-compliant animated WebP can be built from current named/runtime-accessible HeroForge capture behavior plus browser-native still-WebP encoding.
-
-### Runtime implementation
-
-- Added `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js` v0.1.0.
-- First target is fixed to Lob HQ parity: 1024x1024, 250 frames, 40 ms/frame, 10.0-second revolution, infinite loop.
-- Rotates `CK.character.display.rotation.y` through a full revolution and uses the historically established HeroForge display refresh sequence before each frame.
-- Captures each frame through `BT.maker.takeScreenshot(1024,1024)`.
-- Encodes each frame immediately with browser `canvas.toBlob('image/webp', 0.95)` and retains compressed WebP image payload chunks rather than raw RGBA frame buffers.
-- Assembles RIFF/VP8X/ANIM/ANMF animated WebP deterministically in-browser.
-- Mechanically verifies final dimensions, frame count, and total duration before download.
-- Blocks concurrent captures, supports cancel-after-current-frame, restores the original character rotation in `finally`, and exposes `HFSpinnyMiniWebPHQTest.lastCapture` diagnostics.
-
-### Proof before packaging
-
-Live microproof on HeroForge `heroforge07.1.9.98`:
-
-- four rotated 128x128 HeroForge frames captured;
-- each frame browser-encoded as static WebP;
-- custom RIFF animation mux produced a 4-frame / 400 ms animated WebP;
-- browser `Image.decode()` accepted the result at 128x128;
-- base character rotation restored successfully.
-
-Local synthetic proof also produced a valid 3-frame animated WebP recognized by independent image tooling.
-
-Static validation:
-
-- `node --check entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js`: PASS locally before repository commit.
-
-### Architecture decision
-
-For this feature, the accepted first maintained path is:
-
-```text
-named HeroForge rotation/capture state
-→ browser-native static WebP encode per frame
-→ project-owned deterministic animated-WebP mux
-```
-
-This avoids a dependency on closure-local minified encoder/module identifiers and avoids resurrecting Lob's compiled-string GIF patch.
-
-### Test status
-
-- low-resolution live mux proof: PASS;
-- standalone 1024/250 package syntax: PASS;
-- full 1024/250 human capture/visual/repeat-use acceptance: pending at time of this commit; later closed by HFC-2026-09-05-019.
-
-### Touched files
-
-- `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js`
-- `MASTER.md`
-- `ARCHITECTURE.md`
-- `FEATURE_INVENTORY.md`
-- `COMPATIBILITY.md`
-- `OWNERSHIP.md`
-- `TESTING.md`
-- `docs/feature-specs/spinny-mini-webp.md`
-- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
-- `CHANGELOG.md`
-
-**Runtime behavior changed:** yes, on the standalone WIP branch only. Public Witch Dock is unchanged.
+**Runtime behavior changed:** yes, standalone WIP only.
 
 ---
 
@@ -175,35 +167,9 @@ This avoids a dependency on closure-local minified encoder/module identifiers an
 
 Date: 2026-09-05
 
-### Summary
+Documentation-only kickoff recording native HeroForge and historical Lob HQ baselines and the standalone-first reconstruction direction.
 
-Documentation-only kickoff for `media.spinny-mini-webp`, a standalone-first reconstruction of higher-quality Spinny Mini export using HeroForge's new animated WebP path.
-
-### Confirmed baselines
-
-- Native HeroForge Spinny Mini WebP on `heroforge07.1.9.98`: 512x512, 386 frames, 17 ms/frame, 6562 ms total, 58.82 FPS effective, infinite loop, 11,331,110-byte `image/webp` blob.
-- Historical Lob Higher Quality Spinny Mini GIF measured from original output: 1024x1024, 250 frames, 10.0 s total, 25 FPS effective, ~40 ms/frame, 145,375,926 bytes.
-- First WebP parity target: 1024x1024, 250 frames, 10.0-second revolution / 25 FPS.
-- Future rotation-speed presets will be modeled independently from resolution.
-
-### Architecture direction
-
-- Prefer named runtime capture/render capabilities and reuse of HeroForge's native animated-WebP encoder when a stable seam exists.
-- Use runtime/module discovery before bundle transformation.
-- Do not restore the legacy exact compiled-string Spinny patch unless runtime access is proven insufficient.
-- Standalone Tampermonkey validation precedes Witch Dock integration.
-
-### Runtime impact
-
-**No runtime behavior changed.** This commit records pre-flight, feature scope, parity evidence, and the active investigation only.
-
-### Touched files
-
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
-- `FEATURE_INVENTORY.md`
-- `docs/feature-specs/spinny-mini-webp.md`
-- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
+**Runtime behavior changed:** no.
 
 ---
 

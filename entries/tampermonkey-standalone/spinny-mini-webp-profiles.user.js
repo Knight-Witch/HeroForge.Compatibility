@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         HF Compatibility - Spinny Mini WebP Profiles TEST
 // @namespace    https://github.com/Knight-Witch/HeroForge.Compatibility
-// @version      0.2.0
-// @description  Standalone configurable-resolution / configurable-speed animated WebP Spinny Mini test.
+// @version      0.2.1
+// @description  Standalone configurable-resolution / configurable-speed animated WebP Spinny Mini test with progress and device-relative ETA.
 // @author       Knight Witch
 // @match        https://www.heroforge.com/*
 // @match        https://heroforge.com/*
@@ -17,10 +17,12 @@
   const GLOBAL = 'HFSpinnyMiniWebPProfilesTest';
   const PANEL_ID = 'hfc-spinny-mini-webp-profiles-test';
   const STYLE_ID = `${PANEL_ID}-style`;
-  const BUILD = '0.2.0-profiled-runtime-rotation-webp-mux';
+  const BUILD = '0.2.1-progress-eta-runtime-rotation-webp-mux';
 
   const QUALITY = 0.95;
   const LOOP_COUNT = 0;
+  const ETA_MIN_SAMPLES = 5;
+  const ETA_EMA_ALPHA = 0.18;
   const RESOLUTIONS = Object.freeze({
     '1024': Object.freeze({ id: '1024', label: '1024px — HQ parity', size: 1024 }),
     '2048': Object.freeze({ id: '2048', label: '2048px — experimental', size: 2048 })
@@ -39,17 +41,26 @@
   let statusEl = null;
   let capabilityEl = null;
   let metaEl = null;
+  let progressTrackEl = null;
+  let progressFillEl = null;
+  let timingEl = null;
   let button = null;
   let cancelButton = null;
   let resolutionSelect = null;
   let speedSelect = null;
   let refreshTimer = null;
   let lastCapture = null;
+  let activeTiming = null;
+
+  // Intentionally session-only: do not persist timing across reloads or figures.
+  const timingHistory = {};
 
   const diagnostics = {
     build: BUILD,
     busy: false,
     selectedProfile: null,
+    activeTiming: null,
+    timingHistory,
     lastCapture: null
   };
 
@@ -105,11 +116,92 @@
     statusEl.dataset.error = isError ? '1' : '0';
   }
 
-  function setProgress(frameIndex, frameCount, phase = 'render') {
-    const done = Math.max(0, Math.min(frameCount, frameIndex));
-    const percent = Math.round((done / frameCount) * 100);
+  function setProgressBar(fraction) {
+    const clamped = Math.max(0, Math.min(1, Number(fraction) || 0));
+    const percent = clamped * 100;
+    if (progressFillEl) progressFillEl.style.width = `${percent.toFixed(1)}%`;
+    if (progressTrackEl) progressTrackEl.setAttribute('aria-valuenow', String(Math.round(percent)));
+  }
+
+  function setProgress(frameIndex, frameCount, phase = 'render', phaseFraction = 0) {
+    const done = Math.max(0, Math.min(frameCount, Number(frameIndex) || 0));
+    const progressUnits = Math.max(0, Math.min(frameCount, done + phaseFraction));
+    const percent = Math.round((progressUnits / frameCount) * 100);
     const label = phase === 'encode' ? 'Encoding' : phase === 'mux' ? 'Assembling' : 'Rendering';
-    setStatus(`${label}: ${done}/${frameCount} (${percent}%)`);
+    setStatus(`${label}: ${Math.floor(done)}/${frameCount} (${percent}%)`);
+    setProgressBar(progressUnits / frameCount);
+  }
+
+  function formatDuration(ms) {
+    if (!Number.isFinite(ms) || ms < 0) return '—';
+    const totalSeconds = Math.max(0, Math.round(ms / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    if (hours > 0) return `${hours}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+    if (minutes > 0) return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
+    return `${seconds}s`;
+  }
+
+  function createTimingState(profile) {
+    const history = timingHistory[String(profile.size)] || null;
+    const initialFrameMs = history && Number.isFinite(history.frameMs) ? history.frameMs : null;
+    const tailEstimateMs = history && Number.isFinite(history.tailMs) ? history.tailMs : 0;
+    return {
+      startedPerfMs: performance.now(),
+      frameLoopCompletedPerfMs: null,
+      completedFrames: 0,
+      sampleTotalMs: 0,
+      sampleAverageFrameMs: null,
+      emaFrameMs: initialFrameMs,
+      predictedFrameMs: initialFrameMs,
+      tailEstimateMs,
+      estimatedTotalMs: initialFrameMs === null ? null : initialFrameMs * profile.frames + tailEstimateMs,
+      estimateSource: initialFrameMs === null ? 'warming-up' : 'same-session-resolution-history',
+      lastSampleMs: null
+    };
+  }
+
+  function updateTimingAfterFrame(profile, sampleMs) {
+    if (!activeTiming || !Number.isFinite(sampleMs) || sampleMs < 0) return;
+    activeTiming.completedFrames += 1;
+    activeTiming.sampleTotalMs += sampleMs;
+    activeTiming.lastSampleMs = sampleMs;
+    activeTiming.sampleAverageFrameMs = activeTiming.sampleTotalMs / activeTiming.completedFrames;
+
+    if (!Number.isFinite(activeTiming.emaFrameMs)) {
+      activeTiming.emaFrameMs = sampleMs;
+    } else {
+      activeTiming.emaFrameMs = activeTiming.emaFrameMs * (1 - ETA_EMA_ALPHA) + sampleMs * ETA_EMA_ALPHA;
+    }
+
+    if (activeTiming.completedFrames >= ETA_MIN_SAMPLES) {
+      activeTiming.predictedFrameMs = activeTiming.emaFrameMs * 0.7 + activeTiming.sampleAverageFrameMs * 0.3;
+      activeTiming.estimateSource = 'live-current-capture';
+    }
+
+    if (Number.isFinite(activeTiming.predictedFrameMs)) {
+      activeTiming.estimatedTotalMs = activeTiming.predictedFrameMs * profile.frames + activeTiming.tailEstimateMs;
+    }
+  }
+
+  function renderTimingDisplay() {
+    if (!timingEl) return;
+    if (busy && activeTiming) {
+      const elapsed = performance.now() - activeTiming.startedPerfMs;
+      if (!Number.isFinite(activeTiming.predictedFrameMs) || (activeTiming.completedFrames < ETA_MIN_SAMPLES && activeTiming.estimateSource === 'warming-up')) {
+        timingEl.textContent = `Time: ${formatDuration(elapsed)} elapsed · estimating…`;
+        return;
+      }
+      const remaining = Math.max(0, activeTiming.estimatedTotalMs - elapsed);
+      timingEl.textContent = `Time: ${formatDuration(elapsed)} elapsed · ~${formatDuration(remaining)} left · ~${formatDuration(activeTiming.estimatedTotalMs)} total`;
+      return;
+    }
+    if (lastCapture && Number.isFinite(lastCapture.elapsedMs)) {
+      timingEl.textContent = `Completed in ${formatDuration(lastCapture.elapsedMs)}`;
+      return;
+    }
+    timingEl.textContent = 'ETA learns from measured frame time on this device during each capture.';
   }
 
   function nextFrame() {
@@ -412,6 +504,9 @@
     cancelled = false;
     diagnostics.busy = true;
     diagnostics.selectedProfile = { ...profile };
+    activeTiming = createTimingState(profile);
+    diagnostics.activeTiming = activeTiming;
+    setProgress(0, profile.frames, 'render', 0);
     refresh();
 
     lastCapture = {
@@ -426,6 +521,8 @@
       encodedFrameBytes: 0,
       outputBytes: null,
       parsed: null,
+      elapsedMs: null,
+      timing: null,
       rotationRestored: false,
       error: null
     };
@@ -434,13 +531,14 @@
     try {
       for (let index = 0; index < profile.frames; index += 1) {
         if (cancelled) throw new Error('Capture cancelled.');
+        const frameStartedPerfMs = performance.now();
 
         display.rotation.y = baseRotation + (2 * Math.PI * index / profile.frames);
         refreshScene(CK);
         await waitForOcclusion(display);
         await nextFrame();
 
-        setProgress(index, profile.frames, 'render');
+        setProgress(index, profile.frames, 'render', 0.15);
         const canvas = BT.maker.takeScreenshot(profile.size, profile.size);
         if (!canvas || typeof canvas.toBlob !== 'function') {
           throw new Error('BT.maker.takeScreenshot did not return an encodable canvas.');
@@ -450,7 +548,7 @@
         }
         lastCapture.framesRendered = index + 1;
 
-        setProgress(index, profile.frames, 'encode');
+        setProgress(index, profile.frames, 'encode', 0.65);
         const stillBlob = await canvasToWebP(canvas, profile.quality);
         const frame = await extractStillWebPFrame(stillBlob);
         encodedBytes += frame.encodedBytes;
@@ -461,12 +559,15 @@
         canvas.width = 1;
         canvas.height = 1;
 
-        setProgress(index + 1, profile.frames, 'render');
+        updateTimingAfterFrame(profile, performance.now() - frameStartedPerfMs);
+        setProgress(index + 1, profile.frames, 'render', 0);
+        renderTimingDisplay();
         if ((index + 1) % 5 === 0) await nextFrame();
       }
 
+      activeTiming.frameLoopCompletedPerfMs = performance.now();
       if (cancelled) throw new Error('Capture cancelled.');
-      setProgress(profile.frames, profile.frames, 'mux');
+      setProgress(profile.frames, profile.frames, 'mux', 0);
       outputBlob = makeAnimatedWebP(
         profile.size,
         profile.size,
@@ -484,6 +585,24 @@
       downloadBlob(outputBlob, profile);
       lastCapture.status = 'downloaded';
       lastCapture.completedAt = new Date().toISOString();
+      lastCapture.elapsedMs = performance.now() - activeTiming.startedPerfMs;
+      const tailMs = Math.max(0, performance.now() - activeTiming.frameLoopCompletedPerfMs);
+      lastCapture.timing = {
+        completedFrames: activeTiming.completedFrames,
+        sampleAverageFrameMs: activeTiming.sampleAverageFrameMs,
+        emaFrameMs: activeTiming.emaFrameMs,
+        predictedFrameMs: activeTiming.predictedFrameMs,
+        tailMs,
+        estimatedTotalMs: activeTiming.estimatedTotalMs,
+        actualTotalMs: lastCapture.elapsedMs
+      };
+      timingHistory[String(profile.size)] = {
+        frameMs: activeTiming.sampleAverageFrameMs,
+        tailMs,
+        frames: profile.frames,
+        updatedAt: lastCapture.completedAt
+      };
+      setProgressBar(1);
       setStatus(`Downloaded ${profile.size}px ${profile.speedLabel}: ${profile.frames} frames / ${(profile.durationMs / 1000).toFixed(1)} s / ${(outputBlob.size / 1048576).toFixed(1)} MiB`);
       return true;
     } catch (error) {
@@ -491,6 +610,7 @@
       if (lastCapture) {
         lastCapture.status = cancelled ? 'cancelled' : 'failed';
         lastCapture.completedAt = new Date().toISOString();
+        lastCapture.elapsedMs = activeTiming ? performance.now() - activeTiming.startedPerfMs : null;
         lastCapture.error = message;
       }
       setStatus(message, !cancelled);
@@ -508,6 +628,8 @@
       busy = false;
       cancelled = false;
       diagnostics.busy = false;
+      diagnostics.activeTiming = null;
+      activeTiming = null;
       refresh();
     }
   }
@@ -532,6 +654,9 @@
 #${PANEL_ID} select{width:100%;border:1px solid #666;border-radius:5px;padding:6px;background:#29292d;color:#fff}
 #${PANEL_ID} .hfc-status{min-height:30px;margin-top:7px;overflow-wrap:anywhere}
 #${PANEL_ID} .hfc-status[data-error="1"]{color:#ff8a8a}
+#${PANEL_ID} .hfc-progress{height:8px;margin-top:4px;overflow:hidden;border:1px solid #555;border-radius:999px;background:rgba(255,255,255,.09)}
+#${PANEL_ID} .hfc-progress-fill{height:100%;width:0%;border-radius:999px;background:#d8d8dd;transition:width .16s linear}
+#${PANEL_ID} .hfc-timing{min-height:16px;margin-top:5px;opacity:.82;font-size:11px}
 #${PANEL_ID} .hfc-actions{display:flex;gap:6px;margin-top:7px}
 #${PANEL_ID} button{flex:1;border:1px solid #666;border-radius:5px;padding:7px 8px;background:#29292d;color:#fff;cursor:pointer}
 #${PANEL_ID} button:hover:not(:disabled){background:#36363b}
@@ -560,11 +685,16 @@
         <button type="button" class="hfc-cancel">Cancel</button>
       </div>
       <div class="hfc-status" data-error="0">Waiting for Photo Booth…</div>
+      <div class="hfc-progress" role="progressbar" aria-label="Spinny capture progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="hfc-progress-fill"></div></div>
+      <div class="hfc-timing">ETA learns from measured frame time on this device during each capture.</div>
       <div class="hfc-meta"></div>
     `;
     document.body.appendChild(panel);
     capabilityEl = panel.querySelector('.hfc-cap');
     statusEl = panel.querySelector('.hfc-status');
+    progressTrackEl = panel.querySelector('.hfc-progress');
+    progressFillEl = panel.querySelector('.hfc-progress-fill');
+    timingEl = panel.querySelector('.hfc-timing');
     metaEl = panel.querySelector('.hfc-meta');
     button = panel.querySelector('.hfc-capture');
     cancelButton = panel.querySelector('.hfc-cancel');
@@ -590,9 +720,13 @@
     if (resolutionSelect) resolutionSelect.disabled = busy;
     if (speedSelect) speedSelect.disabled = busy;
     if (metaEl) {
-      const baseline = profile.size === 1024 && profile.speedId === 'standard' ? 'Validated Lob-parity baseline' : 'Experimental profile';
-      metaEl.textContent = `${baseline}\n${profile.size}px · ${profile.frames} frames · ${profile.fps.toFixed(0)} FPS · ${(profile.durationMs / 1000).toFixed(1)} s · workload ${profile.workloadMultiplier.toFixed(1)}× baseline`;
+      let validationLabel = 'Experimental profile';
+      if (profile.size === 1024 && profile.speedId === 'standard') validationLabel = 'Validated Lob-parity baseline';
+      else if (profile.size === 2048 && profile.speedId === 'standard') validationLabel = 'Validated 2048 Standard';
+      else if (profile.size === 1024 && profile.speedId === 'verySlow') validationLabel = 'Validated 1024 Very Slow';
+      metaEl.textContent = `${validationLabel}\n${profile.size}px · ${profile.frames} frames · ${profile.fps.toFixed(0)} FPS · ${(profile.durationMs / 1000).toFixed(1)} s · workload ${profile.workloadMultiplier.toFixed(1)}× baseline`;
     }
+    renderTimingDisplay();
   }
 
   function dispose() {
@@ -614,6 +748,7 @@
     resolutions: RESOLUTIONS,
     speeds: SPEEDS,
     diagnostics,
+    timingHistory,
     capture: captureSelectedProfile,
     cancel: cancelCapture,
     get busy() { return busy; },

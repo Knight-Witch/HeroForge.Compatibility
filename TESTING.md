@@ -6,178 +6,108 @@ Standalone-first validation precedes Witch Dock integration.
 
 HeroForge build: `heroforge07.1.9.98`.
 
-### Standalone baseline
-
-- TRUE 4096 one-source adaptive phase feed: passed mechanically and visually.
-- TRUE 8192 grouped four-shifted-4096 source design: passed mechanically and visually; user reported it worked perfectly and was very easy on the GPU.
-- Combined standalone v0.6 TRUE 4K regression: passed.
-- Combined standalone v0.6 TRUE 8K regression: passed perfectly.
-- One-shot maintained 8192 Effects path: rejected due repeated white renderer-reset/blank output.
-- Sandbox/page-context, minimal packaging, and alternate export method: rejected as root-cause fixes.
-
-### Witch Dock Dev integration
-
-WITCH_DEV_PHOTO provider build `0.7.0-witch-dock-dev-provider` with current Lob/ADP present:
-
-- existing Lob-injected HeroForge 4096 control -> Witch Dock provider -> repaired capture: **passed perfectly**;
-- existing Lob-injected HeroForge 8192 control -> Witch Dock provider -> grouped repaired capture: **passed perfectly**;
-- Witch Dock direct TRUE 4K/TRUE 8K capture behavior: **passed**;
-- initial direct-button disabled state: **reproduced/diagnosed** as stale UI readiness after provider installed before Photo Booth opened;
-- capture engine did not require change.
-
-### Witch Dock Stable validation
-
-Public consumer promotion: `e155f2c2f961463b4a0e26f7c88f21f603ce1b95`.
-
-Clean public smoke with temporary Dev/standalone scripts disabled:
-
-- direct Witch Dock buttons became usable without cycling the repair toggle: **passed**;
-- HeroForge/Lob 4096 -> public Witch Dock provider: **passed perfectly**;
-- HeroForge/Lob 8192 -> public grouped provider: **passed perfectly**;
-- public Witch Dock direct TRUE 4K: **passed perfectly**;
-- public Witch Dock direct TRUE 8K: **passed perfectly**;
-- user overall public result: **works perfectly**.
-
-Stable gate: **closed / validated**.
+Standalone, Witch Dock Dev and public Witch Dock Stable still-capture gates remain validated. This Spinny investigation does not reopen them.
 
 ## `media.spinny-mini-webp`
 
 HeroForge build: `heroforge07.1.9.98`.
 
-### Measured native baseline
+### Reference baselines
 
-- canvas: **512x512**;
-- MIME: `image/webp`;
-- file size: **11,331,110 bytes**;
-- frames: **386**;
-- per-frame duration: **17 ms**;
-- total duration: **6562 ms**;
-- effective FPS: **58.82**;
-- loop count: **0 / infinite**;
-- traced calls: 386 x `BT.maker.takeScreenshot(512,512,...)`, 386 x `CK.Effects.renderToCanvas(512,512,...)`, one `CK.Capture.renderToImage(512,512,...)`.
+Native HeroForge WebP:
 
-### Historical Lob HQ baseline
+- 512x512;
+- 386 frames;
+- 17 ms/frame;
+- 6562 ms;
+- 58.82 FPS;
+- infinite loop;
+- 11,331,110 bytes.
 
-- dimensions: **1024x1024**;
-- frames: **250**;
-- duration: **10.000 s**;
-- effective FPS: **25**;
-- approximate frame delay: **40 ms**;
-- file size: **145,375,926 bytes**.
+Historical Lob HQ GIF:
 
-### Animated-WebP mux proof
+- 1024x1024;
+- 250 frames;
+- 40 ms/frame / 25 FPS;
+- 10.0 s;
+- 145,375,926 bytes.
 
-Live four-frame 128x128 proof:
+### v0.1.0 Lob-parity reference
 
-- four HeroForge frames captured/encoded;
-- custom RIFF animation mux produced 4 frames / 400 ms;
-- output blob 9,590 bytes;
-- browser `Image.decode()` PASS;
-- original rotation restoration PASS.
+`entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js`
 
-Result: **PASS**.
+- 1024x1024 / 250 frames / 10,000 ms / 40 ms/frame / infinite loop: **PASS**;
+- downloaded/played successfully by user report;
+- retained UI: 12.9 MiB;
+- low-resolution independent mux proof and syntax check: PASS.
 
-### Standalone parity package v0.1.0 — validated reference
+### v0.2.0 configurable profile validation
 
-Entry: `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js`.
+`entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
 
-Static checks:
+Profiles remain:
 
-- `node --check`: **PASS**.
-- fixed profile: 1024x1024, 250 frames, 40 ms/frame, quality 0.95, infinite loop.
-- concurrent capture block: present.
-- cancel-after-current-frame: present.
-- rotation restoration in `finally`: present.
-- per-frame canvas backing store reduced after compression.
-- final container parser verifies dimensions/frame count/total duration before download.
+- Standard: 10 s / 250 frames / 25 FPS;
+- Slow: 15 s / 375 frames / 25 FPS;
+- Slower: 20 s / 500 frames / 25 FPS;
+- Very Slow: 30 s / 750 frames / 25 FPS;
+- resolution independent at 1024 or 2048.
 
-Full live parity result:
+Live results reported by user:
 
-- user reported the generated WebP worked: **PASS**;
-- build: `0.1.0-runtime-rotation-webp-mux`;
-- parser-gated dimensions **1024x1024**: **PASS**;
-- parser-gated frame count **250**: **PASS**;
-- parser-gated total duration **10,000 ms**: **PASS**;
-- mux frame timing **40 ms / 25 FPS**: confirmed by implementation;
-- mux loop count **0 / infinite**: confirmed by implementation;
-- retained post-capture UI status: `Downloaded 1024px WebP: 250 frames / 10.0 s / 12.9 MiB`;
-- Photo Booth capture capability remained ready afterward.
+- **1024 Standard / 250 frames: PASS / works perfectly**;
+- **2048 Standard / 250 frames: PASS / works perfectly**;
+- **1024 Very Slow / 750 frames: PASS / works perfectly**;
+- 1024 Very Slow output: approximately **34 MiB**;
+- multiple successful captures in the same session: basic repeated-use **PASS**;
+- percent progress readout: **PASS / useful**;
+- Rendering/Encoding phase display: **PASS / useful**;
+- px/frame/FPS/workload info readout: **PASS / useful**.
 
-Parity milestone: **closed / validated**. v0.1.0 remains the canonical fallback until the profile candidate passes regression.
+Test context reported by user:
 
-### Configurable profile package v0.2.0 — candidate
+- very complex figure;
+- many kitbash parts;
+- special paints and heavy special effects;
+- very high decal count;
+- moderate/high Photo Booth complexity without the most extreme background/overlay load.
 
-Entry: `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`.
+Under that workload, capture times varied with resolution/frame count as expected but remained acceptable. User reported 1024 Very Slow as roughly comparable in wall-clock time to Lob's historical HQ GIF capture/encode/delivery flow.
 
-Implemented profiles:
+Not yet recorded as passed:
 
-- 1024 / 2048 resolution;
-- Standard: 10 s / 250 frames / 40 ms;
-- Slow: 15 s / 375 frames / 40 ms;
-- Slower: 20 s / 500 frames / 40 ms;
-- Very Slow: 30 s / 750 frames / 40 ms.
+- 2048 / 500 frames: actively running at latest report;
+- 1024 Slow / 375 specifically;
+- 1024 Slower / 500 specifically;
+- 2048 Very Slow / 750;
+- dedicated cancel/failure regression under high profiles.
 
-Preserved from validated v0.1.0:
+Per user instruction, do not inspect HF-Chat-Bridge until the active capture is reported complete.
 
-- runtime display Y rotation strategy;
-- refresh/occlusion/shadow/matrix sequencing;
-- `BT.maker.takeScreenshot` frame path;
-- immediate static-WebP compression;
-- compressed payload retention and source-canvas release;
-- deterministic mux;
-- cancellation/concurrency behavior;
-- rotation restore in `finally`.
+### v0.2.1 progress/ETA candidate
 
-Added:
+Runtime capture/mux core is preserved. New UX-only behavior:
 
-- exact loop-count verification;
-- exact ANMF frame-duration histogram verification;
-- bridge-readable plain diagnostics with exact output bytes and rotation-restored status;
-- pixel-sample workload display relative to 1024 Standard.
+- progress bar immediately below status/percentage;
+- elapsed wall-clock time;
+- estimated time remaining;
+- estimated total capture time;
+- first live current-capture estimate after five completed frames;
+- smoothed prediction combining EMA and current-run average frame cost;
+- same-session per-resolution timing history to seed subsequent captures;
+- no localStorage or cross-reload timing persistence;
+- completed actual wall-clock duration stored in `lastCapture.elapsedMs`;
+- timing details exposed in diagnostics.
 
-Static status:
+ETA acceptance criteria:
 
-- source review: **PASS / no identified syntax or logic blocker**;
-- `node --check`: **not yet independently executed against the committed v0.2.0 file**;
-- live runtime: **not yet tested**.
-
-Required live validation order:
-
-1. 1024 Standard regression.
-2. 2048 Standard.
-3. 1024 Slow.
-4. 1024 Slower.
-5. 1024 Very Slow.
-6. 2048 + slower combinations only after resource behavior is measured.
-
-Approximate pixel-sample workload relative to validated 1024 Standard:
-
-- 1024 Standard: 1.0x;
-- 2048 Standard: 4.0x;
-- 1024 Slow: 1.5x;
-- 1024 Slower: 2.0x;
-- 1024 Very Slow: 3.0x;
-- 2048 Very Slow: 12.0x.
-
-Still pending:
-
-- v0.2.0 1024 regression;
-- exact full-run rotation-restored diagnostic;
-- repeat full capture in one session;
-- 2048 completion/output/memory behavior;
-- slower-profile resource behavior;
-- practical guardrails for expensive combinations.
+1. Progress bar tracks the existing percentage without affecting capture.
+2. First-run ETA begins as `estimating…`, then converges after live samples.
+3. Remaining time decreases plausibly and adapts when frame processing changes.
+4. Estimated total reflects actual device/figure processing rather than animation playback duration.
+5. A second same-resolution capture in the same page session receives an immediate seeded estimate, then adapts to live samples.
+6. Reload clears timing history.
+7. Final completion time remains visible after download.
+8. Existing 1024/2048 output metrics and playback remain unchanged.
 
 Witch Dock integration: **not started**.
-
-## Future regression triggers
-
-Re-run the Photo Booth still suite when the HeroForge build materially changes, named capture/Effects capabilities change, tile topology changes, or a native true-resolution Effects path appears.
-
-Re-run the Spinny Mini WebP suite when HeroForge character-display rotation/refresh behavior changes, `BT.maker.takeScreenshot` semantics change, browser WebP encoding support changes, or generated RIFF animation validation fails.
-
-## Other maintained milestones
-
-- Corrected bound decal gizmo: Witch Dock Stable with Move/Rotate/Scale undo-redo and transform-state preservation validated.
-- Character local JSON: core Save/Load passed live; repeated-use/lifecycle pending.
-- Projected decal state/control: runtime path confirmed; renderer dependency audit pending.

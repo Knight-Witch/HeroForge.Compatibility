@@ -4,9 +4,9 @@ This is the canonical feature-ID inventory. Historical/provisional inventory det
 
 | Feature ID | Purpose | Risk | Status |
 |---|---|---|---|
-| `media.screenshot-resolution` | Restore genuine 4K/8K Photo Booth still-image rendering | Medium | **Standalone validated; Witch Dock Stable validated on `heroforge07.1.9.98`**. 4K = one 4096 source; 8K = four shifted 4096 sources. Public promotion `e155f2c2f961463b4a0e26f7c88f21f603ce1b95`; clean public smoke passed perfectly. |
-| `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | **Standalone v0.1.0 1024/250 Lob parity validated; separate v0.2.0 configurable profile candidate implemented and awaiting live regression.** v0.2.0 adds 1024/2048 and Standard/Slow/Slower/Very Slow while preserving 40 ms/frame. Public Witch Dock unchanged. Supersedes provisional `media.spin-gif-quality`. |
-| `decals.gizmo.bound-correction` | Correct bound/Project-OFF decal transform gizmo | High | Witch Dock Stable; validated Move/Rotate/Scale, undo/redo, Project state/artwork transform preservation, fresh-slot bad-default normalization. |
+| `media.screenshot-resolution` | Restore genuine 4K/8K Photo Booth still-image rendering | Medium | **Standalone validated; Witch Dock Stable validated on `heroforge07.1.9.98`**. |
+| `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | **Standalone configurable core live-validated on `heroforge07.1.9.98` at 1024 Standard/250f, 2048 Standard/250f, and 1024 Very Slow/750f.** v0.2.1 adds progress bar plus device-relative elapsed/remaining/total ETA; UX validation pending. 1024 Very Slow observed ~34 MiB. Public Witch Dock unchanged. Supersedes provisional `media.spin-gif-quality`. |
+| `decals.gizmo.bound-correction` | Correct bound/Project-OFF decal transform gizmo | High | Witch Dock Stable; validated Move/Rotate/Scale, undo/redo, transform-state preservation and fresh-slot normalization. |
 | `character.local-export` | Export character JSON locally | Medium | Standalone reconstruction committed; core Save passed live. |
 | `character.local-import` | Import character JSON locally | Medium | Standalone reconstruction committed; core Load passed live. |
 | `decals.transform.projected` | Project state/control plus required renderer behavior | Critical while renderer dependency external | Runtime state/control confirmed; renderer audit pending. |
@@ -19,10 +19,10 @@ This is the canonical feature-ID inventory. Historical/provisional inventory det
 
 ## Photo Booth note
 
-Maintained 8K does not use a one-shot 8192 Effects target. Four shifted 4096 sources cover the native 8x8/64-phase lattice. Current Lob/ADP may remain installed and supply the HeroForge-native 4096/8192 UI choices; Witch Dock repairs those downstream requests. Lob-absent native-UI injection remains a separate adapter task.
+Maintained 8K still capture remains the validated grouped four-shifted-4096 implementation. Spinny work is a separate media feature and does not reopen that gate.
 
 ## Spinny Mini WebP note
 
-The maintained reconstruction target is animated WebP rather than GIF. v0.1.0 remains the validated parity reference: 1024x1024, 250 frames, 10 seconds / 25 FPS / infinite loop, with retained live UI reporting 12.9 MiB.
+The maintained target is animated WebP, not GIF. v0.1.0 established Lob parity at 1024x1024 / 250 frames / 10 s / 25 FPS / infinite loop. The configurable core has now also passed 2048 Standard and 1024 Very Slow (750 frames), demonstrating both resolution scaling and increased angular-sample scaling while retaining 40 ms/frame.
 
-The separate v0.2.0 candidate keeps the proven frame-production/mux path and parameterizes resolution and speed. Slower profiles scale angular samples at constant 40 ms/frame instead of stretching the original 250 frames. v0.2.0 must pass 1024 Standard regression before it supersedes v0.1.0 as the standalone reference.
+v0.2.1 changes only standalone UI/diagnostics by adding a progress bar and device-relative ETA. A 2048 / 500-frame run was still active at the latest user report and is not yet recorded as passed.

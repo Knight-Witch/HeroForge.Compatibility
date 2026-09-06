@@ -1,5 +1,80 @@
 # Pre-Flight Check Log
 
+## PFC-2026-09-05-017 — Record configurable Spinny validation and add progress/ETA UX
+
+Date: 2026-09-05
+
+### Target files
+
+- `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
+- `MASTER.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+- `FEATURE_INVENTORY.md`
+- `COMPATIBILITY.md`
+- `TESTING.md`
+- `docs/feature-specs/spinny-mini-webp.md`
+- `docs/investigations/INV-0004-spinny-mini-webp-2026-09-05.md`
+
+### Reviewed
+
+- binding `PROJECT_CONTRACT.md`
+- `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`
+- current Spinny Mini feature spec/investigation
+- validated v0.1.0 parity reference
+- configurable v0.2.0 candidate at branch head `02ffc1cfa7512af90ab7fce2afefdfe22c989806`
+- user live results from multiple v0.2.0 captures on HeroForge `heroforge07.1.9.98`
+
+### Newly confirmed live results
+
+- 1024 Standard / 25 FPS / 250 frames: **PASS / works perfectly**.
+- 2048 Standard / 25 FPS / 250 frames: **PASS / works perfectly**.
+- 1024 Very Slow / 25 FPS / 750 frames: **PASS / works perfectly**.
+- 1024 Very Slow output observed at approximately **34 MiB**.
+- Multiple captures were run successfully in one session, providing basic repeated-use evidence.
+- Existing percentage, Rendering/Encoding phase text, and selected px/frame/FPS/workload readout were explicitly reported useful and working well.
+- Test context was a high-complexity figure with many kitbash parts, special paints/effects and a high decal count, with moderately high Photo Booth complexity; resource behavior remained acceptable by user report.
+- User observed 1024 Very Slow capture time as roughly comparable to Lob's historical HQ Spinny GIF capture/encode/delivery time.
+- 2048 / 500-frame run was still active when this pre-flight was written and is **not recorded as passed yet**.
+- Per user instruction, HF-Chat-Bridge activity is not inspected while the active capture is running.
+
+### Runtime change intent
+
+Advance the same standalone profile script to v0.2.1 with UX-only additions:
+
+- progress bar directly below the existing percentage/status readout;
+- elapsed / estimated time-left / estimated-total display;
+- ETA derived from measured wall-clock render+encode time per completed frame on the current device/figure;
+- same-session timing history keyed by resolution to improve estimates for subsequent captures;
+- no persistent timing history across reloads, preventing stale estimates from leaking between sessions/figures.
+
+### Preserved behavior
+
+- resolution/speed definitions and constant 40 ms output frame timing;
+- full-revolution `CK.character.display.rotation.y` stepping;
+- established display/occlusion/shadow/matrix refresh sequencing;
+- `BT.maker.takeScreenshot` capture path;
+- immediate static-WebP compression and compressed-payload retention;
+- deterministic RIFF animated-WebP mux and parser validation;
+- concurrency block, cancellation semantics and rotation restoration;
+- public Witch Dock remains untouched.
+
+### Material conflict risks
+
+- ETA must measure capture processing time, not confuse it with animation playback duration.
+- Early ETA samples can be noisy; v0.2.1 therefore warms up before using current-capture estimates.
+- Figure/effect complexity can change per-frame cost; estimate must continue adapting during the run.
+- Same-session history must not become persistent cross-figure state.
+- UI-only change must not alter the now-validated capture/mux core.
+
+### Recommended action
+
+Commit v0.2.1 on `spinny-webp-hq-wip`, syntax-check it, then have the user switch after the currently running v0.2.0 capture completes. Validate the progress bar and ETA with one normal capture before any Witch Dock integration.
+
+**Runtime behavior changed:** yes, standalone WIP UI/diagnostics only. Capture/mux behavior and public Witch Dock are unchanged.
+
+---
+
 ## PFC-2026-09-05-016 — Add configurable Spinny WebP profile test
 
 Date: 2026-09-05

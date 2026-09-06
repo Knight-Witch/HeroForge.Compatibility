@@ -1,102 +1,37 @@
 # INV-0004 — Spinny Mini animated WebP reconstruction
 
 Date opened: 2026-09-05
-Status: active — 1024/250 parity validated; configurable v0.2.0 candidate implemented, live regression pending
+Status: active — configurable core validated across resolution and frame-count scaling; progress/ETA UX next
 HeroForge build: `heroforge07.1.9.98`
 Feature: `media.spinny-mini-webp`
 
 ## Question
 
-How can HeroForge's new Spinny Mini WebP capability be reconstructed into a higher-resolution, configurable-speed feature without depending on brittle compiled-string injection or a huge PNG-series ZIP workflow?
+How can HeroForge's new Spinny Mini WebP capability be reconstructed into a higher-resolution, configurable-speed feature without brittle compiled-string injection or PNG-series ZIP output?
 
-## User goal
+## Confirmed baselines
 
-Replace the broken legacy Higher Quality Spinny Mini GIF behavior with animated WebP. First milestone was parity with the historical Lob HQ output; after parity, add higher-resolution options and independent slower-rotation presets.
+Native HeroForge WebP:
 
-## Confirmed native WebP output
+- 512x512;
+- 386 frames;
+- 17 ms/frame;
+- 6562 ms total;
+- 58.82 FPS;
+- infinite loop;
+- 11,331,110 bytes.
 
-A real native HeroForge `Spinny Mini WebP` generation was traced and parsed directly as RIFF/WebP:
+Historical Lob HQ GIF:
 
-- MIME: `image/webp`;
-- size: 11,331,110 bytes;
-- canvas: 512x512;
-- loop count: 0 / infinite;
-- frame count: 386 `ANMF` chunks;
-- every frame: 17 ms;
-- total duration: 6562 ms;
-- effective FPS: 58.823529...;
-- 386 x `BT.maker.takeScreenshot(512,512,...)`;
-- 386 x `CK.Effects.renderToCanvas(512,512,...)`;
-- one `CK.Capture.renderToImage(512,512,...)`.
-
-Native HeroForge uses a specialized encoder path, but the maintained reconstruction no longer requires it.
-
-## Confirmed Lob HQ historical output
-
-Measured from the user-supplied original GIF:
-
-- GIF89a;
 - 1024x1024;
 - 250 frames;
-- 10.000 s;
-- 25 FPS;
-- approximately 40 ms/frame;
+- 40 ms/frame / 25 FPS;
+- 10.0 s;
 - 145,375,926 bytes.
 
-Legacy source audit confirms the old Higher Quality control invoked the Spinny function with resolution 1024 and frame-count argument 250.
+## Architecture decision — confirmed
 
-## First parity target — validated
-
-Standalone v0.1.0 target:
-
-- animated WebP;
-- 1024x1024;
-- 250 frames;
-- 40 ms/frame;
-- 10.0-second revolution;
-- 25 FPS;
-- infinite loop.
-
-Result:
-
-- user reported “the webp worked”;
-- runtime build confirmed `0.1.0-runtime-rotation-webp-mux`;
-- download path mechanically requires 1024x1024, exactly 250 frames, and exactly 10,000 ms before saving;
-- mux writes every ANMF at 40 ms and ANIM loop count 0;
-- retained post-capture UI: `Downloaded 1024px WebP: 250 frames / 10.0 s / 12.9 MiB`;
-- Photo Booth capture capability remained ready afterward.
-
-**PASS. First Lob-parity milestone closed.**
-
-Exact output bytes from that first run were not recoverable because v0.1.0 exposed `lastCapture` through a getter blocked by the bridge safe reader.
-
-## Discovery findings
-
-- No stable high-level named Spinny/WebP animation encoder was exposed on `BT`, `HF`, or `HFUI`.
-- `CK.encoder` visible helpers were unrelated base64/UTF utilities.
-- Webpack discovery found loose WebP/GIF factories but no clean stable callable encoder export.
-- Follow-up bridge issue #467 found the temporary `HFSpinWebpack` diagnostic object gone.
-- Private encoder discovery is now **no longer relevant** to the accepted path because the independent mux architecture passed both microproof and full 1024 parity.
-
-## Decisive independent mux proof
-
-Live browser-side proof without HeroForge's private animation encoder:
-
-1. Save `CK.character.display.rotation.y`.
-2. Rotate through four angles.
-3. Refresh display/occlusion/shadow/matrix state.
-4. Capture via `BT.maker.takeScreenshot(128,128)`.
-5. Encode each canvas with browser static WebP.
-6. Retain compressed `ALPH` / `VP8 ` / `VP8L` chunks.
-7. Assemble RIFF + VP8X + ANIM + ANMF.
-8. Decode via browser `Image.decode()`.
-9. Restore rotation.
-
-Result: 128x128 / four frames / 400 ms / 9,590 bytes / browser decode PASS / rotation restoration PASS.
-
-## Architecture decision
-
-Accepted maintained path:
+A stable private animated-WebP encoder seam was not required. The maintained path is:
 
 ```text
 HeroForge runtime character rotation
@@ -106,94 +41,97 @@ HeroForge runtime character rotation
 → project-owned animated-WebP RIFF mux
 ```
 
-This avoids private/minified encoder dependencies, GIF limitations, PNG-series ZIP growth, and raw-RGBA accumulation.
+This path passed a four-frame browser decode microproof and then a full 1024/250 parity capture.
 
-## v0.1.0 — validated reference
+## v0.1.0 parity result — PASS
 
-Entry: `entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js`.
+`entries/tampermonkey-standalone/spinny-mini-webp-hq.user.js`
 
-- 1024 / 250 frames / 40 ms / quality 0.95 / infinite loop;
-- full-revolution display Y stepping;
-- established refresh/occlusion timing;
-- immediate static-WebP compression;
-- compressed-payload-only retention;
-- canvas backing-store reduction;
-- deterministic animated mux;
-- pre-download dimensions/frame-count/total-duration verification;
-- concurrent capture block;
-- cancel after current frame;
-- rotation restore in `finally`;
-- no permanent HeroForge runtime override.
+- 1024x1024;
+- 250 frames;
+- 10,000 ms;
+- 40 ms/frame;
+- infinite loop;
+- retained UI: 12.9 MiB;
+- user reported the WebP worked.
 
-Static syntax: PASS.
-Full live 1024/250 capture: PASS.
+The first Lob-parity milestone is closed.
 
-## v0.2.0 — configurable profile candidate
+## v0.2.0 configurable profile result — multiple live passes
 
-Entry: `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`.
-Build: `0.2.0-profiled-runtime-rotation-webp-mux`.
+`entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
 
-v0.1.0 remains unchanged and canonical until v0.2.0 passes regression.
+Profiles keep resolution independent from rotation duration, with constant 40 ms/frame / 25 FPS:
 
-Resolution choices:
+- Standard: 250 frames / 10 s;
+- Slow: 375 frames / 15 s;
+- Slower: 500 frames / 20 s;
+- Very Slow: 750 frames / 30 s;
+- resolution: 1024 or 2048.
 
-- 1024 — baseline;
-- 2048 — experimental.
+User live results:
 
-Speed profiles at constant 40 ms / 25 FPS:
+- **1024 Standard / 250 frames: PASS / works perfectly**;
+- **2048 Standard / 250 frames: PASS / works perfectly**;
+- **1024 Very Slow / 750 frames: PASS / works perfectly**;
+- 1024 Very Slow output approximately **34 MiB**;
+- multiple captures completed successfully in the same session;
+- percentage, Rendering/Encoding display and profile information readout were all explicitly reported useful and working well.
 
-- Standard: 10 s / 250 frames;
-- Slow: 15 s / 375 frames;
-- Slower: 20 s / 500 frames;
-- Very Slow: 30 s / 750 frames.
+Test environment was intentionally demanding: a very complex figure with many kitbash parts, special paints, heavy effects and a very high decal count, with moderately high Booth complexity. User reported capture time/resource behavior remained reasonable; 1024 Very Slow was roughly comparable in wall-clock time to Lob's historical HQ GIF flow.
 
-The candidate preserves the validated frame-production/mux sequence. Added behavior is limited to profile selection and validation/diagnostics:
+This establishes that the independent mux implementation scales successfully along both axes already tested:
 
-- resolution and speed are independent;
-- parser verifies dimensions, frame count, total duration, loop count, and exact single-value ANMF duration histogram;
-- `HFSpinnyMiniWebPProfilesTest.diagnostics` is a plain bridge-readable object containing selected profile and mutable `lastCapture` state, including exact output bytes, parser metrics, and post-finally `rotationRestored`;
-- UI reports pixel-sample workload versus 1024 Standard.
+- resolution: 1024 → 2048 at 250 frames;
+- angular samples/frame count: 250 → 750 at 1024.
 
-Workload ratios by pixel samples:
+A 2048 / 500-frame run was still active at the latest report. It remains unconfirmed until the user reports completion. Per explicit instruction, HF-Chat-Bridge is not inspected during that active capture.
 
-- 1024 Standard: 1.0x;
-- 2048 Standard: 4.0x;
-- 1024 Slow: 1.5x;
-- 1024 Slower: 2.0x;
-- 1024 Very Slow: 3.0x;
-- 2048 Very Slow: 12.0x.
+## v0.2.1 UX investigation
 
-## Supported inference
+Requested additions:
 
-2048 Standard is expected to be materially heavier because it has four times the pixels per frame. Slow profiles should increase compressed output and capture work roughly with frame count, but actual output growth depends on scene content and WebP compression.
+1. progress bar below the percentage readout;
+2. time-left / total-time estimator that adapts to the current user/device and workload.
 
-## Still unproven
+Accepted ETA strategy:
 
-- v0.2.0 1024 Standard regression;
-- independently executed `node --check` against the committed v0.2.0 file;
-- exact full-run orientation-restored diagnostic on a full profile capture;
-- repeated full capture in one session;
-- practical 2048 completion time/output/browser/GPU/memory behavior;
-- practical limits for combined 2048 + long-duration profiles;
-- whether quality 0.95 should remain fixed for all resolutions.
+- measure real wall-clock render+encode time for each completed frame;
+- do not derive capture ETA from output playback duration;
+- show `estimating…` during an initial five-frame warm-up when no same-session resolution history exists;
+- maintain both current-run average and exponential moving average of frame processing time;
+- blend those values for a continuously adapting prediction;
+- seed a later capture from successful same-session timing for the same resolution;
+- keep history in memory only; reload clears it to prevent stale cross-figure/session estimates;
+- retain actual completed wall-clock duration and timing data in plain diagnostics.
+
+The progress bar uses the existing capture loop's frame/phase state and does not change capture sequencing.
+
+## Remaining unknowns
+
+- live accuracy/convergence of v0.2.1 ETA on first and repeated captures;
+- result of the currently active 2048 / 500-frame run;
+- practical behavior of 2048 Very Slow / 750 frames;
+- exact high-profile output-memory ceiling;
+- whether quality 0.95 should remain fixed for every eventual supported profile;
+- final guardrails/warnings before Witch Dock integration.
 
 ## Safety / compatibility constraints
 
-- Do not hard-code current minified module-local names as APIs.
-- Do not reintroduce legacy exact compiled-string patching unless higher-priority runtime access becomes insufficient.
-- Do not retain all uncompressed high-resolution frames simultaneously.
-- Block concurrent animated captures.
-- Restore character rotation after success/failure/cancel where technically possible.
-- `media.screenshot-resolution` only intercepts 4096/8192 square still requests, so 1024/2048 Spinny frames pass through untouched.
-- Preserve v0.1.0 unchanged until v0.2.0 regression passes.
-- Public Witch Dock remains untouched.
+- no private/minified encoder dependency;
+- no legacy exact compiled-string patching;
+- no raw-RGBA accumulation across frames;
+- block concurrent captures;
+- restore character rotation after success/failure/cancel;
+- leave validated still-capture feature untouched;
+- public Witch Dock remains untouched until separate Dev integration.
 
 ## Next gate
 
-1. Install/run v0.2.0 standalone.
-2. Validate 1024 Standard regression against v0.1.0.
-3. Read plain diagnostics for exact output bytes and rotation-restored status.
-4. Validate 2048 Standard.
-5. Validate 1024 Slow/Slower/Very Slow.
-6. Define practical guardrails before expensive 2048 + slow combinations.
-7. Only after the expanded standalone suite passes should Witch Dock Dev integration begin.
+1. Let the active v0.2.0 capture finish without bridge inspection.
+2. Record its result when the user reports it.
+3. Switch to v0.2.1.
+4. Validate progress bar and ETA on one normal capture.
+5. Optionally run a second same-resolution capture to verify same-session ETA seeding/adaptation.
+6. Inspect bridge-readable diagnostics only after the user says active capture work is complete.
+7. Decide remaining standalone guardrails before Witch Dock Dev.
