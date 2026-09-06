@@ -1,0 +1,1 @@
+Do not use this directory as an install source. It contains temporary transport chunks for the already user-validated v0.4.0 Pause/Resume candidate. The maintained install path remains entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js.
