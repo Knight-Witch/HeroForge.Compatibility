@@ -106,3 +106,7 @@ Future Witch Dock:
 ## 4K Spinny
 
 Deferred. Current Witch Dock TRUE-resolution still provider owns square 4096/8192 screenshot requests.
+
+## Spinny v0.5.0 integrated standalone gate — PASS
+
+Live user validation passed for 1024 Short Test pause/resume, TRUE-3K 3072 Short Test, cancel while paused, camera wheel/drag guard, Booth-control guard, Keep Capture, guard-triggered cancel requiring repeat action, and guard behavior while paused. Exact promoted source SHA-256: `4d450bd18c427e31ea8a38825ed9c8223045a4834a526ec041ca04256d654ce3`.

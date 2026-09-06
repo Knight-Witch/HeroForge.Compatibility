@@ -40,3 +40,7 @@ Ownership implications:
 - the old standalone Short Test and TRUE-3K companion files remain historical validation scaffolding/reference and do not create separate long-term maintenance obligations;
 - successful standalone validation does not itself approve Witch Dock Stable integration or assign permanent maintenance responsibility;
 - Pause/interaction guards remain part of the Spinny feature safety/lifecycle responsibility, not a separate user-facing feature.
+
+## Spinny v0.5.0 maintenance note
+
+Pause/Resume and interaction guards are now part of maintained `media.spinny-mini-webp`, not separate companion utilities. Long-term primary maintainer assignment remains unchanged/TBD.

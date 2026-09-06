@@ -1,5 +1,19 @@
 # Pre-Flight Check Log
 
+## PFC-2026-09-06-027 — Promote validated Spinny v0.5.0
+
+Date: 2026-09-06
+
+Reviewed `PROJECT_CONTRACT.md`, `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`, Spinny feature/investigation/validation records, maintained source, and the exact live-tested v0.5.0 candidate.
+
+Risks checked: TRUE-3K parity, screenshot-provider ownership, safe pause boundary, cancel while paused, ETA accounting, interaction guard false positives/negatives, restoration, and continued 4096/8192 animation deferral.
+
+Decision: promote exact checksum-verified v0.5.0 source and advance to Witch Dock Dev.
+
+---
+
+# Pre-Flight Check Log
+
 ## PFC-2026-09-06-026 — Validate Spinny v0.4.0 Pause/Resume candidate and begin guard discovery
 
 Date: 2026-09-06

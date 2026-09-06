@@ -47,3 +47,7 @@ Local v0.4.0 candidate:
 Interaction protection is now the active investigation target because accidental mouse-wheel input during an earlier long capture caused visible animation jumps.
 
 4K Spinny remains deferred because square 4096/8192 screenshot requests collide with Witch Dock TRUE-resolution still-provider ownership.
+
+## Spinny v0.5.0 status
+
+`media.spinny-mini-webp`: standalone v0.5.0 validated on `heroforge07.1.9.98`; TRUE-3K 3072, Pause/Resume, cancel-while-paused, and interaction guards passed. Witch Dock Dev integration is the next promotion gate.

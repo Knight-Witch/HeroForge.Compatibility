@@ -248,3 +248,7 @@ Future Pause/guard listeners/DOM must be removable on dispose and must not inten
 ## 4K Spinny
 
 Deferred. Current Witch Dock TRUE-resolution still provider owns square 4096/8192 screenshot requests. A future 4K animation path requires a separately validated explicit frame capability/bypass.
+
+## Maintained v0.5.0 lifecycle / guard status
+
+Version `0.5.0`, build `0.5.0-integrated-pause-interaction-guards`, is the maintained standalone implementation. Pause occurs only after a completed encoded frame; paused wall-clock time is separated from active ETA; cancel while paused restores state; capture-invalidating HeroForge interaction is blocked before mutation with Keep Capture / Cancel Capture choices. Consolidated guard integration passed live.

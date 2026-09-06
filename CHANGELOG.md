@@ -1,5 +1,23 @@
 # Changelog
 
+## HFC-2026-09-06-031 — Promote validated Spinny v0.5.0
+
+Date: 2026-09-06
+
+Promoted the exact live-tested consolidated Spinny source as maintained v0.5.0 / build `0.5.0-integrated-pause-interaction-guards`.
+
+Live validation passed for 1024 and TRUE-3K 3072 capture, safe frame-boundary Pause/Resume, cancel while paused, paused-time ETA accounting, camera wheel/drag protection, Booth-control protection, Keep Capture, guard-triggered cancel, and protection while paused.
+
+Exact promoted source SHA-256: `4d450bd18c427e31ea8a38825ed9c8223045a4834a526ec041ca04256d654ce3`.
+
+Disposition advances to Witch Dock Dev candidate. Public Stable remains a separate gate.
+
+**Runtime behavior changed:** yes — maintained standalone runtime advances to v0.5.0.
+
+---
+
+# Changelog
+
 ## HFC-2026-09-06-030 — Validate Spinny v0.4.0 Pause/Resume candidate
 
 Date: 2026-09-06

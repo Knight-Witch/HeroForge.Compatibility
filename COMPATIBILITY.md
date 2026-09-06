@@ -96,3 +96,7 @@ Re-run Spinny validation when:
 ## 4K Spinny incompatibility note
 
 Do not add 4096 Spinny through the current public `BT.maker.takeScreenshot` surface while Witch Dock TRUE-resolution still repair is enabled. The provider owns square 4096/8192 requests. 4K Spinny remains deferred until a separately designed explicit frame-capture capability/bypass is validated.
+
+## Spinny v0.5.0 compatibility checkpoint
+
+Validated on `heroforge07.1.9.98`: maintained v0.5.0 preserves tested 1024/2048/TRUE-3K behavior and adds live-validated frame-boundary Pause/Resume plus interaction guards. Native unrepaired 3072 remains rejected; 4096 animated WebP remains deferred.

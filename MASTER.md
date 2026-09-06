@@ -88,3 +88,7 @@ After standalone interaction-guard validation:
 ## 4K Spinny
 
 4K Spinny remains deferred because square 4096/8192 screenshot requests are owned by Witch Dock TRUE-resolution still capture.
+
+## Spinny v0.5.0 validated standalone checkpoint
+
+`media.spinny-mini-webp` maintained runtime is now v0.5.0 / `0.5.0-integrated-pause-interaction-guards`. Pause/Resume and capture-invalidating interaction guards passed live testing. Disposition: Witch Dock Dev candidate; public Stable remains untouched until integrated Dev smoke and approval.
