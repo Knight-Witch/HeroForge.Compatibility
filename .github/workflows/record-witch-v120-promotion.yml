@@ -1,0 +1,40 @@
+name: Record Witch Dock v1.2.0 Promotion
+on:
+  push:
+    branches: [hfc-wd-v120-doc-helper]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout helper
+        uses: actions/checkout@v4
+        with:
+          ref: hfc-wd-v120-doc-helper
+          path: helper
+      - name: Checkout HFC work branch
+        uses: actions/checkout@v4
+        with:
+          ref: spinny-webp-hq-wip
+          path: target
+          fetch-depth: 0
+      - name: Apply documentation checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd target
+          python ../helper/.github/scripts/record_witch_v120_promotion.py
+          git diff --check
+      - name: Commit documentation checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd target
+          git config user.name "Knight Witch"
+          git config user.email "amanda.m.ivans@gmail.com"
+          git add MASTER.md PRE_FLIGHT_Check.md CHANGELOG.md FEATURE_INVENTORY.md COMPATIBILITY.md OWNERSHIP.md TESTING.md docs/feature-specs/spinny-mini-webp.md
+          git diff --cached --check
+          git commit -m "Record public Witch Dock v1.2.0 promotion"
+          git push origin HEAD:spinny-webp-hq-wip
