@@ -1,0 +1,42 @@
+name: Record Decals Utilities Host Promotion
+
+on:
+  push:
+    branches:
+      - hfc-decals-utilities-host-doc-helper
+    paths:
+      - '.github/workflows/record-decals-utilities-host-promotion.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout helper
+        uses: actions/checkout@v4
+        with:
+          ref: hfc-decals-utilities-host-doc-helper
+          path: helper
+          fetch-depth: 0
+
+      - name: Checkout HFC work branch
+        uses: actions/checkout@v4
+        with:
+          ref: spinny-webp-hq-wip
+          path: repo
+          fetch-depth: 0
+
+      - name: Apply documentation checkpoint
+        working-directory: repo
+        run: python ../helper/.github/scripts/record_decals_utilities_host_promotion.py
+
+      - name: Commit documentation checkpoint
+        working-directory: repo
+        run: |
+          git config user.name "Knight Witch"
+          git config user.email "amanda.m.ivans@gmail.com"
+          git add MASTER.md PRE_FLIGHT_Check.md CHANGELOG.md FEATURE_INVENTORY.md COMPATIBILITY.md OWNERSHIP.md TESTING.md
+          git commit -m "Record public Decals Utilities host relocation"
+          git push origin HEAD:spinny-webp-hq-wip
