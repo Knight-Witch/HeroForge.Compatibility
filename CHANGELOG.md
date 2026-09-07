@@ -1,5 +1,32 @@
 # Changelog
 
+## HFC-2026-09-06-033 — Record Witch Dock v1.2.0 UI/Developer Mode promotion
+
+Date: 2026-09-06
+
+### Summary
+
+Recorded public Witch Dock v1.2.0 after the separately validated tab, High Res ownership and Developer Mode deltas were narrowly promoted to Stable.
+
+### External consumer status
+
+- validated Developer Mode Dev candidate: v0.3.0 / build `0.3.0-public-ready-manifest-source`, Dev head `85f386cf9b7b8a361d2162a0cec8081784a15e66`;
+- public Witch Dock v1.2.0 commit: `b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`;
+- public High Res service/UI: v0.8.0 / v0.3.0;
+- public Developer Mode: v0.3.0, optional/default-OFF and About-only;
+- public canonical module registry now follows the active Stable manifest;
+- public Spinny service/UI source remains unchanged from v1.1.0;
+- protected Spinny/Booth/readiness/decal-gizmo hashes and release static gates passed;
+- public v1.2.0 clean smoke remains pending.
+
+4096 animated-WebP expansion and a Developer Mode hotkey are no longer active roadmap items and require no further work unless explicitly reopened.
+
+### HFC runtime impact
+
+**No HeroForge.Compatibility runtime behavior changed.** Maintained standalone Spinny remains v0.5.0 / build `0.5.0-integrated-pause-interaction-guards`. This commit updates durable project state only.
+
+---
+
 ## HFC-2026-09-06-032 — Record Witch Dock Stable Spinny v1.1.0 promotion
 
 Date: 2026-09-06

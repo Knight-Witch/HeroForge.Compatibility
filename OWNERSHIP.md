@@ -24,7 +24,7 @@ This project must not silently make Amanda responsible for every imported featur
 | Feature ID | Primary maintainer | Reviewer | Backup | Maintenance status | Last verified HF build |
 |---|---|---|---|---|---|
 | `media.screenshot-resolution` | **TBD — Lob-derived feature maintenance agreement not assigned** | Amanda | — | Standalone validated; Witch Dock Stable consumer promoted and validated by explicit approval; ownership exception remains open | `heroforge07.1.9.98` |
-| `media.spinny-mini-webp` | **TBD — reconstructed from Lob behavior/current HeroForge media capabilities; maintenance agreement not assigned** | Amanda | — | Standalone v0.5.0 validated; Witch Dock Dev validated; Witch Dock Stable v1.1.0 promoted, public smoke pending | `heroforge07.1.9.98` |
+| `media.spinny-mini-webp` | **TBD — reconstructed from Lob behavior/current HeroForge media capabilities; maintenance agreement not assigned** | Amanda | — | Standalone v0.5.0 validated; Witch Dock Dev validated; public Witch Dock v1.2.0 promoted with unchanged Stable Spinny source; clean public smoke pending | `heroforge07.1.9.98` |
 | `decals.gizmo.bound-correction` | TBD | Amanda | — | Witch Dock Stable | 2026-09-05 |
 
 ## Spinny Mini ownership note
@@ -37,16 +37,17 @@ Ownership implications:
 
 - the Spinny service owns full capture and `captureShortTest()`;
 - Witch Dock UI owns presentation only;
-- Developer Mode, where present in Dev, controls Short Test visibility only and does not own media behavior;
+- Developer Mode, now present in public Witch Dock v1.2.0 as an optional About toggle, controls Short Test visibility/diagnostics only and does not own media behavior;
 - old standalone Short Test / TRUE-3K companion files remain historical validation scaffolding/reference;
 - public Stable promotion does not by itself assign Amanda permanent primary-maintainer responsibility;
-- public Witch Dock v1.1.0 is a consumer copy of the validated feature, not a transfer of ownership away from this compatibility project;
+- public Witch Dock v1.2.0 remains a consumer copy/host of the validated feature; its UI/diagnostic promotion does not transfer long-term feature ownership away from this compatibility project;
 - future breakage should first be classified as feature behavior, HeroForge compatibility, public-host integration, or download-host integration before maintenance responsibility is assigned.
 
 ## Current Spinny disposition
 
 - standalone maintained implementation: validated;
 - Witch Dock Dev consumer: validated;
-- public Witch Dock Stable consumer: promoted at `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`;
-- clean public smoke: pending;
+- original public Spinny promotion: `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`;
+- current public Witch Dock v1.2.0 host/UI release: `b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`;
+- clean public v1.2.0 smoke: pending;
 - long-term primary maintainer: still TBD.

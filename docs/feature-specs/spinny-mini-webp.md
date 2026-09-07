@@ -12,14 +12,16 @@ File:
 
 `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
 
-Version: `0.5.0`  
+Version: `0.5.0`
 Build: `0.5.0-integrated-pause-interaction-guards`
 
 Compatibility target: `heroforge07.1.9.98`.
 
-Current disposition: **standalone validated; Witch Dock Dev validated; public Witch Dock Stable v1.1.0 promoted; clean public smoke pending.**
+Current disposition: **standalone validated; Witch Dock Dev validated; public Witch Dock v1.2.0 promoted; clean public v1.2.0 smoke pending.**
 
-Public promotion commit: `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`.
+Original Spinny promotion commit: `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`.
+
+Current public host/UI release commit: `b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`. Spinny service/UI runtime source is unchanged by v1.2.0.
 
 ## Historical Lob-parity reference
 
@@ -155,7 +157,7 @@ Spinny must not replace `BT.maker.takeScreenshot`.
 
 Public Witch Dock `media.screenshot-resolution` owns that method for square 4096/8192 still repair. Spinny 1024/2048/3072 requests pass through that provider's non-owned sizes, while the 3072 fidelity repair operates one layer lower at `CK.Effects.renderToCanvas` during explicit frame capture.
 
-4096 animated WebP remains deferred until a separately validated explicit animation-frame path can coexist with still-provider ownership.
+The 4096 ownership collision remains a compatibility constraint, but **4096 animated-WebP expansion is not an active roadmap item** unless explicitly reopened.
 
 ## Short Test diagnostic operation
 
@@ -179,11 +181,11 @@ For Standard / 250-frame spacing, 16 samples span 21.6 degrees first-to-last.
 
 - standalone development harness: directly visible;
 - Witch Dock normal mode: hidden;
-- Witch Dock Dev Developer Mode ON: visible through Spinny host;
+- Witch Dock Developer Mode ON: visible through Spinny host in Dev and public Stable v1.2.0;
 - Developer Mode OFF: hidden;
-- Developer Mode controls presentation only; it does not own capture logic.
+- Developer Mode controls presentation/diagnostics only; it does not own capture logic.
 
-Public Stable v1.1.0 does not promote Developer Mode, so Short Test is hidden there.
+Public Stable v1.2.0 includes Developer Mode v0.3.0 as an optional/default-OFF About toggle, so Short Test is available for troubleshooting without exposing it in normal mode.
 
 ## Pause / Resume contract
 
@@ -242,26 +244,30 @@ The optional transient `Download complete` UI flash is best-effort only. It was 
 
 ## Public Stable promotion
 
-Public Witch Dock v1.1.0 was promoted at:
+Original Spinny promotion (Witch Dock v1.1.0):
 
 `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`
 
-The promotion includes only the accepted Spinny service/UI, public manifest entries, userscript download host and tracking docs. It excludes Developer Mode, compact High Res UI, Dev module registry, Dev loader and unrelated Dev branch changes.
+Current public Witch Dock v1.2.0 host/UI release:
 
-Status is **Stable promoted / clean public smoke pending**. Do not label fully Stable validated until that clean smoke runs with Dev/temporary Spinny scripts disabled.
+`b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`
+
+The v1.2.0 promotion keeps Stable Spinny service/UI source unchanged and narrowly adds the separately validated tab presentation, compact High Res service/UI ownership split, canonical module registry and Developer Mode v0.3.0. The Dev loader remains excluded.
+
+Status is **Stable promoted / clean public v1.2.0 smoke pending**. Do not label the current public gate fully validated until that smoke runs with Dev/temporary scripts disabled.
 
 ## Clean public smoke gate
 
 Minimum required test:
 
-1. Public Witch Dock v1.1.0 active; Dev/temporary Spinny scripts disabled.
-2. Photo Booth opens and Spinny UI renders normally.
-3. 1024px Standard / 250 frames completes.
-4. WebP download succeeds through the public host.
-5. Wheel over HeroForge canvas during capture is silently ignored.
-6. One non-wheel continuity-invalidating action still produces the guard warning.
+1. Public Witch Dock v1.2.0 active; Dev/temporary Spinny scripts disabled.
+2. Confirm the promoted tab presentation and compact High Res section.
+3. Enable Developer Mode from About and confirm public module versions/builds.
+4. Run 1024px Standard Short Test and confirm WebP download succeeds through the public host.
+5. Confirm wheel over HeroForge canvas is silently ignored and one non-wheel continuity-invalidating action still produces the guard warning.
+6. Disable Developer Mode and confirm diagnostic/Short Test UI cleans up normally.
 
-If this passes, close the public Stable gate with documentation-only checkpoints. A new expensive 3072 production run is not required absent regression evidence.
+If this passes, close the current public Stable gate with documentation-only checkpoints. A new expensive 3072 production run is not required absent regression evidence.
 
 ## Lifecycle
 

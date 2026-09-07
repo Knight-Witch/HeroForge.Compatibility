@@ -89,13 +89,17 @@ User conclusion after final re-smoke: integrated behavior works perfectly; expli
 
 The optional transient in-panel download-complete flash was not observed. User explicitly treated it as non-problematic because the browser's download UI visibly confirms the save. It is not a functional gate.
 
-## Witch Dock Stable promotion gate — PROMOTED / PUBLIC SMOKE PENDING
+## Witch Dock Stable promotion gate — v1.2.0 PROMOTED / PUBLIC SMOKE PENDING
 
-Public Witch Dock v1.1.0 promotion commit:
+Original public Spinny v1.1.0 promotion commit:
 
 `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`
 
-Static promotion gate passed before `Witch_Scripts` advanced. Coverage included:
+Current public Witch Dock v1.2.0 commit:
+
+`b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`
+
+The v1.2.0 Stable gate additionally protected public Spinny service/UI hashes unchanged while promoting the live-tested tab cleanup, High Res service/UI ownership split and Developer Mode v0.3.0. Static promotion coverage included:
 
 - `Witch_Dock.user.js` JavaScript syntax;
 - Stable Spinny service JavaScript syntax;
@@ -114,25 +118,24 @@ Static promotion gate passed before `Witch_Scripts` advanced. Coverage included:
 
 ### Required clean public smoke
 
-Do not repeat expensive TRUE-3K production runs absent a regression. Minimum public Stable smoke:
+Do not repeat expensive TRUE-3K production runs absent a regression. Minimum public v1.2.0 smoke:
 
-1. Update/install public Witch Dock v1.1.0 and approve `GM_download` permission if prompted.
-2. Disable the Dev loader and temporary/standalone Spinny scripts.
-3. Reload HeroForge.
-4. Open Photo Booth and confirm public Spinny renders under the existing High Resolution Capture section.
-5. Run 1024px Standard / 250 frames, the cheapest public full profile because Short Test is hidden in Stable.
-6. Confirm WebP download succeeds.
-7. During capture, confirm wheel over the HeroForge canvas has no effect and shows no modal.
-8. Confirm one non-wheel guarded camera/Booth action still shows Keep Capture / Cancel Capture.
+1. Update/install public Witch Dock v1.2.0; disable the Dev loader and temporary/standalone Spinny scripts.
+2. Reload HeroForge and confirm `Body -> Pose -> Decals -> Booth -> JSON -> Utilities(cog)`.
+3. Confirm the compact High Res section appears once and Spinny remains below it.
+4. Enable Developer Mode from About and confirm public Stable module versions/builds are reported.
+5. Run 1024px Standard **Short Test** (now available only while Developer Mode is enabled) and confirm WebP download succeeds.
+6. During Short Test, confirm wheel over the HeroForge canvas is silently blocked and one non-wheel continuity-invalidating action still produces the guard warning.
+7. Turn Developer Mode OFF and confirm Short Test/tool diagnostics/High Res developer controls disappear cleanly.
 
-If this passes, mark public Stable validated with documentation-only checkpoints in Witch Dock and HeroForge.Compatibility.
+If this passes, mark the current public Stable gate validated with documentation-only checkpoints in Witch Dock and HeroForge.Compatibility.
 
 ## Short Test Witch Dock policy
 
 Standalone development harness exposes Short Test.
 
-Witch Dock service retains `captureShortTest()`, but normal public UI hides it. Dev Developer Mode may reveal it through the Spinny host; Developer Mode does not duplicate media capture logic.
+Witch Dock service retains `captureShortTest()`. Normal public UI hides it; public Developer Mode v0.3.0 reveals it while enabled. Developer Mode does not duplicate or own media capture logic.
 
-## 4K Spinny
+## 4096 Spinny
 
-Deferred. Current Witch Dock TRUE-resolution still provider owns square 4096/8192 screenshot requests.
+Current Witch Dock TRUE-resolution still provider owns square 4096/8192 screenshot requests. **No 4096 animated-WebP work is currently planned**; retain this as a compatibility constraint only.

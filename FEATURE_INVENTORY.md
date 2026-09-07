@@ -5,7 +5,7 @@ This is the canonical feature-ID inventory. Historical/provisional detail remain
 | Feature ID | Purpose | Risk | Status |
 |---|---|---|---|
 | `media.screenshot-resolution` | Restore genuine 4K/8K Photo Booth still-image rendering | Medium | Standalone + Witch Dock Stable validated on `heroforge07.1.9.98`. |
-| `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | Standalone v0.5.0 validated; Witch Dock Dev v0.5.1/v0.1.1 validated; public Witch Dock v1.1.0 promoted at `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`; clean public smoke pending. 4K animated WebP deferred. |
+| `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | Standalone v0.5.0 validated; Witch Dock Dev v0.5.1/v0.1.1 validated; public Witch Dock v1.2.0 at `b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6` carries the unchanged Stable Spinny service/UI plus public Developer Mode; clean v1.2.0 smoke pending. 4096 expansion is not an active roadmap item. |
 | `decals.gizmo.bound-correction` | Correct bound/Project-OFF decal transform gizmo | High | Witch Dock Stable; validated Move/Rotate/Scale, undo/redo, transform-state preservation and fresh-slot normalization. |
 | `character.local-export` | Export character JSON locally | Medium | Standalone reconstruction committed; core Save passed live. |
 | `character.local-import` | Import character JSON locally | Medium | Standalone reconstruction committed; core Load passed live. |
@@ -57,11 +57,12 @@ Final Dev integration:
 
 Public Witch Dock:
 
-- v1.1.0 promoted at commit `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`;
-- Spinny service/UI vendored as self-contained public modules;
-- public userscript exposes the tested `GM_download` host;
-- Developer Mode and unrelated Dev modules were not promoted;
-- Short Test remains service-owned but hidden in ordinary Stable UI;
-- public clean smoke remains pending.
+- original Spinny v1.1.0 promotion: `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`;
+- current public v1.2.0 host/UI release: `b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`;
+- Stable Spinny service/UI source remains unchanged from v1.1.0;
+- public userscript retains the tested `GM_download` host;
+- public Developer Mode v0.3.0 is optional/default-OFF and reveals the existing Short Test only when enabled;
+- compact High Res and tab cleanup were separately validated before v1.2.0 promotion;
+- clean public v1.2.0 smoke remains pending.
 
-4K Spinny remains deferred because square 4096/8192 screenshot requests belong to public `media.screenshot-resolution` still-capture ownership.
+4096 Spinny remains technically incompatible with the current square 4096/8192 still-provider ownership surface, but **4096 animated-WebP expansion is not an active roadmap item**.

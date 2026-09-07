@@ -1,5 +1,40 @@
 # Pre-Flight Check Log
 
+## PFC-2026-09-06-029 — Record public Witch Dock v1.2.0 UI/diagnostics promotion
+
+Date: 2026-09-06
+
+### Scope
+
+Record the completed narrow public Witch Dock v1.2.0 promotion after live Dev validation of tab cleanup, compact High Res service/UI ownership, and Developer Mode public-readiness. Spinny runtime source is intentionally unchanged from public v1.1.0.
+
+### Required material reviewed
+
+- `PROJECT_CONTRACT.md`, `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`;
+- `docs/feature-specs/spinny-mini-webp.md`;
+- public Witch Dock v1.1.0 baseline and v1.2.0 promotion candidate;
+- validated `WITCH_DEV_UI` tab presentation, High Res v0.8.0/v0.3.0 split and Developer Mode v0.3.0;
+- final public branch `Witch_Scripts` at `b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`.
+
+### Confirmed findings
+
+- public Witch Dock advanced by fast-forward from v1.1.0 commit `8d96dd803f452c3c7b623c6963b4fdb3ef762f59` to v1.2.0 commit `b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`;
+- promotion remained one narrow commit and did not merge `WITCH_DEV_UI` wholesale;
+- protected public Spinny service/UI, Booth, readiness adapter and corrected decal-gizmo hashes remained unchanged during the release gate;
+- public v1.2.0 adds validated tab order/cog presentation, High Res service-only/UI-only ownership and About-only Developer Mode v0.3.0;
+- Developer Mode reads the active public manifest registry and reveals the existing Spinny Short Test only while enabled;
+- all release syntax/manifest/ownership/hash/static gates passed before `Witch_Scripts` advanced;
+- user explicitly removed 4096 animated-WebP expansion and Developer Mode hotkey from the active roadmap;
+- one clean public v1.2.0 smoke remains before closing the current Stable validation gate.
+
+### Decision
+
+Record the external consumer promotion as complete. Next gate is a cheap public v1.2.0 smoke using Developer Mode + 1024 Short Test; do not repeat expensive full/TRUE-3K production validation absent a regression.
+
+**Runtime behavior changed:** no in HeroForge.Compatibility. Documentation-only checkpoint recording an already-completed external consumer promotion.
+
+---
+
 ## PFC-2026-09-06-028 — Record Witch Dock Stable Spinny v1.1.0 promotion
 
 Date: 2026-09-06

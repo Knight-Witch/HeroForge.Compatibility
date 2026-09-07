@@ -4,16 +4,18 @@ This is the canonical high-level source for current project state. Historical de
 
 ## Current Phase
 
-**`media.spinny-mini-webp` is standalone validated, Witch Dock Dev validated, and now promoted to public Witch Dock Stable v1.1.0. One clean public Stable smoke remains before the Stable validation gate is closed.**
+**`media.spinny-mini-webp` remains standalone/Dev validated and is now carried by public Witch Dock v1.2.0. The v1.2.0 host/UI release is promoted; one clean public v1.2.0 smoke remains before the current Stable gate is closed.**
 
 Current HeroForge validation target: `heroforge07.1.9.98`.
 
 - Maintained standalone implementation: v0.5.0 / build `0.5.0-integrated-pause-interaction-guards`.
 - Final Witch Dock Dev consumer: service v0.5.1 / UI v0.1.1.
 - Final Dev hardening commit: `fa75a9c1790009b4b4ae1a1162d419982e20545e`.
-- Public Witch Dock v1.1.0 promotion commit: `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`.
-- Public Stable status: **promoted; clean public smoke pending**.
-- 4K animated WebP remains deferred.
+- Original public Spinny v1.1.0 promotion commit: `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`.
+- Current public Witch Dock v1.2.0 commit: `b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`.
+- Public v1.2.0 adds validated tab cleanup, compact High Res service/UI ownership, and About-only Developer Mode; public Spinny service/UI source is unchanged from v1.1.0.
+- Public Stable status: **v1.2.0 promoted; clean public smoke pending**.
+- 4096 animated-WebP expansion is **not an active roadmap item** and requires no further work unless explicitly reopened.
 
 `media.screenshot-resolution` and `decals.gizmo.bound-correction` remain Witch Dock Stable validated and were not reopened by the Spinny promotion.
 
@@ -33,7 +35,7 @@ Maintained standalone file:
 
 `entries/tampermonkey-standalone/spinny-mini-webp-profiles.user.js`
 
-Version: `0.5.0`  
+Version: `0.5.0`
 Build: `0.5.0-integrated-pause-interaction-guards`
 
 Validated standalone behavior:
@@ -90,11 +92,15 @@ The optional transient in-panel download-complete flash was not observed and is 
 
 ## Public Witch Dock Stable Promotion
 
-Public Witch Dock `Witch_Scripts` now contains the accepted Spinny delta as v1.1.0.
+Public Witch Dock `Witch_Scripts` now carries the accepted Spinny delta inside v1.2.0.
 
-Promotion commit:
+Original Spinny promotion commit:
 
 `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`
+
+Current public host/UI release commit:
+
+`b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`
 
 The promotion was intentionally narrow. It added:
 
@@ -104,26 +110,25 @@ The promotion was intentionally narrow. It added:
 - the tested `GM_download` host in `Witch_Dock.user.js`;
 - Stable tracking documentation.
 
-It did **not** merge the diverged `WITCH_DEV_UI` branch wholesale. Developer Mode, compact High Res UI, Dev module registry, Dev loader, and unrelated UI/order work remain separate.
+Neither Stable promotion merged the diverged `WITCH_DEV_UI` branch wholesale. Public v1.2.0 narrowly adds the separately validated tab presentation, compact High Res service/UI split, canonical module registry, and Developer Mode v0.3.0. The Dev loader remains excluded.
 
-Short Test remains part of the Spinny service but is hidden in ordinary public Stable because Developer Mode was not promoted.
+Developer Mode is public, optional/default-OFF, and toggled only from About. When enabled it reveals the existing Spinny Short Test and module/build diagnostics; normal mode still hides Short Test.
 
 ## Next Gate
 
-Perform one clean public Witch Dock v1.1.0 smoke with Dev/temporary Spinny scripts disabled.
+Perform one clean public Witch Dock v1.2.0 smoke with the Dev loader and temporary standalone Spinny scripts disabled.
 
 Recommended minimum:
 
-1. Update/install public Witch Dock v1.1.0 and approve the new download permission if prompted.
-2. Reload HeroForge with Dev/standalone Spinny test scripts disabled.
-3. Open Photo Booth and confirm Spinny appears normally under the existing High Resolution Capture section.
-4. Run the cheapest public full profile: 1024px Standard / 250 frames.
-5. Confirm download succeeds.
-6. Confirm mouse wheel over the HeroForge canvas is silently blocked during capture.
-7. Confirm one non-wheel guarded Booth/canvas action still shows the warning modal.
+1. Update/install public Witch Dock v1.2.0 and reload HeroForge.
+2. Confirm visible order `Body -> Pose -> Decals -> Booth -> JSON -> Utilities(cog)` and Utilities tooltip.
+3. Confirm compact `High Res Image Capture` appears once above Spinny.
+4. In About, enable Developer Mode and confirm Stable module versions are shown, including core v1.2.0, Developer Mode v0.3.0, High Res service v0.8.0/UI v0.3.0, and Spinny v0.5.1/UI v0.1.1.
+5. Use the now-public Developer Mode `Short Test` at 1024px Standard to confirm Spinny/download/guard sanity without repeating a 250-frame production run.
+6. Turn Developer Mode OFF and confirm Short Test/diagnostics disappear while ordinary tools remain functional.
 
-If that smoke passes, close the Stable gate with documentation-only checkpoints in both repositories. Do not repeat expensive 3072 production validation absent a regression.
+If this smoke passes, close the current public Stable gate with documentation-only checkpoints. Do not repeat expensive TRUE-3K production validation absent a regression.
 
-## 4K Spinny
+## 4096 Spinny boundary
 
-4096 animated WebP remains deferred because public `media.screenshot-resolution` owns square 4096/8192 still requests. A future 4K animation path requires a separately validated explicit frame-capture capability that does not displace that provider.
+The technical ownership constraint remains: public `media.screenshot-resolution` owns square 4096/8192 still requests, so 4096 Spinny must not be added through that surface. **No 4096 animated-WebP expansion is currently planned.** Revisit only if the user explicitly reopens it and a clean frame-capture seam exists.

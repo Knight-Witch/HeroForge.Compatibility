@@ -7,7 +7,7 @@ Current media validation target: `heroforge07.1.9.98` / 2026-09-06.
 | Component | Current status | Last verified build/date | Notes |
 |---|---|---|---|
 | `media.screenshot-resolution` | Standalone validated; Witch Dock Stable validated | `heroforge07.1.9.98` / 2026-09-05 | Stable still-capture provider remains closed/validated. |
-| `media.spinny-mini-webp` | Standalone v0.5.0 validated; Witch Dock Dev integration validated; Witch Dock Stable v1.1.0 promoted, public smoke pending | `heroforge07.1.9.98` / 2026-09-06 | Native 3072 rejected; repaired TRUE-3K validated. Public promotion commit `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`. |
+| `media.spinny-mini-webp` | Standalone v0.5.0 validated; Witch Dock Dev integration validated; public Witch Dock v1.2.0 promoted, clean v1.2.0 smoke pending | `heroforge07.1.9.98` / 2026-09-06 | Native 3072 rejected; repaired TRUE-3K validated. Spinny runtime source unchanged by v1.2.0; current public commit `b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`. |
 | `decals.gizmo.bound-correction` | Witch Dock Stable | 2026-09-05 | Validated separately. |
 | Character local JSON | Core Save/Load passed live | 2026-09-03 | Lifecycle/repeated-use pending. |
 | Projected decal state/control | Runtime path confirmed | September 2026 | Renderer dependency audit pending. |
@@ -84,11 +84,17 @@ Final Dev re-smoke passed the two last integration-specific risks:
 - userscript-level WebP download initiation/completion: PASS;
 - silent wheel/scroll block: PASS.
 
-Public Witch Dock v1.1.0 promotion commit:
+Original public Spinny v1.1.0 promotion commit:
 
 `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`
 
-Public Stable has been promoted but has not yet received a clean production smoke with Dev/temporary scripts disabled. Until that smoke passes, compatibility status is **Stable promoted / public smoke pending**, not fully Stable validated.
+Current public Witch Dock v1.2.0 commit:
+
+`b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`
+
+The v1.2.0 release leaves Stable Spinny service/UI source unchanged while adding the separately validated public tab presentation, compact High Res service/UI ownership split, canonical module registry, and About-only Developer Mode v0.3.0. Developer Mode exposes the existing Short Test only while enabled.
+
+Public v1.2.0 has not yet received a clean production smoke with the Dev loader/temporary scripts disabled. Until that smoke passes, compatibility status is **Stable promoted / public smoke pending**, not fully Stable validated.
 
 The public release does not depend on HeroForge.Compatibility unstable head or HF-Chat-Bridge.
 
@@ -106,6 +112,6 @@ Re-run Spinny validation when:
 - public 4096/8192 provider ownership changes;
 - high-cost resource limits are observed.
 
-## 4K Spinny incompatibility note
+## 4096 Spinny incompatibility note
 
-Do not add 4096 Spinny through the current public `BT.maker.takeScreenshot` surface while Witch Dock TRUE-resolution still repair is enabled. The provider owns square 4096/8192 requests. 4K Spinny remains deferred until a separately designed explicit frame-capture capability/bypass is validated.
+Do not add 4096 Spinny through the current public `BT.maker.takeScreenshot` surface while Witch Dock TRUE-resolution still repair is enabled; the provider owns square 4096/8192 requests. This remains a compatibility boundary only. **4096 animated-WebP expansion is not an active roadmap item** unless explicitly reopened later.
