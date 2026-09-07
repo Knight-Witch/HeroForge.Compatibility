@@ -12,7 +12,8 @@ Current HeroForge validation target: `heroforge07.1.9.98`.
 - Final Witch Dock Dev consumer: service v0.5.1 / UI v0.1.1.
 - Final Dev hardening commit: `fa75a9c1790009b4b4ae1a1162d419982e20545e`.
 - Original public Spinny v1.1.0 promotion commit: `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`.
-- Current public Witch Dock v1.2.0 commit: `b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`.
+- Current public Witch Dock v1.2.0 commit: `9fa5c52fdbe2de220457a961be05e633d4b89349`.
+- Latest module-only Stable update moves the corrected bound decal gizmo controls into Utilities and leaves the Decals tab as an upcoming-tools placeholder; the corrected gizmo runtime itself is unchanged.
 - Public v1.2.0 adds validated tab cleanup, compact High Res service/UI ownership, and About-only Developer Mode; public Spinny service/UI source is unchanged from v1.1.0.
 - Public Stable status: **v1.2.0 promoted; clean public smoke pending**.
 - 4096 animated-WebP expansion is **not an active roadmap item** and requires no further work unless explicitly reopened.
@@ -121,7 +122,7 @@ Perform one clean public Witch Dock v1.2.0 smoke with the Dev loader and tempora
 Recommended minimum:
 
 1. Update/install public Witch Dock v1.2.0 and reload HeroForge.
-2. Confirm visible order `Body -> Pose -> Decals -> Booth -> JSON -> Utilities(cog)` and Utilities tooltip.
+2. Confirm visible order `Body -> Pose -> Decals -> Booth -> JSON -> Utilities(cog)`, the Decals placeholder `New decal tools coming shortly!`, the Bound Decal Gizmo controls under Utilities, and the Utilities tooltip.
 3. Confirm compact `High Res Image Capture` appears once above Spinny.
 4. In About, enable Developer Mode and confirm Stable module versions are shown, including core v1.2.0, Developer Mode v0.3.0, High Res service v0.8.0/UI v0.3.0, and Spinny v0.5.1/UI v0.1.1.
 5. Use the now-public Developer Mode `Short Test` at 1024px Standard to confirm Spinny/download/guard sanity without repeating a 250-frame production run.

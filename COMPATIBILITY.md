@@ -7,8 +7,8 @@ Current media validation target: `heroforge07.1.9.98` / 2026-09-06.
 | Component | Current status | Last verified build/date | Notes |
 |---|---|---|---|
 | `media.screenshot-resolution` | Standalone validated; Witch Dock Stable validated | `heroforge07.1.9.98` / 2026-09-05 | Stable still-capture provider remains closed/validated. |
-| `media.spinny-mini-webp` | Standalone v0.5.0 validated; Witch Dock Dev integration validated; public Witch Dock v1.2.0 promoted, clean v1.2.0 smoke pending | `heroforge07.1.9.98` / 2026-09-06 | Native 3072 rejected; repaired TRUE-3K validated. Spinny runtime source unchanged by v1.2.0; current public commit `b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`. |
-| `decals.gizmo.bound-correction` | Witch Dock Stable | 2026-09-05 | Validated separately. |
+| `media.spinny-mini-webp` | Standalone v0.5.0 validated; Witch Dock Dev integration validated; public Witch Dock v1.2.0 promoted, clean v1.2.0 smoke pending | `heroforge07.1.9.98` / 2026-09-06 | Native 3072 rejected; repaired TRUE-3K validated. Spinny runtime source unchanged by v1.2.0; current public commit `9fa5c52fdbe2de220457a961be05e633d4b89349`. |
+| `decals.gizmo.bound-correction` | Witch Dock Stable | 2026-09-06 | Runtime remains validated; public controls moved to Utilities after Dev smoke, Stable commit `9fa5c52fdbe2de220457a961be05e633d4b89349`. |
 | Character local JSON | Core Save/Load passed live | 2026-09-03 | Lifecycle/repeated-use pending. |
 | Projected decal state/control | Runtime path confirmed | September 2026 | Renderer dependency audit pending. |
 | HF-Chat-Bridge | Live validated development transport | September 2026 | Development-only; not a production dependency. |
@@ -90,9 +90,9 @@ Original public Spinny v1.1.0 promotion commit:
 
 Current public Witch Dock v1.2.0 commit:
 
-`b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`
+`9fa5c52fdbe2de220457a961be05e633d4b89349`
 
-The v1.2.0 release leaves Stable Spinny service/UI source unchanged while adding the separately validated public tab presentation, compact High Res service/UI ownership split, canonical module registry, and About-only Developer Mode v0.3.0. Developer Mode exposes the existing Short Test only while enabled.
+The v1.2.0 release leaves Stable Spinny service/UI source unchanged while adding the separately validated public tab presentation, compact High Res service/UI ownership split, canonical module registry, and About-only Developer Mode v0.3.0. The latest module-only Stable update additionally moves corrected bound decal gizmo controls from Decals to Utilities without changing the gizmo runtime. Developer Mode exposes the existing Short Test only while enabled.
 
 Public v1.2.0 has not yet received a clean production smoke with the Dev loader/temporary scripts disabled. Until that smoke passes, compatibility status is **Stable promoted / public smoke pending**, not fully Stable validated.
 

@@ -97,7 +97,7 @@ Original public Spinny v1.1.0 promotion commit:
 
 Current public Witch Dock v1.2.0 commit:
 
-`b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`
+`9fa5c52fdbe2de220457a961be05e633d4b89349`
 
 The v1.2.0 Stable gate additionally protected public Spinny service/UI hashes unchanged while promoting the live-tested tab cleanup, High Res service/UI ownership split and Developer Mode v0.3.0. Static promotion coverage included:
 
@@ -116,12 +116,25 @@ The v1.2.0 Stable gate additionally protected public Spinny service/UI hashes un
 - Spinny does not assign ownership of `BT.maker.takeScreenshot`;
 - diff whitespace/static gate.
 
+### Decals/Utilities host relocation — DEV PASS / STABLE PROMOTED
+
+Dev live validation passed:
+
+- Decals shows `New decal tools coming shortly!`;
+- no gizmo controls remain in Decals;
+- exactly one Bound Decal Gizmo section appears in Utilities;
+- persisted gizmo checkbox state survives the host move;
+- toggle OFF/ON works;
+- Move / Rotate / Scale selection works.
+
+The Stable promotion gate additionally verified that the corrected-gizmo loader/fragments and protected media runtimes were unchanged.
+
 ### Required clean public smoke
 
 Do not repeat expensive TRUE-3K production runs absent a regression. Minimum public v1.2.0 smoke:
 
 1. Update/install public Witch Dock v1.2.0; disable the Dev loader and temporary/standalone Spinny scripts.
-2. Reload HeroForge and confirm `Body -> Pose -> Decals -> Booth -> JSON -> Utilities(cog)`.
+2. Reload HeroForge and confirm `Body -> Pose -> Decals -> Booth -> JSON -> Utilities(cog)`, the Decals placeholder, and Bound Decal Gizmo controls under Utilities.
 3. Confirm the compact High Res section appears once and Spinny remains below it.
 4. Enable Developer Mode from About and confirm public Stable module versions/builds are reported.
 5. Run 1024px Standard **Short Test** (now available only while Developer Mode is enabled) and confirm WebP download succeeds.

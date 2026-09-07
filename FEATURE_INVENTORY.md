@@ -6,7 +6,7 @@ This is the canonical feature-ID inventory. Historical/provisional detail remain
 |---|---|---|---|
 | `media.screenshot-resolution` | Restore genuine 4K/8K Photo Booth still-image rendering | Medium | Standalone + Witch Dock Stable validated on `heroforge07.1.9.98`. |
 | `media.spinny-mini-webp` | Higher-resolution / configurable-speed animated Spinny Mini WebP export | High | Standalone v0.5.0 validated; Witch Dock Dev v0.5.1/v0.1.1 validated; public Witch Dock v1.2.0 at `b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6` carries the unchanged Stable Spinny service/UI plus public Developer Mode; clean v1.2.0 smoke pending. 4096 expansion is not an active roadmap item. |
-| `decals.gizmo.bound-correction` | Correct bound/Project-OFF decal transform gizmo | High | Witch Dock Stable; validated Move/Rotate/Scale, undo/redo, transform-state preservation and fresh-slot normalization. |
+| `decals.gizmo.bound-correction` | Correct bound/Project-OFF decal transform gizmo | High | Witch Dock Stable; validated Move/Rotate/Scale, undo/redo, transform-state preservation and fresh-slot normalization. Public controls now live under Utilities as of `9fa5c52fdbe2de220457a961be05e633d4b89349`; runtime unchanged. |
 | `character.local-export` | Export character JSON locally | Medium | Standalone reconstruction committed; core Save passed live. |
 | `character.local-import` | Import character JSON locally | Medium | Standalone reconstruction committed; core Load passed live. |
 | `decals.transform.projected` | Project state/control plus required renderer behavior | Critical while renderer dependency external | Runtime state/control confirmed; renderer audit pending. |
@@ -58,7 +58,7 @@ Final Dev integration:
 Public Witch Dock:
 
 - original Spinny v1.1.0 promotion: `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`;
-- current public v1.2.0 host/UI release: `b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`;
+- current public v1.2.0 host/UI/module release: `9fa5c52fdbe2de220457a961be05e633d4b89349`;
 - Stable Spinny service/UI source remains unchanged from v1.1.0;
 - public userscript retains the tested `GM_download` host;
 - public Developer Mode v0.3.0 is optional/default-OFF and reveals the existing Short Test only when enabled;

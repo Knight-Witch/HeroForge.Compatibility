@@ -25,7 +25,7 @@ This project must not silently make Amanda responsible for every imported featur
 |---|---|---|---|---|---|
 | `media.screenshot-resolution` | **TBD — Lob-derived feature maintenance agreement not assigned** | Amanda | — | Standalone validated; Witch Dock Stable consumer promoted and validated by explicit approval; ownership exception remains open | `heroforge07.1.9.98` |
 | `media.spinny-mini-webp` | **TBD — reconstructed from Lob behavior/current HeroForge media capabilities; maintenance agreement not assigned** | Amanda | — | Standalone v0.5.0 validated; Witch Dock Dev validated; public Witch Dock v1.2.0 promoted with unchanged Stable Spinny source; clean public smoke pending | `heroforge07.1.9.98` |
-| `decals.gizmo.bound-correction` | TBD | Amanda | — | Witch Dock Stable | 2026-09-05 |
+| `decals.gizmo.bound-correction` | TBD | Amanda | — | Witch Dock Stable; controls hosted by Utilities, feature runtime unchanged | 2026-09-06 |
 
 ## Spinny Mini ownership note
 
@@ -48,6 +48,6 @@ Ownership implications:
 - standalone maintained implementation: validated;
 - Witch Dock Dev consumer: validated;
 - original public Spinny promotion: `8d96dd803f452c3c7b623c6963b4fdb3ef762f59`;
-- current public Witch Dock v1.2.0 host/UI release: `b5e366e3f6c06d661e8bc1d59f8cb190ad7401f6`;
+- current public Witch Dock v1.2.0 host/UI/module release: `9fa5c52fdbe2de220457a961be05e633d4b89349`;
 - clean public v1.2.0 smoke: pending;
 - long-term primary maintainer: still TBD.

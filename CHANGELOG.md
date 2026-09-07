@@ -1,5 +1,30 @@
 # Changelog
 
+## HFC-2026-09-06-034 — Record Witch Dock Decals/Utilities host relocation
+
+Date: 2026-09-06
+
+### Summary
+
+Recorded the public Witch Dock module-only promotion that rehomes corrected bound decal gizmo controls under Utilities and leaves a Decals placeholder for upcoming tools.
+
+### External consumer status
+
+- validated Dev host-relocation commit: `40fa227f13a79c5283f989c23b82485a273a2c53`;
+- public Witch Dock Stable commit: `9fa5c52fdbe2de220457a961be05e633d4b89349`;
+- public `decals-dev`: v1.1.0;
+- public `utilities`: v1.1.0;
+- corrected bound decal gizmo runtime: unchanged v1.1.0 / build `1.1.0-stable-undo-transform-preserve`;
+- public Witch Dock shell: unchanged v1.2.0.
+
+The public gate protected the corrected-gizmo loader/fragments and media runtimes from modification.
+
+### HFC runtime impact
+
+**No HeroForge.Compatibility runtime behavior changed.** This is a documentation-only external-consumer checkpoint.
+
+---
+
 ## HFC-2026-09-06-033 — Record Witch Dock v1.2.0 UI/Developer Mode promotion
 
 Date: 2026-09-06

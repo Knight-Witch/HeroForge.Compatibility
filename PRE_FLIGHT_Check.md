@@ -1,5 +1,36 @@
 # Pre-Flight Check Log
 
+## PFC-2026-09-06-030 — Record public Decals/Utilities host relocation
+
+Date: 2026-09-06
+
+### Scope
+
+Record the completed public Witch Dock module-only promotion that moves the corrected bound decal gizmo controls from Decals to Utilities and leaves a Decals placeholder for upcoming tools.
+
+### Required material reviewed
+
+- `PROJECT_CONTRACT.md`, `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `TESTING.md`;
+- current `decals.gizmo.bound-correction` Stable status and ownership boundary;
+- validated Witch Dock Dev host-relocation commit `40fa227f13a79c5283f989c23b82485a273a2c53`;
+- public Witch Dock promotion commit `9fa5c52fdbe2de220457a961be05e633d4b89349`.
+
+### Confirmed findings
+
+- Dev live validation passed the Decals placeholder, single Utilities gizmo section, persisted checkbox state, toggle OFF/ON, and Move/Rotate/Scale selection;
+- public Stable promotion changed only the Decals/Utilities host modules, their canonical registry versions, and Stable tracking docs;
+- corrected-gizmo service/runtime and all five source fragments were protected by hash checks and remained unchanged;
+- public Witch Dock userscript shell remains v1.2.0 because the change is manifest/module delivered;
+- no HeroForge.Compatibility runtime source changed.
+
+### Decision
+
+Record the public host relocation. Keep `decals.gizmo.bound-correction` Stable validated; the only remaining current public gate is the existing cheap v1.2.0 smoke with the latest module refresh.
+
+**Runtime behavior changed:** no in HeroForge.Compatibility. Documentation-only checkpoint recording an external consumer UI-host promotion.
+
+---
+
 ## PFC-2026-09-06-029 — Record public Witch Dock v1.2.0 UI/diagnostics promotion
 
 Date: 2026-09-06
