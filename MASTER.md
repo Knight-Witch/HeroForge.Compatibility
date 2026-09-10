@@ -15,7 +15,7 @@ Character JSON and projected-decal work remain separate reconstruction tracks.
 - Development-only live transport: private `Knight-Witch/HF-Chat-Bridge`
 - Public Witch Dock runtime dependency on Compatibility `main`: **none**
 - Maintained standalone Photo Booth baseline: `entries/tampermonkey-standalone/photo-booth-true-resolution.user.js` v0.6
-- Experimental texture-quality standalone: `entries/tampermonkey-standalone/rendering-texture-quality.user.js` v0.1.3 on `feature/rendering-texture-quality`, pending human acceptance
+- Experimental texture-quality standalone: `entries/tampermonkey-standalone/rendering-texture-quality.user.js` v0.1.4 on `feature/rendering-texture-quality`, pending human acceptance
 
 ## Photo Booth True Resolution
 
@@ -45,10 +45,12 @@ Runtime investigation on 2026-09-08 through 2026-09-10 confirmed:
 - the narrow atlas + color-bake refresh path produced correct body, seams, paints/channels, and high-confidence correct decal detail on Blood Moon, and previously passed D4 visually;
 - standalone v0.1.2 proved that the current exact pre-enable Blood Moon allocation budget cannot fit protected 2048 body/head in 8192x4096 without reducing unrelated pre-enable slots: the detached protected attempt resolved BL 1024 / BU 1024 / face 2048;
 - a detached cloned-scale vs temporary live-scale A/B produced the same 8192x4096 result, ruling out scale-object identity as the missing requirement;
-- standalone v0.1.3 therefore keeps 2048 as the quality target but tests 8192x4096 first and 8192x8192 only as a higher-area fallback, rejecting any candidate that lowers an unrelated pre-enable allocation;
+- standalone v0.1.3 successfully selected an 8192x8192 candidate with BL/BU/face at 2048 and visibly improved decals, but failed Booth/render lifecycle ownership: while the feature still reported active, `display.atlas` remained the protected 8192x8192 object, `modded.resourceAtlas` became an incompatible 8192x4096 atlas, and `modded.buildAtlas` had reverted to HeroForge's native implementation;
+- the v0.1.3 split atlas state produced coherent-but-wrong body/face texture blocks; toggling Booth temporarily exposed a sane but low-resolution native state before the old watcher reintroduced the broken protected state;
+- v0.1.4 therefore keeps the same 2048 allocation/mask recipe but strengthens renderer ownership/coherence checks and replaces blind old-session reapply with bounded settle -> current-resource coherence -> fresh-session recovery;
 - the separate 4096-body experiment remains intentionally out of scope.
 
-The next gate is one clean-load standalone v0.1.3 activation on Blood Moon, followed by bridge inspection of the script's persistent candidate/attempt telemetry and human visual acceptance if activation passes. Witch Dock remains untouched.
+The next gate is one clean-load standalone v0.1.4 activation on Blood Moon followed by a Booth off/on lifecycle test while HF-Chat-Bridge reads the new ownership/coherence telemetry. Witch Dock remains untouched.
 
 ## Current Gates
 
@@ -59,14 +61,14 @@ The next gate is one clean-load standalone v0.1.3 activation on Blood Moon, foll
 - Feature primary-maintainer assignment: **unresolved**. Stable validation does not silently assign Amanda primary maintenance of the Lob-derived feature.
 - `decals.gizmo.bound-correction`: **Witch Dock Stable**.
 - `rendering.texture-quality` runtime mechanism: **validated manually on D4/Blood Moon**.
-- `rendering.texture-quality` standalone: **v0.1.3 candidate; initial Blood Moon activation pending after v0.1.0-v0.1.2 failures were recorded/diagnosed**.
+- `rendering.texture-quality` standalone: **v0.1.4 candidate; v0.1.3 allocation passed but lifecycle coherence failed/was diagnosed**.
 - `rendering.texture-quality` Witch Dock Dev: **not approved yet**.
 
 ## Migration Queue
 
 | Area | Current state | Next gate |
 |---|---|---|
-| Protected texture quality | Runtime mechanism validated manually; standalone v0.1.3 candidate | Clean-load Blood Moon activation with adaptive atlas-area selection, telemetry inspection, then enable/disable/figure-change acceptance |
+| Protected texture quality | Runtime mechanism validated manually; standalone v0.1.4 lifecycle-repair candidate | Clean-load Blood Moon activation, ownership/coherence telemetry, Booth lifecycle check, then disable/re-enable/figure-change acceptance |
 | Photo Booth high-resolution still capture | Standalone + Witch Dock Stable validated | Later Lob-absent HF UI adapter; future Foundation extraction; build regression only when triggered |
 | Character local JSON | Standalone reconstruction committed; core Save/Load passed live | Finish lifecycle/repeated-use acceptance |
 | Projected decal state/control | Runtime state/control path confirmed | Complete renderer dependency audit then consolidate |

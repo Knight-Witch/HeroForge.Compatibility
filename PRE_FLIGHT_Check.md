@@ -1,5 +1,66 @@
 # Pre-Flight Check Log
 
+## PFC-2026-09-10-018 — Repair protected-texture Booth lifecycle coherence
+
+Date: 2026-09-10
+
+### Target files
+
+- `entries/tampermonkey-standalone/rendering-texture-quality.user.js`
+- `docs/feature-specs/rendering-texture-quality.md`
+- `docs/investigations/INV-0004-texture-atlas-quality-2026-09-10.md`
+- `MASTER.md`
+- `FEATURE_INVENTORY.md`
+- `ARCHITECTURE.md`
+- `COMPATIBILITY.md`
+- `MIGRATION_PLAN.md`
+- `TESTING.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+
+### Reviewed
+
+- binding `PROJECT_CONTRACT.md` and repository `README.md`;
+- current `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `MIGRATION_PLAN.md`, and `TESTING.md`;
+- current texture-quality feature spec, investigation, and standalone v0.1.3 source;
+- user-supplied Blood Moon screenshot and report that v0.1.3 improved decals but produced persistent bizarre body/face textures, with Booth off temporarily exposing the native low-resolution/seamed body before the bad state returned;
+- live read-only HF-Chat-Bridge state and source probes from issues #1205, #1206, #1207, and #1209;
+- live `colorBake.refresh`, `updateDisplayMaterials`, `atlasBaker.bindDisplayMaps`, `atlasBaker.bakeAtlas`, `atlasBaker.getRGBATarget`, and native `modded.buildAtlas` source;
+- existing manual protected-2048 D4/Blood Moon evidence and body-mask findings;
+- exact v0.1.4 runtime candidate reproduced locally from the staged Git blob, `node --check` result, and `git hash-object` result;
+- feature branch head `e1562ed506fd8798860feaa5db050e1b37d9be94` and base tree `0389f601c5a2388361468ba78ceb34fcaa0793ff` before packaging.
+
+### Confirmed
+
+- v0.1.3 passed the adaptive allocation gate on Blood Moon by selecting 8192x8192 and reaching bodyLower/bodyUpper/face 2048.
+- The user observed visibly improved decals and reported paint/color channels appeared correct; the new failure therefore does not support abandoning the 2048 target or blaming paint data.
+- In the persistent broken state, `display.atlas` was the protected 8192x8192 atlas while `modded.resourceAtlas` was a different 8192x4096 atlas.
+- The feature still reported active even though `modded.buildAtlas` had reverted to HeroForge's native implementation; the v0.1.3 protected wrapper was no longer installed.
+- The protected/display atlas packed bodyLower/bodyUpper/face at X positions 0/2048/4096, while the current resource atlas packed them at 512/1024/1536.
+- Display/color-bake material UV vectors matched the protected display atlas, proving that v0.1.3's size-only verification could accept a 2048 rectangle at the wrong lifecycle/layout context.
+- HeroForge's atlas baker uses `display.atlas` dimensions plus material `uvPosScl` for its scissor/output layout, and visible display materials bind the resulting atlas render-target textures. The resource/display split is therefore a real renderer-coherence failure, not harmless duplicate metadata.
+- Booth off temporarily produced a sane native/low-resolution state; the old watcher then treated loss of the protected state as a same-session repair and reintroduced the broken split.
+- The correct repair boundary is renderer/session ownership: stale protected sessions must be invalidated when `display.modded`, wrapper ownership, or resource/display atlas identity changes.
+- `OWNERSHIP.md` does not require a content change for this stage; `rendering.texture-quality` remains primary-maintainer TBD, reviewer Amanda, experimental standalone only.
+
+### Material conflict risks
+
+- Assigning the current HeroForge `resourceAtlas` to `display.atlas` during recovery can temporarily show native/low-resolution textures. This is intentional as a coherence hand-off before creating a fresh protected session; it must use only the narrow color-bake path.
+- Exact pre-enable atlas restoration is safe only while the original protected session still owns the current renderer. After HeroForge replaces renderer ownership, forcing stale pre-transition atlas objects back can recreate the class of split state being fixed.
+- Waiting for renderer identity/atlas objects/part signature to stabilize must remain bounded; normal HeroForge transitions must not stall the feature indefinitely.
+- Repeated renderer replacement may be legitimate on some Booth transitions. v0.1.4 deliberately auto-disables after more than two recoveries in a 30-second burst rather than risk an infinite fight; human acceptance must determine whether this bound is practical.
+- 8192x8192 remains a higher-VRAM fallback and must not become the default when 8192x4096 satisfies the target/no-regression contract.
+- `/legacy/` and Witch Dock remain untouched.
+- No broad `instantSettingsChange()`, `data.change()`, bundle patch, 4096-body promotion, or character-specific mask hard-code is permitted.
+
+### Recommended action
+
+Commit standalone v0.1.4 with hard renderer/wrapper/atlas ownership postconditions, full target UV-location verification, stale-session invalidation, bounded wait-for-HeroForge-settle recovery, current-resource/display coherence hand-off, and fresh protected-session initialization. Preserve the existing 1024-mask / 2048-target / adaptive-atlas allocation recipe. Then test one clean Blood Moon activation and one Booth off/on lifecycle transition before proceeding to disable/re-enable and figure-change acceptance.
+
+**Runtime behavior changed:** yes, limited to the opt-in experimental standalone feature branch. Existing maintained modules and public Witch Dock are unchanged.
+
+---
+
 ## PFC-2026-09-10-017 — Adaptive atlas-area fallback and persistent test telemetry
 
 Date: 2026-09-10

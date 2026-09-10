@@ -1,5 +1,71 @@
 # Changelog
 
+## HFC-2026-09-10-021 — Repair protected texture atlas lifecycle coherence
+
+Date: 2026-09-10
+
+### Summary
+
+Repairs the standalone `rendering.texture-quality` lifecycle failure exposed by the first successful v0.1.3 Blood Moon activation. v0.1.3 proved the adaptive allocator can reach the maintained 2048 body/head target, but a subsequent Photo Booth renderer transition replaced protected atlas ownership while leaving the old protected display atlas active. The resulting incompatible display/resource atlas layouts produced severe coherent-but-wrong body/face textures.
+
+### Confirmed failure / diagnosis
+
+- v0.1.3 selected the 8192x8192 fallback and reached bodyLower/bodyUpper/face 2048x2048.
+- The user observed visibly improved decals; paint/material color channels appeared correct.
+- During the persistent broken state, `display.atlas` remained the protected 8192x8192 atlas while `modded.resourceAtlas` was a different 8192x4096 atlas.
+- `modded.buildAtlas` had reverted to HeroForge's native implementation even though the standalone still reported the protected session active.
+- Protected/display packing placed bodyLower/bodyUpper/face at X positions 0/2048/4096; the current resource atlas placed them at 512/1024/1536.
+- Visible target materials matched the protected display-atlas UVs, demonstrating that v0.1.3's size-only UV verification could accept an incompatible atlas-layout state.
+- HeroForge source inspection confirmed the atlas baker uses `display.atlas` dimensions and material UVs for atlas render-target layout, and visible materials bind those atlas render targets. The split was therefore a real renderer-coherence failure rather than harmless duplicate metadata.
+- Turning Booth off temporarily produced a coherent native/low-resolution body; v0.1.3 then treated the protected-state loss as a same-session repair and reintroduced the stale protected side, matching the user's observed return of the bizarre textures.
+
+### Runtime behavior changed
+
+Standalone v0.1.4 only:
+
+- preserves the existing quality recipe: valid current-figure 1024 body masks, bodyLower/bodyUpper/face target 2048, detached 8192x4096 candidate first, 8192x8192 fallback only when required, and no unrelated pre-enable allocation regression;
+- treats current `display` identity and `display.modded` identity as active-session invariants;
+- retains the exact installed protected `buildAtlas` wrapper reference and requires current wrapper ownership to remain intact;
+- requires `display.atlas`, `modded.resourceAtlas`, and the session's protected atlas to be the same object while the session is healthy;
+- verifies full X/Y/Z/W target UV vectors for display, color-bake, and available decal-bake materials rather than only checking that the UV rectangle resolves to 2048 pixels;
+- records renderer ownership/coherence, display/resource atlas dimensions and target packing, plus `lastVerification`, in bounded bridge-readable telemetry;
+- removes blind stale-session reapply after renderer ownership/coherence loss;
+- on lifecycle loss, releases stale feature-owned metadata/wrapper state, waits for HeroForge's current renderer/atlas/part signature to settle, aligns the visible display to HeroForge's current `resourceAtlas` through only the narrow color-bake path when needed, waits again, then creates a fresh protected session;
+- limits lifecycle recovery to two cycles per 30-second burst and auto-disables on further replacement rather than fighting HeroForge indefinitely;
+- restores exact pre-enable atlas objects on disable only while the original protected session still owns the current renderer. After lifecycle replacement, disable restores current-HeroForge display/resource coherence rather than forcing stale pre-transition atlas objects back onto a new renderer.
+
+No `instantSettingsChange()`, `data.change()`, bundle patch, 4096 body target, character-specific mask hard-code, `/legacy/` modification, or Witch Dock change is introduced.
+
+### Validation status
+
+- underlying manual protected-2048 mechanism on D4/Blood Moon: **PASS**;
+- v0.1.3 adaptive allocation on Blood Moon: **PASS** (`8192x8192`, BL/BU/face 2048);
+- v0.1.3 visible decal improvement: **PASS**;
+- v0.1.3 paint/material-channel preservation in observed state: **PASS / no corruption observed**;
+- v0.1.3 Booth renderer lifecycle: **FAIL / diagnosed**;
+- live wrapper/atlas ownership and packing mismatch: **confirmed through HF-Chat-Bridge**;
+- exact v0.1.4 candidate blob SHA: `5b2d52cefe4cd79916a241214cb4807036046309`;
+- exact v0.1.4 blob reproduced locally; `git hash-object` matched the staged Git blob: **PASS**;
+- `node --check` on the exact v0.1.4 candidate: **PASS**;
+- v0.1.4 clean activation / Booth off-on / disable-reenable / figure-change human acceptance: **pending**;
+- Witch Dock Dev: **not started / still blocked**.
+
+### Touched files
+
+- `entries/tampermonkey-standalone/rendering-texture-quality.user.js`
+- `docs/feature-specs/rendering-texture-quality.md`
+- `docs/investigations/INV-0004-texture-atlas-quality-2026-09-10.md`
+- `MASTER.md`
+- `FEATURE_INVENTORY.md`
+- `ARCHITECTURE.md`
+- `COMPATIBILITY.md`
+- `MIGRATION_PLAN.md`
+- `TESTING.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+
+---
+
 ## HFC-2026-09-10-020 — Add adaptive atlas-area selection and persistent texture diagnostics
 
 Date: 2026-09-10
@@ -43,7 +109,7 @@ No `instantSettingsChange()`, `data.change()`, bundle patch, 4096 body target, c
 - passive bridge recorder: **installed and verified**, confirming the visible error-overwrite bug;
 - v0.1.3 JavaScript syntax: **PASS** (`node --check`) on the prepared source;
 - v0.1.3 GitHub runtime blob: **fetched back/reviewed before commit packaging**;
-- v0.1.3 clean-load human activation: **pending**.
+- v0.1.3 clean-load human activation: **pending at time of this entry; later passed allocation but failed Booth lifecycle, superseded by v0.1.4**.
 
 ### Touched files
 

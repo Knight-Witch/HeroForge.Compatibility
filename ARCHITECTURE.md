@@ -123,6 +123,10 @@ detached adaptive atlas candidate selection
     ↓
 reversible per-display atlas builder ownership
     ↓
+renderer ownership/coherence verification
+    ↓
+settled-current-renderer recovery when HeroForge replaces ownership
+    ↓
 CK.Atlas + CK.Resources + colorBake narrow refresh
 ```
 
@@ -140,13 +144,19 @@ Rules for this feature:
 - a candidate that fails to reach 2048 for any target slot or reduces any unrelated slot below its pre-enable allocation is rejected before display assignment;
 - only the smallest candidate that passes both target-allocation and unrelated-slot checks may become the active/resource atlas;
 - 8192x8192 is an atlas-area fallback, not approval for 4096 body textures or a general UHD escalation;
-- initial failure and manual disable restore the exact captured active/resource atlas objects plus owned metadata rather than generating a replacement native atlas;
-- allocation caps are scoped to a part-set fingerprint; a changed part set requires reinitialization rather than reuse of stale caps;
+- `display`, `display.modded`, protected `buildAtlas` ownership, `display.atlas`, and `modded.resourceAtlas` coherence are session invariants; dimension equality alone is not sufficient;
+- while the feature owns a session, `display.atlas` and `modded.resourceAtlas` must reference the same protected atlas object and target display/color/decal bake UV vectors must match the full protected atlas UV location, including X/Y offset as well as scale;
+- if HeroForge/Booth replaces `display.modded`, replaces the protected `buildAtlas` wrapper, or causes display/resource atlas divergence, the old session is invalid and must not be blindly reapplied;
+- lifecycle recovery releases only stale feature-owned metadata/wrapper state, waits for the current HeroForge renderer to settle, aligns the visible display to the current HeroForge `resourceAtlas` through the narrow color-bake path when needed, waits again, and then creates a fresh protected session against that coherent current state;
+- stale pre-transition atlas objects must not be forced onto a new renderer lifecycle during recovery or disable;
+- repeated lifecycle replacement is bounded; the experimental feature auto-disables instead of fighting HeroForge indefinitely;
+- initial failure and ordinary manual disable restore the exact captured active/resource atlas objects only while that exact protected session still owns the current renderer; after lifecycle replacement, disable falls back to the current coherent HeroForge resource atlas instead of restoring stale objects;
+- allocation caps are scoped to a part-set fingerprint; a changed part set requires fresh initialization rather than reuse of stale caps;
 - only the narrow color-bake invalidation/refresh path is used;
 - broad `instantSettingsChange()`/character reconstruction is prohibited for this feature;
-- test diagnostics are plain bounded data (`diagnostics`, `lastError`, `attemptHistory`, `timeline`) exposed by the standalone feature so development tooling can inspect behavior without adding renderer mutations;
-- user-visible errors remain latched while the feature is disabled until another explicit enable attempt, explicit diagnostic clear, or page reload;
-- repeated lifecycle failures auto-disable instead of fighting HeroForge indefinitely.
+- test diagnostics are plain bounded data (`diagnostics`, `lastError`, `lastVerification`, `attemptHistory`, `timeline`) exposed by the standalone feature so development tooling can inspect behavior without adding renderer mutations;
+- telemetry includes renderer ownership/coherence state, including display/resource atlas identity and protected wrapper ownership;
+- user-visible errors remain latched while the feature is disabled until another explicit enable attempt, explicit diagnostic clear, or page reload.
 
 If this behavior passes standalone acceptance, repeated raw `CK` access should later be extracted into maintained bridge/adapters before or during Witch Dock Dev integration.
 

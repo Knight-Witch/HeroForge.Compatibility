@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HF Compatibility - Protected 2048 Textures TEST
 // @namespace    https://github.com/Knight-Witch/HeroForge.Compatibility
-// @version      0.1.3
+// @version      0.1.4
 // @description  Experimental protected 2048 body/head texture atlas policy for HeroForge complex scenes.
 // @author       Knight Witch
 // @match        https://www.heroforge.com/*
@@ -16,7 +16,7 @@
 
   const GLOBAL = 'HFProtectedTextureQualityTest';
   const FEATURE_ID = 'rendering.texture-quality';
-  const BUILD = '0.1.3-protected-2048-adaptive-atlas';
+  const BUILD = '0.1.4-protected-2048-lifecycle-coherence';
   const PANEL_ID = 'hfc-protected-texture-quality-test';
   const STYLE_ID = `${PANEL_ID}-style`;
   const TARGET_SIZE = 2048;
@@ -29,12 +29,17 @@
   ];
   const RESOURCE_OWNER = 82042048;
   const BAKE_WAIT_MS = 5500;
-  const WATCH_INTERVAL_MS = 1500;
-  const LOSS_GRACE_MS = 2500;
-  const REAPPLY_COOLDOWN_MS = 8000;
-  const MAX_REAPPLY_FAILURES = 3;
-  const MAX_ATTEMPT_HISTORY = 20;
-  const MAX_TIMELINE = 160;
+  const WATCH_INTERVAL_MS = 1250;
+  const LOSS_GRACE_MS = 2200;
+  const RECOVERY_COOLDOWN_MS = 7000;
+  const RECOVERY_STABLE_WINDOW_MS = 1800;
+  const RECOVERY_STABLE_POLL_MS = 300;
+  const RECOVERY_STABLE_TIMEOUT_MS = 9000;
+  const RECOVERY_BURST_WINDOW_MS = 30000;
+  const MAX_RECOVERIES_PER_BURST = 2;
+  const MAX_ATTEMPT_HISTORY = 28;
+  const MAX_TIMELINE = 180;
+  const EPSILON = 1e-8;
 
   let enabled = false;
   let disposed = false;
@@ -46,16 +51,19 @@
   let watcher = null;
   let activeSession = null;
   let unhealthySince = null;
-  let lastReapplyAttempt = 0;
-  let reapplyFailures = 0;
+  let lastRecoveryAttempt = 0;
+  let recoveryBurstCount = 0;
+  let recoveryBurstStartedAt = 0;
   let lastDiagnostics = null;
   let lastError = null;
+  let lastVerification = null;
   const attemptHistory = [];
   const timeline = [];
   let lastTimelineFingerprint = null;
   let api = null;
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const nowIso = () => new Date().toISOString();
 
   function cloneDiagnostic(value) {
     if (value === undefined) return undefined;
@@ -68,12 +76,13 @@
     api.busy = busy;
     api.diagnostics = cloneDiagnostic(lastDiagnostics);
     api.lastError = cloneDiagnostic(lastError);
+    api.lastVerification = cloneDiagnostic(lastVerification);
     api.attemptHistory = cloneDiagnostic(attemptHistory);
     api.timeline = cloneDiagnostic(timeline);
   }
 
   function recordAttempt(stage, data = {}) {
-    attemptHistory.push({ at: new Date().toISOString(), stage, ...cloneDiagnostic(data) });
+    attemptHistory.push({ at: nowIso(), stage, ...cloneDiagnostic(data) });
     while (attemptHistory.length > MAX_ATTEMPT_HISTORY) attemptHistory.shift();
     syncApi();
   }
@@ -157,6 +166,12 @@
     if (!data.atlasScale || typeof data.atlasScale !== 'object') {
       return { ok: false, reason: 'atlasScale policy unavailable' };
     }
+    if (!display.atlas || typeof display.atlas.getUV !== 'function') {
+      return { ok: false, reason: 'Current display atlas unavailable' };
+    }
+    if (!modded.resourceAtlas || typeof modded.resourceAtlas.getUV !== 'function') {
+      return { ok: false, reason: 'Current resource atlas unavailable' };
+    }
     if (maxTextureSize !== null && maxTextureSize < 8192) {
       return { ok: false, reason: `GPU texture limit ${maxTextureSize}px is below 8192px` };
     }
@@ -177,19 +192,34 @@
     if (!uv) return null;
     return {
       width: Math.round(Number(uv.z) * Number(atlas.width)),
-      height: Math.round(Number(uv.w) * Number(atlas.height))
+      height: Math.round(Number(uv.w) * Number(atlas.height)),
+      uv
     };
   }
 
-  function materialAllocation(material, atlas) {
-    const uv = material && material.uniforms && material.uniforms.uvPosScl
+  function uvArray(value) {
+    if (!value) return null;
+    const out = [Number(value.x), Number(value.y), Number(value.z), Number(value.w)];
+    return out.every(Number.isFinite) ? out : null;
+  }
+
+  function sameUV(a, b) {
+    const aa = uvArray(a);
+    const bb = uvArray(b);
+    return !!aa && !!bb && aa.every((value, index) => Math.abs(value - bb[index]) <= EPSILON);
+  }
+
+  function materialUV(material) {
+    return material && material.uniforms && material.uniforms.uvPosScl
       ? material.uniforms.uvPosScl.value
       : null;
-    if (!uv || !atlas) return null;
-    return {
-      width: Math.round(Number(uv.z) * Number(atlas.width)),
-      height: Math.round(Number(uv.w) * Number(atlas.height))
-    };
+  }
+
+  function materialMatchesAtlasSlot(material, atlas, slot) {
+    if (!material || !atlas || typeof atlas.getUV !== 'function') return false;
+    let expected = null;
+    try { expected = atlas.getUV(slot); } catch (_) { return false; }
+    return sameUV(materialUV(material), expected);
   }
 
   function targetAllocations(atlas) {
@@ -201,6 +231,22 @@
     return result;
   }
 
+  function targetPacking(atlas) {
+    const result = {};
+    for (const slot of TARGET_SLOTS) {
+      let a = null;
+      try { a = allocation(atlas, slot); } catch (_) {}
+      result[slot] = a ? {
+        size: [a.width, a.height],
+        uv: uvArray(a.uv),
+        packed: atlas.packed && atlas.packed[slot]
+          ? [Number(atlas.packed[slot].x), Number(atlas.packed[slot].y)]
+          : null
+      } : null;
+    }
+    return result;
+  }
+
   function atlasDescriptor(atlas) {
     return atlas ? [Number(atlas.width), Number(atlas.height)] : null;
   }
@@ -208,7 +254,9 @@
   function partSignature(parts) {
     return Object.keys(parts || {}).sort().map((slot) => {
       const part = parts[slot];
-      return `${slot}:${part && part.baseName ? part.baseName : ''}`;
+      const id = part && part.id !== undefined ? part.id : '';
+      const baseName = part && part.baseName ? part.baseName : '';
+      return `${slot}:${id}:${baseName}`;
     }).join('|');
   }
 
@@ -272,19 +320,45 @@
     }).join(' | ');
   }
 
+  function ownershipSnapshot(session = activeSession) {
+    const CK = getCK();
+    const display = CK && CK.character && CK.character.display;
+    const modded = display && display.modded;
+    return {
+      displayMatchesSession: !!session && display === session.display,
+      moddedMatchesSession: !!session && modded === session.modded,
+      buildAtlasOwned: !!session && modded === session.modded && modded.buildAtlas === session.protectedBuildAtlas,
+      displayAtlasMatchesProtected: !!session && display === session.display && display.atlas === session.protectedAtlas,
+      resourceAtlasMatchesProtected: !!session && modded === session.modded && modded.resourceAtlas === session.protectedAtlas,
+      displayResourceSameObject: !!display && !!modded && display.atlas === modded.resourceAtlas,
+      displayAtlas: atlasDescriptor(display && display.atlas),
+      resourceAtlas: atlasDescriptor(modded && modded.resourceAtlas),
+      displayPacking: display && display.atlas ? targetPacking(display.atlas) : null,
+      resourcePacking: modded && modded.resourceAtlas ? targetPacking(modded.resourceAtlas) : null
+    };
+  }
+
   function recordTimeline() {
     const CK = getCK();
     const display = CK && CK.character && CK.character.display;
     const modded = display && display.modded;
     const parts = modded && modded.parts;
     const atlas = display && display.atlas;
+    const ownership = ownershipSnapshot(activeSession);
     const snapshot = {
-      at: new Date().toISOString(),
+      at: nowIso(),
       build: BUILD,
       enabled,
       busy,
       atlas: atlasDescriptor(atlas),
+      resourceAtlas: atlasDescriptor(modded && modded.resourceAtlas),
       allocations: atlas && parts ? targetAllocations(atlas) : null,
+      displayResourceSameObject: ownership.displayResourceSameObject,
+      displayMatchesSession: ownership.displayMatchesSession,
+      moddedMatchesSession: ownership.moddedMatchesSession,
+      buildAtlasOwned: ownership.buildAtlasOwned,
+      displayAtlasMatchesProtected: ownership.displayAtlasMatchesProtected,
+      resourceAtlasMatchesProtected: ownership.resourceAtlasMatchesProtected,
       bakeSize: parts ? {
         bodyLower: parts.bodyLower && parts.bodyLower.bakeSize,
         bodyUpper: parts.bodyUpper && parts.bodyUpper.bakeSize,
@@ -294,6 +368,11 @@
         bodyLower: parts.bodyLower && parts.bodyLower._usedTextureSize,
         bodyUpper: parts.bodyUpper && parts.bodyUpper._usedTextureSize,
         face: parts.face && parts.face._usedTextureSize
+      } : null,
+      verification: lastVerification ? {
+        ok: lastVerification.ok,
+        kind: lastVerification.kind || null,
+        reason: lastVerification.reason || null
       } : null,
       status: statusEl ? statusEl.textContent : null,
       detail: detailEl ? detailEl.textContent : null,
@@ -321,7 +400,7 @@
   function latchError(error, diagnostics, detailText = '') {
     const message = error && error.message ? error.message : String(error);
     lastError = {
-      at: new Date().toISOString(),
+      at: nowIso(),
       message,
       diagnostics: cloneDiagnostic(diagnostics)
     };
@@ -378,6 +457,8 @@
       candidateResults: [],
       selectedAtlasSize: null,
       protectedAtlas: null,
+      protectedBuildAtlas: null,
+      partSetChanged: false,
       appliedAt: null
     };
   }
@@ -477,7 +558,8 @@
         allocations,
         targetOk,
         regressions: comparison.regressions,
-        changes: comparison.changes
+        changes: comparison.changes,
+        packing: targetPacking(atlas)
       }
     };
   }
@@ -514,7 +596,6 @@
       throw new Error(`Selected protected atlas now reduces ${built.result.regressions[0].slot} below baseline.`);
     }
     session.protectedAtlas = built.atlas;
-    session.candidateResults = [built.result];
     return built.atlas;
   }
 
@@ -532,6 +613,7 @@
       return atlas;
     };
 
+    session.protectedBuildAtlas = wrapper;
     Object.defineProperty(session.modded, 'buildAtlas', {
       configurable: true,
       enumerable: session.original.buildAtlas.descriptor ? !!session.original.buildAtlas.descriptor.enumerable : false,
@@ -543,66 +625,99 @@
     }
   }
 
+  function verifyTargetBindings(session, atlas) {
+    for (const slot of TARGET_SLOTS) {
+      const mesh = session.display.meshes[slot];
+      if (!mesh || !materialMatchesAtlasSlot(mesh.material, atlas, slot)) {
+        return { ok: false, kind: 'binding', reason: `${slot} display UV does not match protected atlas location` };
+      }
+      const bakeMaterials = mesh.bakeMaterials || {};
+      if (bakeMaterials.color && !materialMatchesAtlasSlot(bakeMaterials.color, atlas, slot)) {
+        return { ok: false, kind: 'binding', reason: `${slot} color-bake UV does not match protected atlas location` };
+      }
+      const colorDecals = bakeMaterials.colorDecals;
+      if (Array.isArray(colorDecals)) {
+        for (let index = 0; index < colorDecals.length; index += 1) {
+          if (colorDecals[index] && !materialMatchesAtlasSlot(colorDecals[index], atlas, slot)) {
+            return { ok: false, kind: 'binding', reason: `${slot} decal-bake UV[${index}] does not match protected atlas location` };
+          }
+        }
+      }
+    }
+    return { ok: true };
+  }
+
   function verifyProtectedState(session = activeSession) {
-    if (!session) return { ok: false, reason: 'No active protected-texture session' };
+    if (!session) return { ok: false, kind: 'ownership', reason: 'No active protected-texture session' };
     const CK = getCK();
-    if (!CK || !CK.character || CK.character.display !== session.display) {
-      return { ok: false, reason: 'HeroForge display changed' };
+    const display = CK && CK.character && CK.character.display;
+    if (!CK || !CK.character || !display || display !== session.display) {
+      return { ok: false, kind: 'ownership', reason: 'HeroForge display changed' };
+    }
+    if (display.modded !== session.modded) {
+      return { ok: false, kind: 'ownership', reason: 'HeroForge modded renderer changed' };
+    }
+    if (session.modded.buildAtlas !== session.protectedBuildAtlas) {
+      return { ok: false, kind: 'ownership', reason: 'Protected buildAtlas ownership was replaced' };
+    }
+    if (display.atlas !== session.protectedAtlas) {
+      return { ok: false, kind: 'coherence', reason: 'Display atlas is not the owned protected atlas' };
+    }
+    if (session.modded.resourceAtlas !== session.protectedAtlas) {
+      return { ok: false, kind: 'coherence', reason: 'Resource atlas diverged from the owned protected atlas' };
+    }
+    if (display.atlas !== session.modded.resourceAtlas) {
+      return { ok: false, kind: 'coherence', reason: 'Display/resource atlas objects diverged' };
     }
 
-    const atlas = session.display.atlas;
+    const atlas = display.atlas;
     const selected = session.selectedAtlasSize;
     if (!selected || !atlas || Number(atlas.width) !== selected[0] || Number(atlas.height) !== selected[1]) {
-      return { ok: false, reason: 'Protected atlas dimensions lost' };
+      return { ok: false, kind: 'allocation', reason: 'Protected atlas dimensions lost' };
     }
 
     const allocations = targetAllocations(atlas);
     for (const slot of TARGET_SLOTS) {
       const a = allocations[slot];
       if (!a || a[0] !== TARGET_SIZE || a[1] !== TARGET_SIZE) {
-        return { ok: false, reason: `${slot} allocation is not ${TARGET_SIZE}px`, allocations };
-      }
-      const displayMaterial = session.display.meshes[slot] && session.display.meshes[slot].material;
-      const bound = materialAllocation(displayMaterial, atlas);
-      if (!bound || bound.width !== TARGET_SIZE || bound.height !== TARGET_SIZE) {
-        return { ok: false, reason: `${slot} display material is not bound to protected allocation`, allocations };
+        return { ok: false, kind: 'allocation', reason: `${slot} allocation is not ${TARGET_SIZE}px`, allocations };
       }
     }
 
     for (const slot of BODY_MASK_SLOTS) {
-      const mesh = session.display.meshes[slot];
+      const mesh = display.meshes[slot];
       const texture = session.maskTextures && session.maskTextures[slot];
       if (!mesh || !texture || mesh.masksMapOverride !== texture) {
-        return { ok: false, reason: `${slot} protected mask override was lost`, allocations };
+        return { ok: false, kind: 'mask', reason: `${slot} protected mask override was lost`, allocations };
       }
       const width = texture.image ? Number(texture.image.width) : 0;
-      if (width !== BODY_MASK_SIZE) return { ok: false, reason: `${slot} mask is not ${BODY_MASK_SIZE}px`, allocations };
-    }
-
-    const lowerBake = session.display.meshes.bodyLower
-      && session.display.meshes.bodyLower.bakeMaterials
-      && session.display.meshes.bodyLower.bakeMaterials.color;
-    const lowerBakeAllocation = materialAllocation(lowerBake, atlas);
-    if (!lowerBakeAllocation || lowerBakeAllocation.width !== TARGET_SIZE || lowerBakeAllocation.height !== TARGET_SIZE) {
-      return { ok: false, reason: 'bodyLower color bake is not bound to protected allocation', allocations };
-    }
-
-    const lowerDecals = session.display.meshes.bodyLower
-      && session.display.meshes.bodyLower.bakeMaterials
-      && session.display.meshes.bodyLower.bakeMaterials.colorDecals;
-    if (Array.isArray(lowerDecals) && lowerDecals.length) {
-      const decalAllocation = materialAllocation(lowerDecals[0], atlas);
-      if (!decalAllocation || decalAllocation.width !== TARGET_SIZE || decalAllocation.height !== TARGET_SIZE) {
-        return { ok: false, reason: 'bodyLower decal bake is not bound to protected allocation', allocations };
+      if (width !== BODY_MASK_SIZE) {
+        return { ok: false, kind: 'mask', reason: `${slot} mask is not ${BODY_MASK_SIZE}px`, allocations };
       }
     }
+
+    const binding = verifyTargetBindings(session, atlas);
+    if (!binding.ok) return { ...binding, allocations };
 
     const comparison = compareAgainstBaseline(session.baselineAllocations, atlas, session.modded.parts);
     if (comparison.regressions.length) {
-      return { ok: false, reason: `${comparison.regressions[0].slot} fell below pre-enable allocation`, allocations };
+      return {
+        ok: false,
+        kind: 'regression',
+        reason: `${comparison.regressions[0].slot} fell below pre-enable allocation`,
+        allocations,
+        comparison
+      };
     }
 
-    return { ok: true, allocations, comparison };
+    return {
+      ok: true,
+      kind: 'healthy',
+      allocations,
+      comparison,
+      ownership: ownershipSnapshot(session),
+      packing: targetPacking(atlas)
+    };
   }
 
   async function restoreExactBaseline(session) {
@@ -627,6 +742,85 @@
     }
   }
 
+  function releaseStaleSessionMetadata(session) {
+    if (!session) return;
+    try { restoreSessionMetadata(session); } catch (error) {
+      console.error('[HFC texture quality] stale-session metadata restore warning', error);
+    }
+  }
+
+  function rendererFingerprint(capability) {
+    if (!capability || !capability.ok) return null;
+    return {
+      display: capability.display,
+      modded: capability.modded,
+      resourceAtlas: capability.modded.resourceAtlas,
+      displayAtlas: capability.display.atlas,
+      signature: partSignature(capability.parts),
+      resourceDims: atlasDescriptor(capability.modded.resourceAtlas),
+      displayDims: atlasDescriptor(capability.display.atlas)
+    };
+  }
+
+  function sameRendererFingerprint(a, b) {
+    return !!a && !!b
+      && a.display === b.display
+      && a.modded === b.modded
+      && a.resourceAtlas === b.resourceAtlas
+      && a.displayAtlas === b.displayAtlas
+      && a.signature === b.signature
+      && JSON.stringify(a.resourceDims) === JSON.stringify(b.resourceDims)
+      && JSON.stringify(a.displayDims) === JSON.stringify(b.displayDims);
+  }
+
+  async function waitForRendererStable() {
+    const deadline = Date.now() + RECOVERY_STABLE_TIMEOUT_MS;
+    let previous = null;
+    let stableSince = 0;
+    while (Date.now() < deadline) {
+      const capability = readCapabilities();
+      if (!capability.ok) {
+        previous = null;
+        stableSince = 0;
+        await sleep(RECOVERY_STABLE_POLL_MS);
+        continue;
+      }
+      const current = rendererFingerprint(capability);
+      if (sameRendererFingerprint(previous, current)) {
+        if (!stableSince) stableSince = Date.now();
+        if (Date.now() - stableSince >= RECOVERY_STABLE_WINDOW_MS) return capability;
+      } else {
+        previous = current;
+        stableSince = Date.now();
+      }
+      await sleep(RECOVERY_STABLE_POLL_MS);
+    }
+    throw new Error('HeroForge renderer did not settle after lifecycle change.');
+  }
+
+  async function alignCurrentDisplayToResourceAtlas(capability) {
+    const { display, modded, colorBake } = capability;
+    const resourceAtlas = modded.resourceAtlas;
+    if (!resourceAtlas || typeof resourceAtlas.getUV !== 'function') {
+      throw new Error('Current HeroForge resource atlas is unavailable during lifecycle recovery.');
+    }
+    if (display.atlas === resourceAtlas) return false;
+
+    recordAttempt('lifecycle-align-native', {
+      displayAtlasBefore: atlasDescriptor(display.atlas),
+      resourceAtlas: atlasDescriptor(resourceAtlas),
+      displayPackingBefore: display.atlas ? targetPacking(display.atlas) : null,
+      resourcePacking: targetPacking(resourceAtlas)
+    });
+
+    display.atlas = resourceAtlas;
+    colorBake.invalidateCache();
+    colorBake.refresh(true);
+    await sleep(BAKE_WAIT_MS);
+    if (display.atlas !== resourceAtlas) display.atlas = resourceAtlas;
+    return true;
+  }
+
   async function applyFreshSession() {
     const capability = readCapabilities();
     if (!capability.ok) throw new Error(capability.reason);
@@ -634,6 +828,8 @@
 
     recordAttempt('enable-start', {
       baselineAtlas: atlasDescriptor(session.originalActiveAtlas),
+      baselineResourceAtlas: atlasDescriptor(session.originalResourceAtlas),
+      baselineSameObject: session.originalActiveAtlas === session.originalResourceAtlas,
       baselineTargetAllocations: session.baselineTargetAllocations,
       maxTextureSize: capability.maxTextureSize,
       partCount: Object.keys(capability.parts).length
@@ -643,14 +839,16 @@
       await loadBodyMasks(capability, session);
       applyProtectedTargetMetadata(session);
       const protectedAtlas = chooseProtectedAtlas(session);
-      installProtectedBuildAtlas(session);
       activeSession = session;
+      installProtectedBuildAtlas(session);
       session.modded.resourceAtlas = protectedAtlas;
       session.display.atlas = protectedAtlas;
 
       recordAttempt('atlas-assigned', {
         selectedAtlas: session.selectedAtlasSize,
-        allocations: targetAllocations(protectedAtlas)
+        allocations: targetAllocations(protectedAtlas),
+        packing: targetPacking(protectedAtlas),
+        ownership: ownershipSnapshot(session)
       });
 
       session.display.colorBake.invalidateCache();
@@ -658,18 +856,27 @@
       await sleep(BAKE_WAIT_MS);
 
       const verification = verifyProtectedState(session);
-      if (!verification.ok) throw new Error(verification.reason);
+      lastVerification = verification;
+      if (!verification.ok) {
+        const error = new Error(verification.reason);
+        error.hfcVerification = verification;
+        throw error;
+      }
 
-      session.appliedAt = new Date().toISOString();
+      session.appliedAt = nowIso();
       lastDiagnostics = {
         featureId: FEATURE_ID,
         build: BUILD,
         status: 'active',
         baselineAtlas: atlasDescriptor(session.originalActiveAtlas),
+        baselineResourceAtlas: atlasDescriptor(session.originalResourceAtlas),
+        baselineSameObject: session.originalActiveAtlas === session.originalResourceAtlas,
         baselineTargetAllocations: session.baselineTargetAllocations,
         selectedAtlas: session.selectedAtlasSize,
         targetSize: TARGET_SIZE,
         allocations: verification.allocations,
+        packing: verification.packing,
+        ownership: verification.ownership,
         candidateResults: session.candidateResults,
         maskPaths: session.maskPaths,
         maxTextureSize: capability.maxTextureSize,
@@ -682,10 +889,14 @@
     } catch (error) {
       const diagnostic = {
         baselineAtlas: atlasDescriptor(session.originalActiveAtlas),
+        baselineResourceAtlas: atlasDescriptor(session.originalResourceAtlas),
+        baselineSameObject: session.originalActiveAtlas === session.originalResourceAtlas,
         baselineTargetAllocations: session.baselineTargetAllocations,
         candidateResults: session.candidateResults,
         maskPaths: session.maskPaths,
-        maxTextureSize: capability.maxTextureSize
+        maxTextureSize: capability.maxTextureSize,
+        verification: error.hfcVerification || lastVerification,
+        ownership: ownershipSnapshot(session)
       };
       if (activeSession === session) activeSession = null;
       await restoreExactBaseline(session);
@@ -694,43 +905,11 @@
     }
   }
 
-  async function reapplySession(session) {
-    const CK = getCK();
-    if (!session || !CK || !CK.character || CK.character.display !== session.display) {
-      throw new Error('Current display changed.');
-    }
-    if (partSignature(session.modded.parts) !== session.partSignature) {
-      throw new Error('Current part set changed; fresh protected session required.');
-    }
-    applyProtectedTargetMetadata(session);
-    const atlas = buildSelectedAtlas(session);
-    session.modded.resourceAtlas = atlas;
-    session.display.atlas = atlas;
-    session.display.colorBake.invalidateCache();
-    session.display.colorBake.refresh(true);
-    await sleep(BAKE_WAIT_MS);
-
-    const verification = verifyProtectedState(session);
-    if (!verification.ok) throw new Error(verification.reason);
-    session.appliedAt = new Date().toISOString();
-    lastDiagnostics = {
-      ...lastDiagnostics,
-      status: 'active',
-      selectedAtlas: session.selectedAtlasSize,
-      allocations: verification.allocations,
-      appliedAt: session.appliedAt
-    };
-    recordAttempt('reapply-success', {
-      selectedAtlas: session.selectedAtlasSize,
-      allocations: verification.allocations
-    });
-    syncApi();
-  }
-
   function sessionMatchesCurrent(session) {
     const CK = getCK();
     const display = CK && CK.character && CK.character.display;
     if (!session || !display || display !== session.display) return false;
+    if (display.modded !== session.modded) return false;
     const parts = display.modded && display.modded.parts;
     return !!parts
       && parts.bodyLower === session.parts.bodyLower
@@ -738,11 +917,73 @@
       && parts.face === session.parts.face;
   }
 
+  function sessionExactRestoreIsSafe(session) {
+    return sessionMatchesCurrent(session)
+      && session.modded.buildAtlas === session.protectedBuildAtlas
+      && session.display.atlas === session.protectedAtlas
+      && session.modded.resourceAtlas === session.protectedAtlas;
+  }
+
+  function bumpRecoveryBurst() {
+    const now = Date.now();
+    if (!recoveryBurstStartedAt || now - recoveryBurstStartedAt > RECOVERY_BURST_WINDOW_MS) {
+      recoveryBurstStartedAt = now;
+      recoveryBurstCount = 0;
+    }
+    recoveryBurstCount += 1;
+    return recoveryBurstCount;
+  }
+
+  async function recoverLifecycle(reason, verification = null) {
+    const count = bumpRecoveryBurst();
+    if (count > MAX_RECOVERIES_PER_BURST) {
+      throw new Error(`HeroForge renderer repeatedly replaced the protected atlas lifecycle (${count} times in ${Math.round(RECOVERY_BURST_WINDOW_MS / 1000)}s).`);
+    }
+
+    const staleSession = activeSession;
+    activeSession = null;
+    unhealthySince = null;
+
+    recordAttempt('lifecycle-loss', {
+      reason,
+      verification: cloneDiagnostic(verification),
+      ownership: ownershipSnapshot(staleSession),
+      recoveryCount: count
+    });
+
+    releaseStaleSessionMetadata(staleSession);
+
+    let capability = await waitForRendererStable();
+    await alignCurrentDisplayToResourceAtlas(capability);
+    capability = await waitForRendererStable();
+
+    recordAttempt('lifecycle-native-settled', {
+      atlas: atlasDescriptor(capability.display.atlas),
+      resourceAtlas: atlasDescriptor(capability.modded.resourceAtlas),
+      sameObject: capability.display.atlas === capability.modded.resourceAtlas,
+      allocations: targetAllocations(capability.display.atlas)
+    });
+
+    activeSession = await applyFreshSession();
+    lastRecoveryAttempt = Date.now();
+    const [w, h] = activeSession.selectedAtlasSize;
+    setStatus('Protected 2048 textures active');
+    setDetail(`Renderer lifecycle recovered cleanly using ${w}×${h}; body/head remain protected at 2048px.`);
+    recordAttempt('lifecycle-recovery-success', {
+      selectedAtlas: activeSession.selectedAtlasSize,
+      ownership: ownershipSnapshot(activeSession)
+    });
+    syncApi();
+  }
+
   async function enableFeature() {
     if (disposed || busy || enabled) return;
     clearErrorLatch();
+    lastVerification = null;
     setBusy(true);
     enabled = true;
+    recoveryBurstCount = 0;
+    recoveryBurstStartedAt = 0;
     syncApi();
     if (toggle) toggle.checked = true;
     setStatus('Applying protected 2048 textures…');
@@ -750,22 +991,48 @@
     recordTimeline();
 
     try {
+      let capability = await waitForRendererStable();
+      if (capability.display.atlas !== capability.modded.resourceAtlas) {
+        setStatus('HeroForge atlas state is still transitioning — normalizing before enable…');
+        setDetail('Waiting for the current resource/display atlas pair to become coherent before the protected bake starts.');
+        await alignCurrentDisplayToResourceAtlas(capability);
+        capability = await waitForRendererStable();
+      }
       activeSession = await applyFreshSession();
       unhealthySince = null;
-      reapplyFailures = 0;
       const [w, h] = activeSession.selectedAtlasSize;
       setStatus('Protected 2048 textures active');
       setDetail(`${w}×${h} atlas; bodyLower/bodyUpper/face protected at 2048px.${h === 8192 ? ' High-atlas-area mode is active.' : ''}`);
       recordTimeline();
     } catch (error) {
+      const verification = error.hfcVerification;
+      const lifecycleKind = verification && (verification.kind === 'ownership' || verification.kind === 'coherence');
+      if (lifecycleKind) {
+        try {
+          setStatus('HeroForge changed renderer state during apply — waiting for it to settle…');
+          setDetail(verification.reason);
+          await recoverLifecycle(`initial apply: ${verification.reason}`, verification);
+          recordTimeline();
+          return;
+        } catch (recoveryError) {
+          error = recoveryError;
+        }
+      }
+
       enabled = false;
+      if (activeSession) {
+        try { await restoreExactBaseline(activeSession); } catch (_) {}
+      }
       activeSession = null;
       if (toggle) toggle.checked = false;
-      const diagnostic = error.hfcDiagnostic || {};
+      const diagnostic = error.hfcDiagnostic || {
+        verification: error.hfcVerification || lastVerification,
+        ownership: ownershipSnapshot(null)
+      };
       const rows = diagnostic.candidateResults || [];
       const detail = rows.length
-        ? `${describeCandidateRows(rows)}. Exact pre-enable display restored. This error remains latched.`
-        : 'Exact pre-enable display restored. This error remains latched.';
+        ? `${describeCandidateRows(rows)}. Renderer restored where possible. This error remains latched.`
+        : 'Renderer restored where possible. This error remains latched.';
       latchError(error, diagnostic, detail);
       console.error('[HFC texture quality] enable failed', error, diagnostic);
     } finally {
@@ -777,7 +1044,8 @@
     if (busy) return;
     enabled = false;
     unhealthySince = null;
-    reapplyFailures = 0;
+    recoveryBurstCount = 0;
+    recoveryBurstStartedAt = 0;
     if (toggle) toggle.checked = false;
     syncApi();
 
@@ -793,21 +1061,34 @@
     }
 
     setBusy(true);
-    if (!silent) setStatus('Restoring exact pre-enable texture state…');
+    if (!silent) setStatus('Restoring pre-enable texture state…');
     try {
-      await restoreExactBaseline(session);
-      lastDiagnostics = {
-        featureId: FEATURE_ID,
-        build: BUILD,
-        status: 'disabled',
-        restoredAtlas: atlasDescriptor(session.originalActiveAtlas),
-        disabledAt: new Date().toISOString()
-      };
+      if (sessionExactRestoreIsSafe(session)) {
+        await restoreExactBaseline(session);
+        lastDiagnostics = {
+          featureId: FEATURE_ID,
+          build: BUILD,
+          status: 'disabled',
+          restoredAtlas: atlasDescriptor(session.originalActiveAtlas),
+          disabledAt: nowIso()
+        };
+      } else {
+        releaseStaleSessionMetadata(session);
+        const capability = await waitForRendererStable();
+        await alignCurrentDisplayToResourceAtlas(capability);
+        lastDiagnostics = {
+          featureId: FEATURE_ID,
+          build: BUILD,
+          status: 'disabled-after-lifecycle-change',
+          restoredAtlas: atlasDescriptor(capability.modded.resourceAtlas),
+          disabledAt: nowIso()
+        };
+      }
       clearErrorLatch();
       recordAttempt('disable-success', lastDiagnostics);
       if (!silent) {
-        setStatus('Pre-enable HeroForge textures restored');
-        setDetail('The atlas and runtime metadata captured before enable were restored.');
+        setStatus('HeroForge texture state restored');
+        setDetail('Protected atlas ownership was released and the current renderer was returned to a coherent HeroForge state.');
       }
     } catch (error) {
       if (!silent) latchError(error, { stage: 'disable' }, 'Disable completed with a warning. Refresh HeroForge if the renderer does not look native.');
@@ -837,67 +1118,53 @@
       return;
     }
 
-    if (!sessionMatchesCurrent(activeSession) || (activeSession && activeSession.partSetChanged)) {
-      setBusy(true);
-      setStatus('HeroForge character/part set changed — rebuilding protected session…');
-      try {
-        if (activeSession && sessionMatchesCurrent(activeSession)) {
-          await restoreExactBaseline(activeSession);
-        } else if (activeSession) {
-          restoreSessionMetadata(activeSession);
-        }
-        activeSession = await applyFreshSession();
-        unhealthySince = null;
-        reapplyFailures = 0;
-        const [w, h] = activeSession.selectedAtlasSize;
-        setStatus('Protected 2048 textures active');
-        setDetail(`Protected policy reapplied using ${w}×${h}.`);
-      } catch (error) {
-        enabled = false;
-        activeSession = null;
-        if (toggle) toggle.checked = false;
-        latchError(error, error.hfcDiagnostic || { stage: 'character-change' }, 'Auto-disabled; the last error remains visible.');
-        console.error('[HFC texture quality] character-change reapply failed', error);
-      } finally {
-        setBusy(false);
-      }
-      return;
-    }
-
     const verification = verifyProtectedState(activeSession);
+    lastVerification = verification;
+    syncApi();
     if (verification.ok) {
       unhealthySince = null;
+      if (recoveryBurstStartedAt && Date.now() - recoveryBurstStartedAt > RECOVERY_BURST_WINDOW_MS) {
+        recoveryBurstCount = 0;
+        recoveryBurstStartedAt = 0;
+      }
       return;
     }
 
     const now = Date.now();
-    if (unhealthySince === null) unhealthySince = now;
-    if (now - unhealthySince < LOSS_GRACE_MS || now - lastReapplyAttempt < REAPPLY_COOLDOWN_MS) return;
+    if (unhealthySince === null) {
+      unhealthySince = now;
+      recordAttempt('verification-loss-detected', {
+        verification,
+        ownership: ownershipSnapshot(activeSession)
+      });
+      return;
+    }
+    if (now - unhealthySince < LOSS_GRACE_MS || now - lastRecoveryAttempt < RECOVERY_COOLDOWN_MS) return;
 
-    lastReapplyAttempt = now;
+    lastRecoveryAttempt = now;
     setBusy(true);
-    setStatus('Texture allocation changed — restoring protected 2048 state…');
+    setStatus('HeroForge renderer changed — rebuilding a coherent protected session…');
+    setDetail(verification.reason);
     try {
-      await reapplySession(activeSession);
+      await recoverLifecycle(verification.reason, verification);
       unhealthySince = null;
-      reapplyFailures = 0;
-      setStatus('Protected 2048 textures active');
-      setDetail(`Protected atlas lifecycle restored automatically using ${activeSession.selectedAtlasSize[0]}×${activeSession.selectedAtlasSize[1]}.`);
     } catch (error) {
-      reapplyFailures += 1;
-      recordAttempt('reapply-failure', { message: error.message, count: reapplyFailures });
-      console.error('[HFC texture quality] lifecycle reapply failed', error);
-      if (reapplyFailures >= MAX_REAPPLY_FAILURES) {
-        const failedSession = activeSession;
-        activeSession = null;
-        enabled = false;
-        if (toggle) toggle.checked = false;
-        try { await restoreExactBaseline(failedSession); } catch (_) {}
-        latchError(error, { stage: 'lifecycle', reapplyFailures }, 'Auto-disabled after repeated lifecycle failures; error remains visible.');
-      } else {
-        setStatus(`Protected state lost; retry ${reapplyFailures}/${MAX_REAPPLY_FAILURES}`, true);
-        setDetail(error.message);
-      }
+      const failedSession = activeSession;
+      activeSession = null;
+      enabled = false;
+      if (toggle) toggle.checked = false;
+      try {
+        releaseStaleSessionMetadata(failedSession);
+        const capability = await waitForRendererStable();
+        await alignCurrentDisplayToResourceAtlas(capability);
+      } catch (_) {}
+      latchError(error, {
+        stage: 'lifecycle',
+        verification,
+        ownership: ownershipSnapshot(null),
+        recoveryBurstCount
+      }, 'Auto-disabled after renderer lifecycle recovery failed. HeroForge was returned to its current coherent resource atlas where possible.');
+      console.error('[HFC texture quality] lifecycle recovery failed', error);
     } finally {
       setBusy(false);
     }
@@ -911,7 +1178,7 @@
     style.textContent = `
       #${PANEL_ID} {
         position: fixed; right: 16px; bottom: 16px; z-index: 2147483600;
-        width: 360px; padding: 12px 14px; border: 1px solid rgba(255,255,255,.18);
+        width: 390px; padding: 12px 14px; border: 1px solid rgba(255,255,255,.18);
         border-radius: 10px; background: rgba(20,20,24,.94); color: #f2f2f5;
         box-shadow: 0 10px 30px rgba(0,0,0,.35); font: 12px/1.35 system-ui, sans-serif;
       }
@@ -970,16 +1237,31 @@
     busy: false,
     diagnostics: null,
     lastError: null,
+    lastVerification: null,
     attemptHistory: [],
     timeline: [],
     enable: enableFeature,
     disable: disableFeature,
     applyNow: async () => {
       if (!enabled) return enableFeature();
-      if (!activeSession) return false;
-      return reapplySession(activeSession);
+      if (busy) return false;
+      const verification = verifyProtectedState(activeSession);
+      if (verification.ok) return true;
+      setBusy(true);
+      try {
+        await recoverLifecycle(`manual applyNow: ${verification.reason}`, verification);
+        return true;
+      } finally {
+        setBusy(false);
+      }
     },
-    verify: () => verifyProtectedState(activeSession),
+    verify: () => {
+      const result = verifyProtectedState(activeSession);
+      lastVerification = result;
+      syncApi();
+      return result;
+    },
+    getOwnership: () => cloneDiagnostic(ownershipSnapshot(activeSession)),
     clearLastError: () => {
       clearErrorLatch();
       setStatus('Ready — protected texture policy is off');

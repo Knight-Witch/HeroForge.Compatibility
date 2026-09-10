@@ -6,7 +6,7 @@ Current Photo Booth validation target: `heroforge07.1.9.98` / 2026-09-05. Curren
 
 | Component | Current status | Last verified build/date | Notes |
 |---|---|---|---|
-| `rendering.texture-quality` | **Runtime mechanism validated manually; standalone v0.1.3 unvalidated** | `1.9.98` bundle family / 2026-09-10 | D4 + Blood Moon protected-2048 path. Requires atlas mode, 8192 texture capability, valid 1024 body masks, reversible narrow rebake. Atlas area is 8192x4096 first with 8192x8192 fallback only if required by the exact pre-enable allocation budget. No Witch Dock integration yet. |
+| `rendering.texture-quality` | **Runtime mechanism validated manually; standalone v0.1.4 lifecycle-repair candidate unvalidated** | `1.9.98` bundle family / 2026-09-10 | D4 + Blood Moon protected-2048 path. v0.1.3 achieved 2048 allocations but Booth lifecycle replaced atlas ownership and produced incompatible display/resource atlas states. v0.1.4 adds hard ownership/coherence checks and fresh-session recovery. No Witch Dock integration yet. |
 | `media.screenshot-resolution` | **Standalone validated; Witch Dock Stable validated** | `heroforge07.1.9.98` / 2026-09-05 | v0.6 baseline; Stable provider promoted at Witch Dock commit `e155f2c2f961463b4a0e26f7c88f21f603ce1b95`; clean public smoke passed perfectly. |
 | `decals.gizmo.bound-correction` | Witch Dock Stable | 2026-09-05 | Validated separately. |
 | Character local JSON | Core Save/Load passed live | 2026-09-03 | Lifecycle/repeated-use pending. |
@@ -30,13 +30,18 @@ Required postconditions:
 - selected active atlas is either 8192x4096 or, only when required, 8192x8192;
 - bodyLower/bodyUpper/face each resolve to 2048x2048;
 - valid figure-specific 1024 body mask inputs remain pinned;
-- display and color/decal bake UV bindings target the protected allocation;
+- current `display` and `display.modded` remain the objects owned by the active session;
+- `modded.buildAtlas` remains the exact reversible wrapper installed by the active session;
+- `display.atlas` and `modded.resourceAtlas` both reference the exact protected atlas object owned by the session;
+- full X/Y/Z/W display, color-bake, and available decal-bake UV vectors match the protected atlas slot locations, not merely the 2048 width/height;
 - no unrelated slot is allocated below the exact pre-enable displayed allocation;
 - a larger atlas candidate is not selected when the smaller candidate already satisfies the contract.
 
-Standalone v0.1.2 established that the current Blood Moon exact pre-enable budget can produce only BL 1024 / BU 1024 / face 2048 in 8192x4096 under the no-regression cap map. A detached cloned-scale versus temporary live-scale A/B returned the same allocation, so v0.1.3 treats atlas packing area as the next bounded compatibility variable rather than mutating persistent scale state.
+Standalone v0.1.3 proved why these coherence checks are required. Blood Moon selected an 8192x8192 protected atlas and reached BL/BU/face 2048, but live inspection later found `display.atlas=8192x8192`, `modded.resourceAtlas=8192x4096`, and `modded.buildAtlas` restored to HeroForge's native function while the feature still reported active. The protected display packing placed BL/BU/face at x=0/2048/4096, while the resource atlas placed them at x=512/1024/1536. This split state correlated with severe coherent-but-wrong body/face texture blocks.
 
-If any requirement fails, the standalone must refuse/auto-disable and restore the exact captured pre-enable ownership/state where possible. Failure details must remain visible and available as bounded plain-data telemetry for bridge inspection.
+v0.1.4 treats renderer ownership replacement or atlas divergence as a lifecycle boundary, not a normal reapply condition. It releases the stale session's metadata/wrapper, waits for HeroForge to settle, uses the current HeroForge `resourceAtlas` as the coherent hand-off point for a narrow rebake when necessary, then creates a fresh protected session. Repeated rapid replacement auto-disables instead of looping.
+
+If any requirement fails, the standalone must refuse/recover/auto-disable and restore a coherent HeroForge state where possible. Failure details remain visible and available as bounded plain-data telemetry for bridge inspection.
 
 Rejected compatibility dependencies:
 
@@ -68,4 +73,4 @@ Rejected compatibility dependencies:
 
 ## Revalidation triggers
 
-Re-run texture-quality validation when `CK.Atlas`, part mask path/resource behavior, color-bake ownership, atlas allocation semantics, GPU max texture capability, body part metadata, or relevant HeroForge build topology changes. Re-run the Photo Booth suite when HeroForge build changes, the named capture/Effects methods change, tile geometry becomes incoherent, Photo Booth effect profiles materially change, or native true-resolution rendering appears.
+Re-run texture-quality validation when `CK.Atlas`, part mask path/resource behavior, color-bake ownership, atlas allocation semantics, `display.modded`/`buildAtlas` lifecycle behavior, GPU max texture capability, body part metadata, or relevant HeroForge build topology changes. Re-run the Photo Booth suite when HeroForge build changes, the named capture/Effects methods change, tile geometry becomes incoherent, Photo Booth effect profiles materially change, or native true-resolution rendering appears.

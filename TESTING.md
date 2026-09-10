@@ -21,7 +21,7 @@ Blood Moon:
 - manual protected atlas states produced bodyLower/bodyUpper/face 2048px;
 - valid 1024 human body masks loaded and pinned;
 - body display UV, base color-bake UV, and decal-bake UV confirmed at protected size during successful manual runs;
-- final manual user visual result: body texture correct, seams correct, paints/material channels correct, decals high-confidence correct (~95% due Booth appearance ambiguity);
+- final manual user visual result before standalone packaging: body texture correct, seams correct, paints/material channels correct, decals high-confidence correct (~95% due Booth appearance ambiguity);
 - user additionally reported no apparent degradation elsewhere on the figure with protected body/head 2048 active;
 - detached 4096-body/8192x8192 layout packed successfully but is not an approved maintained target.
 
@@ -79,40 +79,78 @@ A detached A/B runtime test then compared the same 8192x4096 construction with t
 
 Conclusion: under the exact pre-enable no-regression caps, current Blood Moon needs more atlas packing area if 2048 body/head is to be protected without sacrificing unrelated pre-enable allocations.
 
-### Standalone v0.1.3 candidate
+### Standalone v0.1.3 live result
 
-v0.1.3 keeps the maintained quality target at 2048 and changes only atlas-area selection/diagnostics:
+v0.1.3 added adaptive atlas-area selection and persistent telemetry. On Blood Moon it passed the allocation gate but failed the renderer lifecycle gate.
 
-- capture the exact current displayed/resource atlas baseline before mutation;
-- load/pin each current figure's own valid 1024 body masks;
-- raise bodyLower/bodyUpper/face bake ceilings to 2048 and hold source `_usedTextureSize` at 1024;
-- construct **8192x4096 detached first** with per-slot caps based on the exact pre-enable allocations;
-- if it cannot produce BL/BU/face 2048 with zero unrelated allocation regressions, construct **8192x8192 detached** as the only fallback candidate;
-- assign only the smallest passing candidate;
-- keep 4096-body allocation out of scope;
-- preserve the reversible `buildAtlas` wrapper, narrow color-bake refresh, exact rollback, part-set fingerprinting, lifecycle reapply/auto-disable behavior;
-- latch the last error visibly until another explicit enable attempt, explicit clear, or reload;
-- expose bounded plain-data `attemptHistory`, `timeline`, `diagnostics`, and `lastError` for HF-Chat-Bridge inspection.
+Confirmed initial/quality behavior:
+
+- the standalone selected the **8192x8192** fallback candidate;
+- bodyLower/bodyUpper/face each resolved to **2048x2048**;
+- valid 1024 body masks remained available/pinned;
+- the user could see that decals had improved;
+- paint/material color channels appeared correct;
+- therefore the 2048 target and adaptive-area mechanism were not the source of the new visual corruption.
+
+Confirmed Booth/lifecycle failure from live bridge inspection while the figure was visibly corrupted:
+
+- `display.atlas`: **8192x8192** protected atlas;
+- `modded.resourceAtlas`: **8192x4096** different atlas;
+- feature state still reported enabled/active;
+- `modded.buildAtlas` had reverted to HeroForge's native implementation, so the feature-owned wrapper was no longer installed;
+- protected/display packing placed bodyLower/bodyUpper/face at pixel X offsets **0 / 2048 / 4096**;
+- current resource-atlas packing placed bodyLower/bodyUpper/face at pixel X offsets **512 / 1024 / 1536**;
+- visible display and color-bake material UVs matched the protected display atlas, proving that v0.1.3's width/height-only binding verification could call a split renderer state healthy;
+- `colorBake.refresh(true)` and the atlas baker use `display.atlas` for UV/scissor/layout, while visible materials bind the baker's atlas render targets; the incompatible resource/display lifecycle state therefore cannot be treated as harmless metadata divergence;
+- user-observed behavior matched the runtime state: Booth off temporarily removed the bizarre body/face blocks but exposed low-resolution native body/seams, then the v0.1.3 watcher restored the stale protected side and the corruption returned.
+
+Result:
+
+- adaptive protected-2048 allocation: **PASS**;
+- visible decal improvement: **PASS**;
+- paint/material-channel preservation in the observed state: **PASS / no corruption observed**;
+- Booth renderer lifecycle coherence: **FAIL / diagnosed**;
+- v0.1.3 is superseded by v0.1.4 and must not be promoted.
+
+### Standalone v0.1.4 candidate
+
+v0.1.4 keeps the proven quality recipe and changes the lifecycle contract:
+
+- bodyLower/bodyUpper/face target remains 2048;
+- current-figure valid body masks remain 1024;
+- 8192x4096 remains the first detached candidate and 8192x8192 the only fallback;
+- unrelated slots still may not fall below their exact pre-enable allocation;
+- current `display` identity and `display.modded` identity are required session invariants;
+- the current `modded.buildAtlas` function must be the exact wrapper owned by the session;
+- `display.atlas`, `modded.resourceAtlas`, and the session's protected atlas must be the same object while the protected session is healthy;
+- target display/color/decal bake materials must match the full X/Y/Z/W atlas UV location, not only a 2048-sized rectangle;
+- a renderer/wrapper/atlas ownership replacement invalidates the old session instead of triggering blind stale-session reapply;
+- recovery releases stale feature ownership, waits for the current HeroForge renderer identity/atlases/part signature to remain stable, aligns the visible display to HeroForge's current `resourceAtlas` through only `colorBake.invalidateCache()` + `colorBake.refresh(true)` when needed, waits again, and then creates a fresh protected session;
+- two rapid recoveries within 30 seconds are allowed; further replacement in that burst auto-disables rather than fighting HeroForge indefinitely;
+- exact pre-enable atlas-object restoration is used only while the original protected session still owns the current renderer. After HeroForge has replaced lifecycle ownership, disable returns the current renderer to coherent current-HeroForge resource/display state rather than forcing stale pre-transition atlas objects back onto it;
+- telemetry adds `lastVerification`, wrapper ownership, modded/display identity, display/resource object identity, dimensions, and target packing/UV data.
 
 Static validation:
 
-- v0.1.3 JavaScript syntax: **PASS** (`node --check`) on the prepared source;
-- GitHub runtime blob was fetched back and reviewed before commit packaging.
+- exact candidate userscript blob SHA: `5b2d52cefe4cd79916a241214cb4807036046309`;
+- exact blob reproduced locally and `git hash-object` matched that SHA;
+- `node --check` on that exact file: **PASS**;
+- no `instantSettingsChange()`, `data.change()`, bundle patch, 4096-body target, or character-specific mask hard-code is introduced.
 
-### Standalone v0.1.3 acceptance checklist
+### Standalone v0.1.4 acceptance checklist
 
-Pending from one clean Blood Moon page refresh:
+Pending from one clean Blood Moon page refresh after updating the standalone:
 
-1. Confirm the installed script reports v0.1.3 and remains disabled by default.
+1. Confirm the installed script reports v0.1.4 and remains disabled by default.
 2. Allow Blood Moon to settle, then enable once.
-3. Do not stack further texture mutations. Read `window.HFProtectedTextureQualityTest.attemptHistory`, `diagnostics`, `lastError`, and `timeline` through HF-Chat-Bridge after the attempt.
-4. If activation fails, confirm the last error remains visible and the exact pre-enable state is restored; use the captured candidate rows for the next diagnosis.
-5. If activation succeeds, confirm reported selected atlas and BL/BU/face allocations are 2048 and no unrelated allocation regression was recorded.
-6. Human-check body detail, seams, paints/material channels, decals, and obvious unrelated armor/prop/kitbash texture quality.
-7. Disable and confirm the exact pre-enable atlas/appearance returns without reload.
+3. Bridge-confirm the selected atlas, BL/BU/face allocations, valid 1024 masks, wrapper ownership, and `display.atlas === modded.resourceAtlas === protectedAtlas` after activation.
+4. Human-check body detail/seams, face, decals, paints/material channels, and obvious unrelated armor/prop/kitbash texture quality.
+5. Toggle Photo Booth off and back on once. A temporary native transition is acceptable; persistent bizarre body/face texture blocks are not.
+6. After Booth settles, bridge-confirm the feature either retained coherent ownership or performed one bounded fresh-session recovery and ended with coherent protected ownership. It must not blindly restore an obsolete session.
+7. Disable and confirm the visible renderer returns to a coherent HeroForge/native state without requiring reload.
 8. Re-enable and confirm repeated enable/disable is stable.
-9. Switch to another figure while enabled and confirm a fresh per-figure baseline/mask discovery occurs rather than reusing Blood Moon objects/caps.
-10. Exercise an ordinary part-set/atlas lifecycle change and confirm reinitialization/reapply does not loop or corrupt paints.
+9. Switch to another figure while enabled and confirm fresh per-figure baseline/mask discovery rather than Blood Moon object/cap reuse.
+10. Confirm ordinary atlas/part lifecycle changes do not create a recovery loop. If HeroForge repeatedly replaces ownership, the feature should auto-disable/fail closed.
 
 Witch Dock Dev integration remains blocked until this checklist passes.
 
@@ -164,7 +202,7 @@ Stable gate: **closed / validated**.
 
 ## Future regression triggers
 
-Re-run the texture-quality suite when `CK.Atlas`, body mask/resource behavior, color-bake ownership, atlas allocation semantics, relevant GPU max texture capability, or current body metadata changes. Re-run the Photo Booth suite when the HeroForge build materially changes, named capture/Effects capabilities change, tile topology changes, or a native true-resolution Effects path appears. Lob-absent HeroForge-native resolution-menu injection remains a separate UI-adapter test track and does not reopen the validated capture-engine gate.
+Re-run the texture-quality suite when `CK.Atlas`, body mask/resource behavior, color-bake ownership, atlas allocation semantics, `display.modded`/`buildAtlas` lifecycle behavior, relevant GPU max texture capability, or current body metadata changes. Re-run the Photo Booth suite when the HeroForge build materially changes, named capture/Effects capabilities change, tile topology changes, or a native true-resolution Effects path appears. Lob-absent HeroForge-native resolution-menu injection remains a separate UI-adapter test track and does not reopen the validated capture-engine gate.
 
 ## Other maintained milestones
 

@@ -27,7 +27,7 @@ The corrected bound decal gizmo is the first current decal reconstruction to com
 
 | Area | Current disposition | Reason / next gate |
 |---|---|---|
-| `rendering.texture-quality` | **Experimental standalone candidate** | Runtime protected-2048 mechanism validated manually on D4 + Blood Moon; standalone v0.1.3 clean-load activation/telemetry plus enable/disable/figure-change testing required before any Witch Dock Dev consideration |
+| `rendering.texture-quality` | **Experimental standalone candidate** | Runtime protected-2048 mechanism validated manually on D4 + Blood Moon; v0.1.3 reached the quality target but failed Booth renderer-lifecycle coherence; v0.1.4 must pass clean activation, Booth off/on recovery, disable/re-enable, and figure-change testing before any Witch Dock Dev consideration |
 | ADP v0.99.30 decal posing subsystem | Reconstruction target | ADP-side audit complete; archive source, audit Full Res v0.80 renderer dependency, audit HF Core Tweaks slots if included |
 | `decals.advanced-posing` Witch Dock host | Planned Witch Dock Dev candidate | Must first exist as maintained production-style standalone module and pass Lob coexistence testing for remaining overlapping features |
 | Corrected bound decal gizmo | **Witch Dock Stable** | WITCH_DEV v0.4.2 behavior validated and promoted; retain regression coverage, defer unequal bound rendering/center-wireframe polish |
@@ -47,16 +47,19 @@ The corrected bound decal gizmo is the first current decal reconstruction to com
 
 The previous generic texture-atlas/render-override investigation has now been decomposed into the concrete feature ID `rendering.texture-quality`.
 
-The maintained quality target is bodyLower/bodyUpper/face at 2048. Standalone v0.1.3 tests 8192x4096 first and may use 8192x8192 only as a larger atlas-area fallback when the smaller candidate cannot satisfy the exact pre-enable no-regression allocation contract. This does not promote the detached 4096-body experiment.
+The maintained quality target remains bodyLower/bodyUpper/face at 2048. Standalone v0.1.3 proved the adaptive allocator can select 8192x8192 when 8192x4096 cannot preserve the exact pre-enable no-regression budget, and it visibly improved decal detail. It also exposed a separate lifecycle failure: Booth/HeroForge replaced the feature-owned `buildAtlas` path while the old protected display atlas remained active, leaving incompatible display/resource atlas layouts and corrupt body/face sampling.
+
+Standalone v0.1.4 keeps the same allocation/mask recipe but treats renderer identity, wrapper ownership, active/resource atlas object identity, and full UV locations as hard postconditions. A stale protected session is never blindly reapplied after HeroForge replaces renderer ownership. The feature instead releases stale ownership, waits for the current HeroForge renderer to settle, aligns the display to the current resource atlas through the narrow rebake path when necessary, then initializes a fresh protected session. Repeated rapid lifecycle replacement must fail closed rather than loop.
 
 Promotion requirements before Witch Dock Dev:
 
-- standalone v0.1.3 initial activation passes from a clean Blood Moon load or produces a fully diagnosed fail-closed result through persistent telemetry;
+- standalone v0.1.4 clean-load activation succeeds on Blood Moon and reports BL/BU/face 2048 with no unrelated allocation regression;
+- a Booth off/on transition does not leave persistent body/face corruption and ends with coherent protected ownership (`display.atlas === modded.resourceAtlas === protectedAtlas`, wrapper still owned);
 - current-figure mask discovery passes across multiple figures/body families where available;
-- no unrelated slot allocation regression is detected;
 - body/seams/paints/material channels/decals remain visually correct;
 - 8192x8192 fallback, when required, has acceptable GPU/VRAM behavior in human testing;
-- figure-change and ordinary atlas-refresh lifecycle behavior pass;
+- manual disable returns the current renderer to a coherent HeroForge state, and re-enable works without reload;
+- figure-change and ordinary atlas-refresh lifecycle behavior pass without stale-session reuse or recovery loops;
 - fail-closed/auto-disable/error-latch behavior is acceptable;
 - long-term maintenance disposition is explicitly recorded.
 
