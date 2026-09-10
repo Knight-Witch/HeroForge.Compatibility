@@ -33,12 +33,31 @@ Rejected/negative probes:
 - `maxTextures` -> not the body stack solution;
 - broad `instantSettingsChange()` -> unacceptable derived renderer/material corruption risk.
 
-### Standalone v0.1.0 acceptance checklist
+### Standalone v0.1.0 result
+
+Clean Blood Moon load with standalone initially disabled:
+
+- native appearance/control path: reached;
+- enable attempt: **FAIL**, with `Protected atlas could not allocate 2048px for bodyLower.`;
+- fail-closed behavior: **PASS mechanically** — toggle returned off and body/head bake ceilings were restored to native 1024 values;
+- diagnosis: `CK.Atlas` fourth constructor argument is the per-slot maximum allocation map; v0.1.0 omitted it, allowing unrelated slots to compete at ideal resolution and forcing the global packer to step the protected body allocation below 2048.
+
+### Standalone v0.1.1 correction
+
+The corrected allocator:
+
+- runs HeroForge's original `buildAtlas()` to establish the current native allocation baseline;
+- derives a per-slot cap map from those native allocations;
+- preserves unrelated slots at no more than their native allocation while permitting bodyLower/bodyUpper/face up to 2048;
+- supplies that cap map to the 8192x4096 `CK.Atlas` constructor;
+- retains the existing postcondition that any unrelated slot below native allocation aborts activation.
+
+### Standalone v0.1.1 acceptance checklist
 
 Pending from a clean HeroForge load:
 
-1. Load a normal/moderate figure with the script disabled; confirm native appearance.
-2. Enable the standalone; confirm status reports 8192x4096 and protected 2048 body/head.
+1. Load Blood Moon with the script disabled; confirm native appearance.
+2. Enable v0.1.1; confirm status reports protected 2048 active rather than allocator refusal.
 3. Confirm body, seams, paints/material channels, and decals remain correct.
 4. Confirm no visible unrelated armor/prop/kitbash texture regression.
 5. Disable; confirm native atlas/appearance returns without page reload.
@@ -68,7 +87,7 @@ HeroForge build: `heroforge07.1.9.98`.
 WITCH_DEV_PHOTO provider build `0.7.0-witch-dock-dev-provider` with current Lob/ADP present:
 
 - existing Lob-injected HeroForge 4096 control -> Witch Dock provider -> repaired capture: **passed perfectly**;
-- existing Lob-injected HeroForge 8192 grouped capture -> Witch Dock provider -> repaired capture: **passed perfectly**;
+- existing Lob-injected HeroForge 8192 grouped capture -> Witch Dock provider: **passed perfectly**;
 - Witch Dock direct TRUE 4K/TRUE 8K capture behavior: **passed**;
 - initial direct-button disabled state: **reproduced/diagnosed** as stale UI readiness after provider installed before Photo Booth opened;
 - capture engine did not require change.

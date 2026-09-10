@@ -2,7 +2,7 @@
 
 **Feature ID:** `rendering.texture-quality`  
 **Title:** Protected 2048 body/head texture quality  
-**Status:** runtime behavior validated on D4 and Blood Moon; standalone test implementation pending human acceptance  
+**Status:** runtime behavior validated on D4 and Blood Moon; standalone v0.1.1 pending human acceptance  
 **Risk:** High  
 **Primary maintainer:** TBD  
 **Reviewer:** Amanda  
@@ -22,22 +22,24 @@ The maintained first target is deliberately limited to **2048px bodyLower/bodyUp
 - Pinning valid 1024 body masks via `masksMapOverride`, holding body source `_usedTextureSize` at 1024, and rebaking through the narrow color-bake path preserved correct skin/body paint and decal color.
 - Blood Moon final visual acceptance: body texture correct, seams correct, paints/material channels correct, decals judged at approximately 95% confidence to match expected high-resolution appearance.
 - D4 previously passed the same protected-2048 visual path with correct skin/glyph color and improved detail.
+- Standalone v0.1.0 failed closed on a clean Blood Moon load because its protected atlas constructor omitted HeroForge's per-slot maximum allocation map; the allocator globally stepped resolution down and bodyLower did not reach 2048.
 
 ## Maintained standalone design
 
 1. Require named runtime capabilities only: `CK.Atlas`, `CK.Resources`, current character/display/modded parts, and color-bake refresh methods.
 2. Require HeroForge's normal texture-atlas mode and a GPU max texture size of at least 8192.
 3. Snapshot all runtime fields owned by the feature before mutation.
-4. Build a detached native-reference atlas before changing body/head bake ceilings.
+4. Ask HeroForge's original `modded.buildAtlas()` to establish the current figure's actual native allocation baseline before protected allocation is applied.
 5. Resolve each current figure's own bodyLower/bodyUpper 1024 mask path through that part's `getMaskPath(currentHiRezMode, 1024)`.
 6. Load and validate the 1024 resources; fail closed if either is unavailable or not actually 1024px.
 7. Pin the validated body masks through runtime `masksMapOverride`; do not reuse mask objects from another figure.
 8. Set current bodyLower/bodyUpper/face runtime bake ceilings to 2048 and source `_usedTextureSize` to 1024.
-9. Install a reversible own-property `modded.buildAtlas` override that constructs an 8192x4096 atlas using a cloned `atlasScale` with only bodyLower/bodyUpper/face forced to priority/scale 4. `character.data.atlasScale` itself is not modified by the standalone implementation.
-10. Reject the protected atlas before display assignment if any non-target slot would receive a smaller allocation than the detached native reference.
-11. Assign the validated protected atlas and run only `colorBake.invalidateCache()` plus `colorBake.refresh(true)`; do not call `instantSettingsChange()` or `data.change()`.
-12. Verify atlas dimensions, body/head allocations, display UV binding, base color-bake UV binding, and decal-bake UV binding where a decal pass exists.
-13. While enabled, watch for character/display replacement or protected-atlas loss and reapply with debounce/cooldown. Repeated failures auto-disable and restore native behavior.
+9. Derive a per-slot maximum allocation map from the native atlas. Unrelated slots keep their current native allocation caps; bodyLower/bodyUpper/face are permitted up to 2048.
+10. Install a reversible own-property `modded.buildAtlas` override that constructs an 8192x4096 atlas using the native-cap map and a cloned `atlasScale` with only bodyLower/bodyUpper/face forced to priority/scale 4. `character.data.atlasScale` itself is not modified by the standalone implementation.
+11. Reject the protected atlas before display assignment if bodyLower/bodyUpper/face do not reach 2048 or if any non-target slot would receive a smaller allocation than the native baseline.
+12. Assign the validated protected atlas and run only `colorBake.invalidateCache()` plus `colorBake.refresh(true)`; do not call `instantSettingsChange()` or `data.change()`.
+13. Verify atlas dimensions, body/head allocations, display UV binding, base color-bake UV binding, and decal-bake UV binding where a decal pass exists.
+14. While enabled, watch for character/display replacement or protected-atlas loss and reapply with debounce/cooldown. Repeated failures auto-disable and restore native behavior.
 
 ## Lifecycle
 
@@ -57,10 +59,10 @@ The feature must fail closed. It does not initialize a protected atlas when:
 - GPU max texture size is below 8192;
 - valid 1024 body masks cannot be resolved/loaded;
 - target 2048 allocations cannot be produced;
-- any other atlas slot would be allocated below its detached native-reference size;
+- any other atlas slot would be allocated below its current native size;
 - or post-bake UV/binding verification fails.
 
-On apply failure, owned runtime fields are restored and the prior/native atlas is rebound where possible.
+On apply failure, owned runtime fields are restored and HeroForge's original atlas builder is used to restore native allocation where possible.
 
 ## Explicitly rejected paths
 
@@ -74,7 +76,7 @@ On apply failure, owned runtime fields are restored and the prior/native atlas i
 
 ## Known limitations / open gates
 
-- Standalone enable/disable/reload lifecycle still requires human acceptance testing from a clean HeroForge load.
+- Standalone v0.1.1 enable/disable/reload lifecycle still requires human acceptance testing from a clean HeroForge load.
 - Long-session memory/performance behavior is not yet characterized.
 - HeroForge/WebP spin-capture speed is a separate Photo Booth/media investigation and is not part of this feature.
 - Some HeroForge decal source assets are intrinsically 512px while others are 2048px; this feature can protect bake destination resolution but cannot create source detail that does not exist.

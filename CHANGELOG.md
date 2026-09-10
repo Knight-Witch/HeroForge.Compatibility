@@ -1,5 +1,51 @@
 # Changelog
 
+## HFC-2026-09-10-018 — Fix protected texture allocator to preserve native slot budgets
+
+Date: 2026-09-10
+
+### Summary
+
+Fixes the first standalone `rendering.texture-quality` enable failure observed on a clean Blood Moon load.
+
+### Confirmed failure
+
+Standalone v0.1.0 failed closed with `Protected atlas could not allocate 2048px for bodyLower.` The rollback restored body/head bake ceilings to native 1024 values and did not leave a half-enabled protected state.
+
+Source-level diagnosis of `CK.Atlas` confirmed the constructor's fourth argument is a per-slot maximum allocation map. v0.1.0 passed no map, so the allocator attempted to satisfy all slots' ideal sizes inside 8192x4096 and globally stepped resolution down until the scene packed. On an extreme figure this reduced the protected body slot below 2048.
+
+### Runtime behavior changed
+
+Standalone v0.1.1 only:
+
+- asks HeroForge's original `buildAtlas()` for the current native allocation baseline;
+- derives per-slot native allocation caps from that atlas;
+- preserves those caps for unrelated slots while allowing bodyLower/bodyUpper/face up to 2048;
+- constructs the protected 8192x4096 atlas with that cap map plus the existing cloned body/head priority scale;
+- still refuses activation if any unrelated slot resolves below native allocation;
+- keeps figure-specific 1024 mask pinning, narrow color-bake refresh, reversible `buildAtlas` ownership, lifecycle monitoring, and fail-closed rollback.
+
+No `instantSettingsChange()`, `data.change()`, bundle patch, character-specific mask hard-code, or public Witch Dock change is introduced.
+
+### Validation status
+
+- v0.1.0 clean-load enable: **FAIL / diagnosed**;
+- v0.1.0 failure rollback: **PASS mechanically**;
+- corrected allocator source reasoning: **confirmed against live `CK.Atlas` constructor source**;
+- v0.1.1 JavaScript syntax: **passed before commit**;
+- v0.1.1 clean-load human enable/disable/figure-change acceptance: **pending**.
+
+### Touched files
+
+- `entries/tampermonkey-standalone/rendering-texture-quality.user.js`
+- `docs/feature-specs/rendering-texture-quality.md`
+- `ARCHITECTURE.md`
+- `TESTING.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+
+---
+
 ## HFC-2026-09-10-017 — Add experimental protected texture-quality standalone
 
 Date: 2026-09-10

@@ -131,7 +131,9 @@ Rules for this feature:
 - body/head destination resolution is protected without hard-coding character-specific assets;
 - `character.data.atlasScale` is not persisted/modified by the standalone candidate; protected scale values are supplied through a cloned atlas policy;
 - the per-display `buildAtlas` override is configurable/reversible and only owns the active experimental session;
-- a detached native-reference atlas is built before apply, and a protected layout that would reduce any unrelated slot is rejected before display assignment;
+- HeroForge's original `buildAtlas()` establishes the current native allocation baseline before protected allocation;
+- the protected allocator supplies `CK.Atlas` with a per-slot maximum allocation map derived from that native baseline, preserving unrelated slots at their native allocation caps while allowing bodyLower/bodyUpper/face up to 2048;
+- a protected layout that fails to reach 2048 for any target slot or reduces any unrelated slot below native allocation is rejected before display assignment;
 - only the narrow color-bake invalidation/refresh path is used;
 - broad `instantSettingsChange()`/character reconstruction is prohibited for this feature;
 - repeated lifecycle failures auto-disable instead of fighting HeroForge indefinitely;

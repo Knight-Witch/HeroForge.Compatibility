@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HF Compatibility - Protected 2048 Textures TEST
 // @namespace    https://github.com/Knight-Witch/HeroForge.Compatibility
-// @version      0.1.0
+// @version      0.1.1
 // @description  Experimental protected 2048 body/head texture atlas policy for HeroForge complex scenes.
 // @author       Knight Witch
 // @match        https://www.heroforge.com/*
@@ -16,7 +16,7 @@
 
   const GLOBAL = 'HFProtectedTextureQualityTest';
   const FEATURE_ID = 'rendering.texture-quality';
-  const BUILD = '0.1.0-protected-2048-experimental';
+  const BUILD = '0.1.1-protected-2048-native-caps';
   const PANEL_ID = 'hfc-protected-texture-quality-test';
   const STYLE_ID = `${PANEL_ID}-style`;
   const ATLAS_WIDTH = 8192;
@@ -53,14 +53,13 @@
   }
 
   function ownSnapshot(object, key) {
+    const hadOwn = !!object && Object.prototype.hasOwnProperty.call(object, key);
     return {
       object,
       key,
-      hadOwn: Object.prototype.hasOwnProperty.call(object, key),
-      descriptor: Object.prototype.hasOwnProperty.call(object, key)
-        ? Object.getOwnPropertyDescriptor(object, key)
-        : null,
-      value: object[key]
+      hadOwn,
+      descriptor: hadOwn ? Object.getOwnPropertyDescriptor(object, key) : null,
+      value: object ? object[key] : undefined
     };
   }
 
@@ -78,10 +77,9 @@
   }
 
   function setStatus(text, error = false) {
-    if (statusEl) {
-      statusEl.textContent = text;
-      statusEl.dataset.error = error ? '1' : '0';
-    }
+    if (!statusEl) return;
+    statusEl.textContent = text;
+    statusEl.dataset.error = error ? '1' : '0';
   }
 
   function setDetail(text) {
@@ -99,7 +97,8 @@
 
   function readCapabilities() {
     const CK = getCK();
-    if (!CK) return { ok: false, reason: 'CK unavailable', CK: null };
+    if (!CK) return { ok: false, reason: 'CK unavailable' };
+
     const character = CK.character;
     const display = character && character.display;
     const modded = display && display.modded;
@@ -111,31 +110,31 @@
     const maxTextureSize = rendererMaxTextureSize(CK);
 
     if (!character || !display || !modded || !parts || !meshes || !data || !colorBake) {
-      return { ok: false, reason: 'HeroForge character renderer not ready', CK };
+      return { ok: false, reason: 'HeroForge character renderer not ready' };
     }
-    if (window.CK.Settings && window.CK.Settings.shadersUseTextureAtlas !== true) {
-      return { ok: false, reason: 'Native texture-atlas mode is required', CK };
+    if (CK.Settings && CK.Settings.shadersUseTextureAtlas !== true) {
+      return { ok: false, reason: 'Native texture-atlas mode is required' };
     }
-    if (typeof CK.Atlas !== 'function') return { ok: false, reason: 'CK.Atlas unavailable', CK };
+    if (typeof CK.Atlas !== 'function') return { ok: false, reason: 'CK.Atlas unavailable' };
     if (!Resources || typeof Resources.getResource !== 'function' || typeof Resources.getNow !== 'function') {
-      return { ok: false, reason: 'CK.Resources texture loader unavailable', CK };
+      return { ok: false, reason: 'CK.Resources texture loader unavailable' };
     }
-    if (typeof modded.buildAtlas !== 'function') return { ok: false, reason: 'modded.buildAtlas unavailable', CK };
+    if (typeof modded.buildAtlas !== 'function') return { ok: false, reason: 'modded.buildAtlas unavailable' };
     if (typeof colorBake.invalidateCache !== 'function' || typeof colorBake.refresh !== 'function') {
-      return { ok: false, reason: 'Color-bake refresh capability unavailable', CK };
+      return { ok: false, reason: 'Color-bake refresh capability unavailable' };
     }
-    if (typeof data.isUHD !== 'function') return { ok: false, reason: 'data.isUHD unavailable', CK };
+    if (typeof data.isUHD !== 'function') return { ok: false, reason: 'data.isUHD unavailable' };
     if (!data.atlasScale || typeof data.atlasScale !== 'object') {
-      return { ok: false, reason: 'atlasScale policy unavailable', CK };
+      return { ok: false, reason: 'atlasScale policy unavailable' };
     }
     if (maxTextureSize !== null && maxTextureSize < ATLAS_WIDTH) {
-      return { ok: false, reason: `GPU texture limit ${maxTextureSize}px is below ${ATLAS_WIDTH}px`, CK };
+      return { ok: false, reason: `GPU texture limit ${maxTextureSize}px is below ${ATLAS_WIDTH}px` };
     }
 
     for (const slot of TARGET_SLOTS) {
-      if (!parts[slot] || !meshes[slot]) return { ok: false, reason: `${slot} capability unavailable`, CK };
-      if (typeof parts[slot].getMaskPath !== 'function' && BODY_MASK_SLOTS.includes(slot)) {
-        return { ok: false, reason: `${slot}.getMaskPath unavailable`, CK };
+      if (!parts[slot] || !meshes[slot]) return { ok: false, reason: `${slot} capability unavailable` };
+      if (BODY_MASK_SLOTS.includes(slot) && typeof parts[slot].getMaskPath !== 'function') {
+        return { ok: false, reason: `${slot}.getMaskPath unavailable` };
       }
     }
 
@@ -165,8 +164,8 @@
   }
 
   function compareAllocations(nativeAtlas, protectedAtlas, parts) {
-    const regressions = [];
     const changes = [];
+    const regressions = [];
     for (const slot of Object.keys(parts)) {
       let nativeAllocation;
       let protectedAllocation;
@@ -177,28 +176,118 @@
         continue;
       }
       if (!nativeAllocation || !protectedAllocation) continue;
-      if (nativeAllocation.width !== protectedAllocation.width || nativeAllocation.height !== protectedAllocation.height) {
-        const row = {
-          slot,
-          native: [nativeAllocation.width, nativeAllocation.height],
-          protected: [protectedAllocation.width, protectedAllocation.height]
-        };
-        changes.push(row);
-        if (protectedAllocation.width < nativeAllocation.width || protectedAllocation.height < nativeAllocation.height) {
-          regressions.push(row);
-        }
+      if (nativeAllocation.width === protectedAllocation.width && nativeAllocation.height === protectedAllocation.height) continue;
+      const row = {
+        slot,
+        native: [nativeAllocation.width, nativeAllocation.height],
+        protected: [protectedAllocation.width, protectedAllocation.height]
+      };
+      changes.push(row);
+      if (!TARGET_SLOTS.includes(slot)
+        && (protectedAllocation.width < nativeAllocation.width || protectedAllocation.height < nativeAllocation.height)) {
+        regressions.push(row);
       }
     }
     return { changes, regressions };
   }
 
+  function nativeAllocationCaps(nativeAtlas, parts) {
+    const caps = {};
+    for (const slot of Object.keys(parts)) {
+      let a;
+      try { a = allocation(nativeAtlas, slot); } catch (_) { a = null; }
+      if (!a) continue;
+      caps[slot] = Math.min(a.width, a.height);
+    }
+    for (const slot of TARGET_SLOTS) caps[slot] = TARGET_SIZE;
+    return caps;
+  }
+
+  function snapshotTargetBakeSizes(session) {
+    const values = {};
+    for (const slot of TARGET_SLOTS) values[slot] = session.parts[slot].bakeSize;
+    return values;
+  }
+
+  function applyOriginalTargetBakeSizes(session) {
+    session.parts.bodyLower.bakeSize = session.original.bodyLowerBakeSize.value;
+    session.parts.bodyUpper.bakeSize = session.original.bodyUpperBakeSize.value;
+    session.parts.face.bakeSize = session.original.faceBakeSize.value;
+  }
+
+  function applyProtectedTargetMetadata(session) {
+    session.parts.bodyLower.bakeSize = TARGET_SIZE;
+    session.parts.bodyUpper.bakeSize = TARGET_SIZE;
+    session.parts.face.bakeSize = TARGET_SIZE;
+    session.parts.bodyLower._usedTextureSize = BODY_MASK_SIZE;
+    session.parts.bodyUpper._usedTextureSize = BODY_MASK_SIZE;
+    session.parts.face._usedTextureSize = BODY_MASK_SIZE;
+    if (session.maskTextures) {
+      session.display.meshes.bodyLower.masksMapOverride = session.maskTextures.bodyLower;
+      session.display.meshes.bodyUpper.masksMapOverride = session.maskTextures.bodyUpper;
+    }
+  }
+
+  function buildCurrentNativeReference(session) {
+    const currentBakeSizes = snapshotTargetBakeSizes(session);
+    try {
+      applyOriginalTargetBakeSizes(session);
+      session.originalResolvedBuildAtlas.call(session.modded);
+      if (!session.modded.resourceAtlas) throw new Error('HeroForge native atlas builder returned no resource atlas.');
+      return session.modded.resourceAtlas;
+    } finally {
+      for (const slot of TARGET_SLOTS) session.parts[slot].bakeSize = currentBakeSizes[slot];
+    }
+  }
+
+  function buildProtectedAtlas(session) {
+    const { CK, data, modded } = session;
+    const nativeAtlas = buildCurrentNativeReference(session);
+    applyProtectedTargetMetadata(session);
+
+    const caps = nativeAllocationCaps(nativeAtlas, modded.parts);
+    const scale = Object.assign({}, data.atlasScale || {});
+    scale.bodyLower = 4;
+    scale.bodyUpper = 4;
+    scale.face = 4;
+
+    const protectedAtlas = new CK.Atlas(
+      Object.assign({}, modded.parts),
+      ATLAS_WIDTH,
+      ATLAS_HEIGHT,
+      caps,
+      data.isUHD(),
+      scale
+    );
+
+    for (const slot of TARGET_SLOTS) {
+      const a = allocation(protectedAtlas, slot);
+      if (!a || a.width !== TARGET_SIZE || a.height !== TARGET_SIZE) {
+        throw new Error(`Protected atlas could not allocate ${TARGET_SIZE}px for ${slot}.`);
+      }
+    }
+
+    const comparison = compareAllocations(nativeAtlas, protectedAtlas, modded.parts);
+    if (comparison.regressions.length) {
+      const first = comparison.regressions[0];
+      throw new Error(`Protected atlas would reduce ${first.slot} below native allocation.`);
+    }
+
+    session.lastNativeAtlas = nativeAtlas;
+    session.lastNativeCaps = caps;
+    session.lastComparison = comparison;
+    session.protectedAtlas = protectedAtlas;
+    return protectedAtlas;
+  }
+
   function verifyProtectedState(session = activeSession) {
     if (!session) return { ok: false, reason: 'No active protected-texture session' };
-    const { display, parts } = session;
-    if (!display || display !== (getCK() && getCK().character && getCK().character.display)) {
+    const CK = getCK();
+    if (!CK || !CK.character || CK.character.display !== session.display) {
       return { ok: false, reason: 'HeroForge display changed' };
     }
-    const atlas = display.atlas;
+
+    const atlas = session.display.atlas;
     if (!atlas || Number(atlas.width) !== ATLAS_WIDTH || Number(atlas.height) !== ATLAS_HEIGHT) {
       return { ok: false, reason: 'Protected atlas dimensions lost' };
     }
@@ -210,42 +299,48 @@
       if (!a || a.width !== TARGET_SIZE || a.height !== TARGET_SIZE) {
         return { ok: false, reason: `${slot} allocation is not ${TARGET_SIZE}px`, allocations };
       }
-    }
-
-    const displayLower = materialAllocation(display.meshes.bodyLower && display.meshes.bodyLower.material, atlas);
-    const bakeLower = materialAllocation(
-      display.meshes.bodyLower
-      && display.meshes.bodyLower.bakeMaterials
-      && display.meshes.bodyLower.bakeMaterials.color,
-      atlas
-    );
-    if (!displayLower || displayLower.width !== TARGET_SIZE || displayLower.height !== TARGET_SIZE) {
-      return { ok: false, reason: 'bodyLower display material is not bound to protected allocation', allocations };
-    }
-    if (!bakeLower || bakeLower.width !== TARGET_SIZE || bakeLower.height !== TARGET_SIZE) {
-      return { ok: false, reason: 'bodyLower color bake is not bound to protected allocation', allocations };
-    }
-
-    const decals = display.meshes.bodyLower
-      && display.meshes.bodyLower.bakeMaterials
-      && display.meshes.bodyLower.bakeMaterials.colorDecals;
-    if (Array.isArray(decals) && decals.length > 0) {
-      const decalLower = materialAllocation(decals[0], atlas);
-      if (!decalLower || decalLower.width !== TARGET_SIZE || decalLower.height !== TARGET_SIZE) {
-        return { ok: false, reason: 'bodyLower decal bake is not bound to protected allocation', allocations };
+      const displayMaterial = session.display.meshes[slot] && session.display.meshes[slot].material;
+      const displayAllocation = materialAllocation(displayMaterial, atlas);
+      if (!displayAllocation || displayAllocation.width !== TARGET_SIZE || displayAllocation.height !== TARGET_SIZE) {
+        return { ok: false, reason: `${slot} display material is not bound to protected allocation`, allocations };
       }
     }
 
-    if (parts.bodyLower._usedTextureSize !== BODY_MASK_SIZE || parts.bodyUpper._usedTextureSize !== BODY_MASK_SIZE) {
-      return { ok: false, reason: 'Body mask source size drifted from protected 1024px input', allocations };
+    for (const slot of BODY_MASK_SLOTS) {
+      const mesh = session.display.meshes[slot];
+      const texture = session.maskTextures && session.maskTextures[slot];
+      if (!mesh || !texture || mesh.masksMapOverride !== texture) {
+        return { ok: false, reason: `${slot} protected mask override was lost`, allocations };
+      }
+      const width = texture.image ? Number(texture.image.width) : 0;
+      if (width !== BODY_MASK_SIZE) return { ok: false, reason: `${slot} mask is not ${BODY_MASK_SIZE}px`, allocations };
+    }
+
+    const lowerBake = session.display.meshes.bodyLower
+      && session.display.meshes.bodyLower.bakeMaterials
+      && session.display.meshes.bodyLower.bakeMaterials.color;
+    const lowerBakeAllocation = materialAllocation(lowerBake, atlas);
+    if (!lowerBakeAllocation || lowerBakeAllocation.width !== TARGET_SIZE || lowerBakeAllocation.height !== TARGET_SIZE) {
+      return { ok: false, reason: 'bodyLower color bake is not bound to protected allocation', allocations };
+    }
+
+    const lowerDecals = session.display.meshes.bodyLower
+      && session.display.meshes.bodyLower.bakeMaterials
+      && session.display.meshes.bodyLower.bakeMaterials.colorDecals;
+    if (Array.isArray(lowerDecals) && lowerDecals.length) {
+      const decalAllocation = materialAllocation(lowerDecals[0], atlas);
+      if (!decalAllocation || decalAllocation.width !== TARGET_SIZE || decalAllocation.height !== TARGET_SIZE) {
+        return { ok: false, reason: 'bodyLower decal bake is not bound to protected allocation', allocations };
+      }
     }
 
     return { ok: true, allocations };
   }
 
   function makeSession(capability) {
-    const { display, modded, parts, meshes, data } = capability;
+    const { CK, display, modded, parts, meshes, data } = capability;
     return {
+      CK,
       display,
       modded,
       data,
@@ -254,6 +349,9 @@
         bodyUpper: parts.bodyUpper,
         face: parts.face
       },
+      originalResolvedBuildAtlas: modded.buildAtlas,
+      originalActiveAtlas: display.atlas,
+      originalResourceAtlas: modded.resourceAtlas,
       original: {
         bodyLowerBakeSize: ownSnapshot(parts.bodyLower, 'bakeSize'),
         bodyUpperBakeSize: ownSnapshot(parts.bodyUpper, 'bakeSize'),
@@ -265,10 +363,11 @@
         upperMaskOverride: ownSnapshot(meshes.bodyUpper, 'masksMapOverride'),
         buildAtlas: ownSnapshot(modded, 'buildAtlas')
       },
-      originalResolvedBuildAtlas: modded.buildAtlas,
-      nativeAtlas: null,
       maskPaths: null,
       maskTextures: null,
+      lastNativeAtlas: null,
+      lastNativeCaps: null,
+      lastComparison: null,
       protectedAtlas: null,
       appliedAt: null
     };
@@ -276,54 +375,53 @@
 
   function restoreSessionMetadata(session) {
     if (!session) return;
-    const originals = session.original;
-    restoreOwnSnapshot(originals.bodyLowerBakeSize);
-    restoreOwnSnapshot(originals.bodyUpperBakeSize);
-    restoreOwnSnapshot(originals.faceBakeSize);
-    restoreOwnSnapshot(originals.bodyLowerUsedSize);
-    restoreOwnSnapshot(originals.bodyUpperUsedSize);
-    restoreOwnSnapshot(originals.faceUsedSize);
-    restoreOwnSnapshot(originals.lowerMaskOverride);
-    restoreOwnSnapshot(originals.upperMaskOverride);
-    restoreOwnSnapshot(originals.buildAtlas);
+    restoreOwnSnapshot(session.original.bodyLowerBakeSize);
+    restoreOwnSnapshot(session.original.bodyUpperBakeSize);
+    restoreOwnSnapshot(session.original.faceBakeSize);
+    restoreOwnSnapshot(session.original.bodyLowerUsedSize);
+    restoreOwnSnapshot(session.original.bodyUpperUsedSize);
+    restoreOwnSnapshot(session.original.faceUsedSize);
+    restoreOwnSnapshot(session.original.lowerMaskOverride);
+    restoreOwnSnapshot(session.original.upperMaskOverride);
+    restoreOwnSnapshot(session.original.buildAtlas);
   }
 
   async function rebuildNativeAfterRestore(session) {
     if (!session) return;
     const CK = getCK();
-    if (!CK || CK.character.display !== session.display) return;
+    if (!CK || !CK.character || CK.character.display !== session.display) return;
     const display = session.display;
     if (!display.modded || typeof display.modded.buildAtlas !== 'function') return;
     display.modded.buildAtlas();
     if (display.modded.resourceAtlas) display.atlas = display.modded.resourceAtlas;
-    if (display.colorBake && typeof display.colorBake.invalidateCache === 'function') display.colorBake.invalidateCache();
-    if (display.colorBake && typeof display.colorBake.refresh === 'function') display.colorBake.refresh(true);
+    display.colorBake.invalidateCache();
+    display.colorBake.refresh(true);
     await sleep(BAKE_WAIT_MS);
   }
 
   async function rollbackFailedApply(session) {
+    if (!session) return;
     restoreSessionMetadata(session);
-    if (session && session.display && getCK() && getCK().character.display === session.display) {
+    const CK = getCK();
+    if (!CK || !CK.character || CK.character.display !== session.display) return;
+    try {
+      session.originalResolvedBuildAtlas.call(session.modded);
+      if (session.modded.resourceAtlas) session.display.atlas = session.modded.resourceAtlas;
+      session.display.colorBake.invalidateCache();
+      session.display.colorBake.refresh(true);
+      await sleep(BAKE_WAIT_MS);
+    } catch (error) {
+      console.error('[HFC texture quality] rollback warning', error);
       try {
-        if (session.nativeAtlas) {
-          session.display.modded.resourceAtlas = session.nativeAtlas;
-          session.display.atlas = session.nativeAtlas;
-        } else {
-          session.originalResolvedBuildAtlas.call(session.modded);
-          session.display.atlas = session.modded.resourceAtlas;
-        }
-        session.display.colorBake.invalidateCache();
-        session.display.colorBake.refresh(true);
-        await sleep(BAKE_WAIT_MS);
+        session.modded.resourceAtlas = session.originalResourceAtlas;
+        session.display.atlas = session.originalActiveAtlas;
       } catch (_) {}
     }
   }
 
   async function loadBodyMasks(capability, session) {
     const { Resources, display } = capability;
-    const hiRez = display.modded && display.modded.settings
-      ? display.modded.settings.hiRez
-      : false;
+    const hiRez = display.modded && display.modded.settings ? display.modded.settings.hiRez : false;
 
     session.parts.bodyLower._usedTextureSize = BODY_MASK_SIZE;
     session.parts.bodyUpper._usedTextureSize = BODY_MASK_SIZE;
@@ -356,48 +454,25 @@
 
     session.maskPaths = { bodyLower: lowerPath, bodyUpper: upperPath };
     session.maskTextures = { bodyLower: lowerTexture, bodyUpper: upperTexture };
-    return session.maskTextures;
   }
 
-  function installProtectedBuildAtlas(capability, session) {
-    const { CK, modded } = capability;
+  function installProtectedBuildAtlas(session) {
     const wrapper = function protectedBuildAtlas() {
-      const scale = Object.assign({}, this.data.atlasScale || {});
-      scale.bodyLower = 4;
-      scale.bodyUpper = 4;
-      scale.face = 4;
-      this.resourceAtlas = new CK.Atlas(
-        Object.assign({}, this.parts),
-        ATLAS_WIDTH,
-        ATLAS_HEIGHT,
-        undefined,
-        this.data.isUHD(),
-        scale
-      );
-      return this.resourceAtlas;
+      if (!enabled || activeSession !== session || this !== session.modded) {
+        return session.originalResolvedBuildAtlas.apply(this, arguments);
+      }
+      const atlas = buildProtectedAtlas(session);
+      this.resourceAtlas = atlas;
+      return atlas;
     };
 
-    Object.defineProperty(modded, 'buildAtlas', {
+    Object.defineProperty(session.modded, 'buildAtlas', {
       configurable: true,
-      enumerable: session.original.buildAtlas.descriptor
-        ? !!session.original.buildAtlas.descriptor.enumerable
-        : false,
+      enumerable: session.original.buildAtlas.descriptor ? !!session.original.buildAtlas.descriptor.enumerable : false,
       writable: true,
       value: wrapper
     });
-    if (modded.buildAtlas !== wrapper) throw new Error('Could not install reversible protected atlas builder.');
-  }
-
-  function buildNativeReference(capability) {
-    const { CK, modded, data } = capability;
-    return new CK.Atlas(
-      Object.assign({}, modded.parts),
-      undefined,
-      undefined,
-      undefined,
-      data.isUHD(),
-      data.atlasScale
-    );
+    if (session.modded.buildAtlas !== wrapper) throw new Error('Could not install reversible protected atlas builder.');
   }
 
   async function applyFreshSession() {
@@ -406,34 +481,20 @@
     const session = makeSession(capability);
 
     try {
-      session.nativeAtlas = buildNativeReference(capability);
+      session.originalResolvedBuildAtlas.call(session.modded);
+      if (!session.modded.resourceAtlas) throw new Error('HeroForge native atlas builder returned no resource atlas.');
+      session.lastNativeAtlas = session.modded.resourceAtlas;
+
       await loadBodyMasks(capability, session);
+      applyProtectedTargetMetadata(session);
 
-      session.parts.bodyLower.bakeSize = TARGET_SIZE;
-      session.parts.bodyUpper.bakeSize = TARGET_SIZE;
-      session.parts.face.bakeSize = TARGET_SIZE;
-      capability.meshes.bodyLower.masksMapOverride = session.maskTextures.bodyLower;
-      capability.meshes.bodyUpper.masksMapOverride = session.maskTextures.bodyUpper;
+      const protectedAtlas = buildProtectedAtlas(session);
+      installProtectedBuildAtlas(session);
+      session.modded.resourceAtlas = protectedAtlas;
+      session.display.atlas = protectedAtlas;
 
-      installProtectedBuildAtlas(capability, session);
-      const protectedAtlas = capability.modded.buildAtlas();
-      session.protectedAtlas = protectedAtlas;
-
-      for (const slot of TARGET_SLOTS) {
-        const a = allocation(protectedAtlas, slot);
-        if (!a || a.width !== TARGET_SIZE || a.height !== TARGET_SIZE) {
-          throw new Error(`Protected atlas could not allocate ${TARGET_SIZE}px for ${slot}.`);
-        }
-      }
-
-      const comparison = compareAllocations(session.nativeAtlas, protectedAtlas, capability.modded.parts);
-      if (comparison.regressions.length > 0) {
-        throw new Error(`Protected atlas would reduce ${comparison.regressions[0].slot} below native allocation.`);
-      }
-
-      capability.display.atlas = protectedAtlas;
-      capability.colorBake.invalidateCache();
-      capability.colorBake.refresh(true);
+      session.display.colorBake.invalidateCache();
+      session.display.colorBake.refresh(true);
       await sleep(BAKE_WAIT_MS);
 
       activeSession = session;
@@ -448,9 +509,9 @@
         atlas: [ATLAS_WIDTH, ATLAS_HEIGHT],
         targetSize: TARGET_SIZE,
         allocations: verification.allocations,
-        nativeAtlas: [session.nativeAtlas.width, session.nativeAtlas.height],
-        allocationChanges: comparison.changes,
-        allocationRegressions: comparison.regressions,
+        nativeAtlas: session.lastNativeAtlas ? [session.lastNativeAtlas.width, session.lastNativeAtlas.height] : null,
+        allocationChanges: session.lastComparison ? session.lastComparison.changes : [],
+        allocationRegressions: session.lastComparison ? session.lastComparison.regressions : [],
         maskPaths: session.maskPaths,
         maxTextureSize: capability.maxTextureSize,
         appliedAt: session.appliedAt
@@ -465,34 +526,25 @@
 
   async function reapplySession(session) {
     const CK = getCK();
-    if (!session || !CK || CK.character.display !== session.display) throw new Error('Current display changed.');
-    session.parts.bodyLower.bakeSize = TARGET_SIZE;
-    session.parts.bodyUpper.bakeSize = TARGET_SIZE;
-    session.parts.face.bakeSize = TARGET_SIZE;
-    session.parts.bodyLower._usedTextureSize = BODY_MASK_SIZE;
-    session.parts.bodyUpper._usedTextureSize = BODY_MASK_SIZE;
-    session.parts.face._usedTextureSize = BODY_MASK_SIZE;
-    session.display.meshes.bodyLower.masksMapOverride = session.maskTextures.bodyLower;
-    session.display.meshes.bodyUpper.masksMapOverride = session.maskTextures.bodyUpper;
-
+    if (!session || !CK || !CK.character || CK.character.display !== session.display) {
+      throw new Error('Current display changed.');
+    }
+    applyProtectedTargetMetadata(session);
     const atlas = session.modded.buildAtlas();
     session.protectedAtlas = atlas;
-    for (const slot of TARGET_SLOTS) {
-      const a = allocation(atlas, slot);
-      if (!a || a.width !== TARGET_SIZE || a.height !== TARGET_SIZE) {
-        throw new Error(`Rebuilt atlas did not preserve ${TARGET_SIZE}px ${slot}.`);
-      }
-    }
     session.display.atlas = atlas;
     session.display.colorBake.invalidateCache();
     session.display.colorBake.refresh(true);
     await sleep(BAKE_WAIT_MS);
+
     const verification = verifyProtectedState(session);
     if (!verification.ok) throw new Error(verification.reason);
     session.appliedAt = new Date().toISOString();
     if (lastDiagnostics) {
       lastDiagnostics.status = 'active';
       lastDiagnostics.allocations = verification.allocations;
+      lastDiagnostics.nativeAtlas = session.lastNativeAtlas ? [session.lastNativeAtlas.width, session.lastNativeAtlas.height] : null;
+      lastDiagnostics.allocationChanges = session.lastComparison ? session.lastComparison.changes : [];
       lastDiagnostics.appliedAt = session.appliedAt;
     }
   }
@@ -514,7 +566,8 @@
     enabled = true;
     if (toggle) toggle.checked = true;
     setStatus('Applying protected 2048 textures…');
-    setDetail('This may take several seconds while HeroForge rebakes color/decal textures.');
+    setDetail('HeroForge will build a native baseline, reserve body/head resolution, then rebake.');
+
     try {
       activeSession = await applyFreshSession();
       unhealthySince = null;
@@ -539,6 +592,7 @@
     unhealthySince = null;
     reapplyFailures = 0;
     if (toggle) toggle.checked = false;
+
     const session = activeSession;
     activeSession = null;
     if (!session) {
@@ -554,16 +608,16 @@
     try {
       restoreSessionMetadata(session);
       await rebuildNativeAfterRestore(session);
-      if (!silent) {
-        setStatus('Native HeroForge textures restored');
-        setDetail('Reload is not required unless HeroForge itself is in a bad renderer state.');
-      }
       lastDiagnostics = {
         featureId: FEATURE_ID,
         build: BUILD,
         status: 'disabled',
         disabledAt: new Date().toISOString()
       };
+      if (!silent) {
+        setStatus('Native HeroForge textures restored');
+        setDetail('Reload is not required unless HeroForge itself is already in a bad renderer state.');
+      }
     } catch (error) {
       if (!silent) {
         setStatus(`Disable completed with warning: ${error.message}`, true);
@@ -577,6 +631,7 @@
 
   async function watcherTick() {
     if (disposed || busy) return;
+
     if (!enabled) {
       const capability = readCapabilities();
       if (capability.ok) {
@@ -656,12 +711,13 @@
 
   function mountUI() {
     if (document.getElementById(PANEL_ID)) return;
+
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
       #${PANEL_ID} {
         position: fixed; right: 16px; bottom: 16px; z-index: 2147483600;
-        width: 300px; padding: 12px 14px; border: 1px solid rgba(255,255,255,.18);
+        width: 330px; padding: 12px 14px; border: 1px solid rgba(255,255,255,.18);
         border-radius: 10px; background: rgba(20,20,24,.94); color: #f2f2f5;
         box-shadow: 0 10px 30px rgba(0,0,0,.35); font: 12px/1.35 system-ui, sans-serif;
       }
@@ -685,6 +741,7 @@
       <div class="hfc-build">${FEATURE_ID} · ${BUILD}</div>
     `;
     document.body.appendChild(panel);
+
     toggle = panel.querySelector('input[type="checkbox"]');
     statusEl = panel.querySelector('.hfc-status');
     detailEl = panel.querySelector('.hfc-detail');
@@ -736,7 +793,9 @@
       return;
     }
     mountUI();
-    watcher = setInterval(() => { watcherTick().catch((error) => console.error('[HFC texture quality] watcher', error)); }, WATCH_INTERVAL_MS);
+    watcher = setInterval(() => {
+      watcherTick().catch((error) => console.error('[HFC texture quality] watcher', error));
+    }, WATCH_INTERVAL_MS);
     watcherTick().catch((error) => console.error('[HFC texture quality] initial probe', error));
   }
 
