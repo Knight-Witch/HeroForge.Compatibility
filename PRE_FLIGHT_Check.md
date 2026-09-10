@@ -1,5 +1,66 @@
 # Pre-Flight Check Log
 
+## PFC-2026-09-10-017 — Adaptive atlas-area fallback and persistent test telemetry
+
+Date: 2026-09-10
+
+### Target files
+
+- `entries/tampermonkey-standalone/rendering-texture-quality.user.js`
+- `docs/feature-specs/rendering-texture-quality.md`
+- `docs/investigations/INV-0004-texture-atlas-quality-2026-09-10.md`
+- `MASTER.md`
+- `FEATURE_INVENTORY.md`
+- `ARCHITECTURE.md`
+- `COMPATIBILITY.md`
+- `MIGRATION_PLAN.md`
+- `TESTING.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+
+### Reviewed
+
+- binding `PROJECT_CONTRACT.md`;
+- current `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `MIGRATION_PLAN.md`, and `TESTING.md`;
+- current texture feature spec, investigation, and standalone v0.1.2 source;
+- v0.1.2 Blood Moon panel failure supplied by Amanda;
+- passive bridge recorder result from issue #1192;
+- live `CK.Atlas` constructor source and native `modded.buildAtlas()` implementation;
+- successful manual Blood Moon protected sequence in issues #1145/#1146;
+- detached cloned-scale vs live-scale equivalence result from issue #1193;
+- current bridge health and the timed-out heavy pressure-profile probe;
+- feature branch head `0745d3f7254185430ce20d6254e79679025f3060` and base tree `586b8cb68be2aa2e8c94811fceb29727d5c9dff6` before packaging.
+
+### Confirmed
+
+- v0.1.2 failed with baseline `8192x4096`; its protected attempt produced bodyLower `1024`, bodyUpper `1024`, face `2048`.
+- The last failure remained available in v0.1.2 diagnostics, but the disabled watcher replaced the visible panel error with normal Ready status on the next tick.
+- The passive recorder can observe atlas/target/bake/status transitions without mutating HeroForge.
+- Using a cloned target scale versus temporarily placing the same target entries on live `character.data.atlasScale` produced the same detached `8192x4096` result (`1024/1024/2048`). Scale-object identity is therefore not the missing factor.
+- With unrelated slots capped to their exact pre-enable allocations, the current `8192x4096` area cannot satisfy all three 2048 targets; increasing atlas area is the next bounded variable.
+- The maintained quality target remains 2048. The separate 4096-body experiment is not being promoted.
+- `COMPATIBILITY.md`, `MIGRATION_PLAN.md`, and the investigation contained fixed-8192x4096 / v0.1.0-era wording that must change in the same commit so durable project state matches v0.1.3 behavior.
+- `OWNERSHIP.md` does not require a runtime-stage change; primary maintainer remains TBD and Witch Dock promotion is still unapproved.
+
+### Material conflict risks
+
+- `8192x8192` doubles atlas area relative to `8192x4096` and may carry materially higher GPU/VRAM cost. It must be a fallback candidate only, selected only when the smaller atlas cannot satisfy postconditions.
+- The fallback must be tested detached before display assignment.
+- Any candidate that lowers an unrelated pre-enable slot allocation must be rejected.
+- Errors must remain visible long enough for human review and must be available as plain bridge-readable data.
+- Heavy Power probes can exceed the relay mutation lease; the maintained standalone must capture its own bounded telemetry instead of relying on repeated Power inspection during user testing.
+- `/legacy/` and Witch Dock remain untouched.
+- No broad character/settings rebuild is permitted.
+- A stale/contaminated pre-enable atlas is still a bad acceptance baseline; the human test must begin after a clean page refresh.
+
+### Recommended action
+
+Commit standalone v0.1.3 with adaptive detached atlas candidates (`8192x4096`, then `8192x8192`), persistent error latch, capped attempt history, state-change timeline, exact pre-enable rollback, and the existing 1024 mask safety. Test from a page refresh and read the standalone telemetry through HF-Chat-Bridge after the single human enable action.
+
+**Runtime behavior changed:** yes, limited to the opt-in experimental standalone feature branch. Existing maintained runtime modules and public Witch Dock are unchanged.
+
+---
+
 ## PFC-2026-09-10-016 — Preserve exact pre-enable atlas during protected-texture apply
 
 Date: 2026-09-10

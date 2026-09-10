@@ -1,7 +1,7 @@
 # INV-0004 — Texture Atlas Quality / Protected Body Resolution
 
 Date: 2026-09-08 through 2026-09-10  
-Status: runtime mechanism confirmed; standalone validation next  
+Status: runtime mechanism confirmed; standalone v0.1.3 validation next  
 Feature candidate: `rendering.texture-quality`
 
 ## Problem
@@ -27,7 +27,7 @@ D4 could load with substantially healthier native allocations, demonstrating tha
 
 ### Protected 2048 allocation
 
-An explicitly constructed 8192x4096 `CK.Atlas`, with bodyLower/bodyUpper/face priority/scale set to 4 and their bake ceilings at 2048, produced:
+Manually constructed protected `CK.Atlas` states, with bodyLower/bodyUpper/face priority/scale set to 4 and their bake ceilings at 2048, produced:
 
 - bodyLower: 2048x2048;
 - bodyUpper: 2048x2048;
@@ -60,6 +60,28 @@ Blood Moon's actual decal stack included both 2048 and 512 source assets. Confir
 
 A detached 8192x8192 atlas experiment with cloned body part metadata and a 4096 bake ceiling successfully packed bodyLower/bodyUpper at 4096 and face at 2048 on Blood Moon. This was not adopted: the protected 2048 target already achieved the desired visual result, and 4096 requires separate performance/lifecycle testing.
 
+### Standalone v0.1.2 exposed an atlas-area constraint
+
+After v0.1.0 and v0.1.1 failures were diagnosed, standalone v0.1.2 correctly used the exact displayed pre-enable atlas as its allocation/safety baseline. On the current Blood Moon state:
+
+- pre-enable atlas: 8192x4096;
+- protected candidate: 8192x4096;
+- bodyLower: 1024;
+- bodyUpper: 1024;
+- face: 2048.
+
+This result occurred with the per-slot cap map preserving unrelated slots at their exact pre-enable allocation sizes. Therefore the 8192x4096 packer could not simultaneously preserve that allocation budget and raise all three protected targets to 2048.
+
+A detached A/B test then repeated the same 8192x4096 construction with target scale entries supplied through a cloned scale object and through temporary live `character.data.atlasScale` entries. Both returned the same `1024/1024/2048` target allocations. Scale-object identity is therefore ruled out as the missing requirement.
+
+The supported next variable is **atlas packing area**, not broader settings mutation or a higher body-resolution target.
+
+### Error visibility / diagnostic observability
+
+The v0.1.2 failure remained available in the feature's diagnostic state, but the disabled watcher overwrote the visible failure panel with the normal Ready message on its next tick. A passive bridge recorder confirmed this transition.
+
+For v0.1.3, the test feature owns bounded plain-data telemetry (`diagnostics`, `lastError`, `attemptHistory`, `timeline`) and latches the last user-visible error until another explicit enable attempt, explicit clear, or page reload. This reduces dependence on screenshot timing and on mutation-capable bridge probes during testing.
+
 ## Visual acceptance
 
 ### D4
@@ -68,7 +90,7 @@ Protected high-resolution body allocation plus valid 1024 body masks produced co
 
 ### Blood Moon
 
-Final protected-2048 result was reported as:
+Final manual protected-2048 result was reported as:
 
 - body texture correct;
 - seams correct;
@@ -81,16 +103,22 @@ An earlier isolated skirt-metal channel error occurred during broader experiment
 
 HF-Chat-Bridge Power experiments revealed a development-tool lifecycle trap: persistent set restorers can be flushed by later Power runs, making a previously protected atlas appear to "decay" back to native. This contamination is not evidence that HeroForge's normal `buildAtlas()` independently reverted the validated state; a temporary `buildAtlas` counter observed no call during a stable protected window.
 
+A later large detached pressure probe also exceeded the relay's mutation-capable lease. That reinforces the maintained rule that the standalone feature should capture its own bounded test telemetry and should not depend on repeated Power mutations for observability.
+
 The maintained standalone feature must not depend on HF-Chat-Bridge and must own its runtime lifecycle directly.
 
 ## Supported inference
 
-The general HeroForge quality downgrade experienced by complex scenes is primarily an atlas-allocation pressure policy: destination regions are reduced sharply to make the atlas fit. Protecting body/head allocations while expanding the atlas avoids that downgrade on the tested figures.
+The general HeroForge quality downgrade experienced by complex scenes is primarily an atlas-allocation pressure policy: destination regions are reduced sharply to make the atlas fit. Protecting body/head allocations while increasing atlas packing area when necessary avoids that downgrade on the tested manual states.
+
+For the current Blood Moon exact pre-enable allocation budget, 8192x4096 is insufficient under the standalone's no-unrelated-regression contract. An 8192x8192 fallback is therefore a bounded next candidate for preserving the same 2048 body/head target, not evidence that 4096 body textures are required.
 
 ## Not proven
 
 - The January GPU-crash/account-specific quality change has not been proven to share the same root cause.
 - The exact internal trigger that decides the native atlas dimensions for every scene is not fully mapped.
+- Standalone v0.1.3 has not yet been human-validated on Blood Moon.
+- 8192x8192 fallback GPU/VRAM impact has not yet been characterized in normal use.
 - Long-session memory behavior and spin-capture performance are separate open investigations.
 
 ## Maintained direction
@@ -98,12 +126,14 @@ The general HeroForge quality downgrade experienced by complex scenes is primari
 Proceed with a standalone, reversible, capability-gated `rendering.texture-quality` test using:
 
 - normal atlas mode;
-- 8192x4096 protected atlas;
-- bodyLower/bodyUpper/face at 2048;
+- bodyLower/bodyUpper/face maintained at 2048;
 - figure-specific valid 1024 body masks;
+- exact pre-enable per-slot allocation baseline/caps;
+- detached 8192x4096 candidate first;
+- detached 8192x8192 candidate only if the smaller atlas cannot satisfy 2048 targets with zero unrelated allocation regressions;
 - narrow color-bake refresh only;
-- pre-apply native-vs-protected allocation regression check;
 - lifecycle watcher/reapply;
-- fail-closed disable/restore.
+- persistent bounded diagnostics/error latch;
+- fail-closed exact disable/restore.
 
-Do not integrate into Witch Dock until standalone enable/disable, figure-change, and reload behavior pass.
+Do not integrate into Witch Dock until standalone activation, enable/disable, figure-change, reload, visual correctness, and fallback performance behavior pass.

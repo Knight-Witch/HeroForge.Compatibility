@@ -6,7 +6,7 @@ Current Photo Booth validation target: `heroforge07.1.9.98` / 2026-09-05. Curren
 
 | Component | Current status | Last verified build/date | Notes |
 |---|---|---|---|
-| `rendering.texture-quality` | **Runtime mechanism validated; standalone candidate unvalidated** | `1.9.98` bundle family / 2026-09-10 | D4 + Blood Moon protected-2048 path. Requires atlas mode, 8192 texture capability, valid 1024 body masks, reversible narrow rebake. No Witch Dock integration yet. |
+| `rendering.texture-quality` | **Runtime mechanism validated manually; standalone v0.1.3 unvalidated** | `1.9.98` bundle family / 2026-09-10 | D4 + Blood Moon protected-2048 path. Requires atlas mode, 8192 texture capability, valid 1024 body masks, reversible narrow rebake. Atlas area is 8192x4096 first with 8192x8192 fallback only if required by the exact pre-enable allocation budget. No Witch Dock integration yet. |
 | `media.screenshot-resolution` | **Standalone validated; Witch Dock Stable validated** | `heroforge07.1.9.98` / 2026-09-05 | v0.6 baseline; Stable provider promoted at Witch Dock commit `e155f2c2f961463b4a0e26f7c88f21f603ce1b95`; clean public smoke passed perfectly. |
 | `decals.gizmo.bound-correction` | Witch Dock Stable | 2026-09-05 | Validated separately. |
 | Character local JSON | Core Save/Load passed live | 2026-09-03 | Lifecycle/repeated-use pending. |
@@ -27,13 +27,16 @@ The current candidate depends on named runtime surfaces:
 
 Required postconditions:
 
-- 8192x4096 active atlas;
-- bodyLower/bodyUpper/face each 2048x2048;
-- valid figure-specific 1024 body mask inputs;
+- selected active atlas is either 8192x4096 or, only when required, 8192x8192;
+- bodyLower/bodyUpper/face each resolve to 2048x2048;
+- valid figure-specific 1024 body mask inputs remain pinned;
 - display and color/decal bake UV bindings target the protected allocation;
-- no unrelated slot is allocated below the detached native-reference size.
+- no unrelated slot is allocated below the exact pre-enable displayed allocation;
+- a larger atlas candidate is not selected when the smaller candidate already satisfies the contract.
 
-If any requirement fails, the standalone must refuse/auto-disable and restore native ownership where possible.
+Standalone v0.1.2 established that the current Blood Moon exact pre-enable budget can produce only BL 1024 / BU 1024 / face 2048 in 8192x4096 under the no-regression cap map. A detached cloned-scale versus temporary live-scale A/B returned the same allocation, so v0.1.3 treats atlas packing area as the next bounded compatibility variable rather than mutating persistent scale state.
+
+If any requirement fails, the standalone must refuse/auto-disable and restore the exact captured pre-enable ownership/state where possible. Failure details must remain visible and available as bounded plain-data telemetry for bridge inspection.
 
 Rejected compatibility dependencies:
 
@@ -41,6 +44,7 @@ Rejected compatibility dependencies:
 - no minified-name dependency;
 - no `instantSettingsChange()`;
 - no hard-coded character-specific mask paths;
+- no 4096-body target in the maintained candidate;
 - no public Witch Dock dependency on Compatibility or HF-Chat-Bridge.
 
 ## Photo Booth capability contract
@@ -64,4 +68,4 @@ Rejected compatibility dependencies:
 
 ## Revalidation triggers
 
-Re-run texture-quality validation when `CK.Atlas`, part mask path/resource behavior, color-bake ownership, atlas allocation semantics, body part metadata, or relevant HeroForge build topology changes. Re-run the Photo Booth suite when HeroForge build changes, the named capture/Effects methods change, tile geometry becomes incoherent, Photo Booth effect profiles materially change, or native true-resolution rendering appears.
+Re-run texture-quality validation when `CK.Atlas`, part mask path/resource behavior, color-bake ownership, atlas allocation semantics, GPU max texture capability, body part metadata, or relevant HeroForge build topology changes. Re-run the Photo Booth suite when HeroForge build changes, the named capture/Effects methods change, tile geometry becomes incoherent, Photo Booth effect profiles materially change, or native true-resolution rendering appears.

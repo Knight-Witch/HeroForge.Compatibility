@@ -27,7 +27,7 @@ The corrected bound decal gizmo is the first current decal reconstruction to com
 
 | Area | Current disposition | Reason / next gate |
 |---|---|---|
-| `rendering.texture-quality` | **Experimental standalone candidate** | Runtime protected-2048 mechanism validated on D4 + Blood Moon; clean-load standalone enable/disable/figure-change testing required before any Witch Dock Dev consideration |
+| `rendering.texture-quality` | **Experimental standalone candidate** | Runtime protected-2048 mechanism validated manually on D4 + Blood Moon; standalone v0.1.3 clean-load activation/telemetry plus enable/disable/figure-change testing required before any Witch Dock Dev consideration |
 | ADP v0.99.30 decal posing subsystem | Reconstruction target | ADP-side audit complete; archive source, audit Full Res v0.80 renderer dependency, audit HF Core Tweaks slots if included |
 | `decals.advanced-posing` Witch Dock host | Planned Witch Dock Dev candidate | Must first exist as maintained production-style standalone module and pass Lob coexistence testing for remaining overlapping features |
 | Corrected bound decal gizmo | **Witch Dock Stable** | WITCH_DEV v0.4.2 behavior validated and promoted; retain regression coverage, defer unequal bound rendering/center-wireframe polish |
@@ -47,14 +47,17 @@ The corrected bound decal gizmo is the first current decal reconstruction to com
 
 The previous generic texture-atlas/render-override investigation has now been decomposed into the concrete feature ID `rendering.texture-quality`.
 
+The maintained quality target is bodyLower/bodyUpper/face at 2048. Standalone v0.1.3 tests 8192x4096 first and may use 8192x8192 only as a larger atlas-area fallback when the smaller candidate cannot satisfy the exact pre-enable no-regression allocation contract. This does not promote the detached 4096-body experiment.
+
 Promotion requirements before Witch Dock Dev:
 
-- standalone v0.1.0 enable/disable passes from a clean load;
+- standalone v0.1.3 initial activation passes from a clean Blood Moon load or produces a fully diagnosed fail-closed result through persistent telemetry;
 - current-figure mask discovery passes across multiple figures/body families where available;
 - no unrelated slot allocation regression is detected;
 - body/seams/paints/material channels/decals remain visually correct;
+- 8192x8192 fallback, when required, has acceptable GPU/VRAM behavior in human testing;
 - figure-change and ordinary atlas-refresh lifecycle behavior pass;
-- fail-closed/auto-disable behavior is acceptable;
+- fail-closed/auto-disable/error-latch behavior is acceptable;
 - long-term maintenance disposition is explicitly recorded.
 
 The detached 4096-body experiment remains experimental-only and is not bundled into the first maintained target.

@@ -119,6 +119,8 @@ protected-texture feature lifecycle
     ↓
 capability/resource validation
     ↓
+detached adaptive atlas candidate selection
+    ↓
 reversible per-display atlas builder ownership
     ↓
 CK.Atlas + CK.Resources + colorBake narrow refresh
@@ -129,15 +131,21 @@ Rules for this feature:
 - normal HeroForge atlas mode remains enabled;
 - current-figure body-mask resources are discovered through named part/resource APIs;
 - body/head destination resolution is protected without hard-coding character-specific assets;
+- the maintained quality target is bodyLower/bodyUpper/face at 2048px; the separate 4096-body experiment remains out of scope;
 - `character.data.atlasScale` is not persisted/modified by the standalone candidate; protected scale values are supplied through a cloned atlas policy;
 - the per-display `buildAtlas` override is configurable/reversible and only owns the active experimental session;
 - the exact atlas HeroForge is displaying immediately before enable is the initial safety/allocation baseline; the feature does not call native `buildAtlas()` merely to synthesize a reference atlas;
 - the protected allocator supplies `CK.Atlas` with a per-slot maximum allocation map derived from that pre-enable displayed baseline, preserving unrelated slots at those allocation caps while allowing bodyLower/bodyUpper/face up to 2048;
-- a protected layout that fails to reach 2048 for any target slot or reduces any unrelated slot below its pre-enable allocation is rejected before display assignment;
+- candidate atlas area is selected adaptively: test 8192x4096 detached first, then 8192x8192 only if the smaller area cannot satisfy all target/postcondition requirements;
+- a candidate that fails to reach 2048 for any target slot or reduces any unrelated slot below its pre-enable allocation is rejected before display assignment;
+- only the smallest candidate that passes both target-allocation and unrelated-slot checks may become the active/resource atlas;
+- 8192x8192 is an atlas-area fallback, not approval for 4096 body textures or a general UHD escalation;
 - initial failure and manual disable restore the exact captured active/resource atlas objects plus owned metadata rather than generating a replacement native atlas;
 - allocation caps are scoped to a part-set fingerprint; a changed part set requires reinitialization rather than reuse of stale caps;
 - only the narrow color-bake invalidation/refresh path is used;
 - broad `instantSettingsChange()`/character reconstruction is prohibited for this feature;
+- test diagnostics are plain bounded data (`diagnostics`, `lastError`, `attemptHistory`, `timeline`) exposed by the standalone feature so development tooling can inspect behavior without adding renderer mutations;
+- user-visible errors remain latched while the feature is disabled until another explicit enable attempt, explicit diagnostic clear, or page reload;
 - repeated lifecycle failures auto-disable instead of fighting HeroForge indefinitely.
 
 If this behavior passes standalone acceptance, repeated raw `CK` access should later be extracted into maintained bridge/adapters before or during Witch Dock Dev integration.

@@ -1,5 +1,66 @@
 # Changelog
 
+## HFC-2026-09-10-020 — Add adaptive atlas-area selection and persistent texture diagnostics
+
+Date: 2026-09-10
+
+### Summary
+
+Responds to the third standalone `rendering.texture-quality` enable failure on Blood Moon. v0.1.2 correctly preserved the exact pre-enable atlas but proved that an 8192x4096 atlas cannot satisfy the current safety contract while simultaneously preserving every unrelated pre-enable slot allocation and raising bodyLower/bodyUpper/face to 2048.
+
+### Confirmed failure / diagnosis
+
+- v0.1.2 reported baseline `8192x4096` and a protected attempt of bodyLower `1024`, bodyUpper `1024`, face `2048`.
+- The failure was retained in diagnostics but the disabled watcher immediately overwrote the visible panel with the normal Ready status, making the useful error difficult to capture.
+- A passive bridge recorder confirmed that status transition without mutating renderer state.
+- A detached A/B runtime test constructed the same 8192x4096 atlas once with a cloned target scale and once with temporary live `character.data.atlasScale` target entries. Both produced bodyLower/bodyUpper `1024` and face `2048`, ruling out cloned-vs-live scale-object identity as the missing requirement.
+- The supported current constraint is atlas packing area under the exact pre-enable no-unrelated-regression policy, not failure to request 2048 body/head ceilings.
+
+### Runtime behavior changed
+
+Standalone v0.1.3 only:
+
+- keeps 2048 as the bodyLower/bodyUpper/face quality target;
+- captures the exact pre-enable atlas and per-slot allocation baseline as before;
+- tests `8192x4096` as the first detached protected candidate;
+- if that candidate cannot reach 2048 for all three targets without lowering an unrelated slot, tests `8192x8192` as a second detached candidate;
+- assigns only the smallest candidate that passes both target-allocation and unrelated-slot postconditions;
+- does **not** enable the separate 4096-body experiment;
+- keeps valid current-figure 1024 body-mask pinning and the narrow color-bake refresh path;
+- latches the last enable/disable error in the UI until another explicit enable attempt, explicit clear, or page reload;
+- records capped `attemptHistory` and state-change `timeline` as plain data on `window.HFProtectedTextureQualityTest` so HF-Chat-Bridge can inspect test behavior without timing screenshots or accessor reads;
+- includes candidate atlas dimensions, target allocations, regressions, baseline allocations, and mask paths in persistent diagnostics;
+- continues exact pre-enable restoration, part-set fingerprinting, reversible `buildAtlas` ownership, lifecycle reapply, and fail-closed behavior.
+
+No `instantSettingsChange()`, `data.change()`, bundle patch, 4096 body target, character-specific mask hard-code, `/legacy/` modification, or Witch Dock change is introduced.
+
+### Validation status
+
+- v0.1.0 initial enable: **FAIL / recorded**;
+- v0.1.1 initial enable: **FAIL / recorded**;
+- v0.1.2 initial enable: **FAIL / diagnosed** (`8192x4096 -> BL 1024 / BU 1024 / face 2048` under the safety caps);
+- detached cloned-vs-live scale-object test: **PASS / equivalent result**, ruling out scale-object identity;
+- passive bridge recorder: **installed and verified**, confirming the visible error-overwrite bug;
+- v0.1.3 JavaScript syntax: **PASS** (`node --check`) on the prepared source;
+- v0.1.3 GitHub runtime blob: **fetched back/reviewed before commit packaging**;
+- v0.1.3 clean-load human activation: **pending**.
+
+### Touched files
+
+- `entries/tampermonkey-standalone/rendering-texture-quality.user.js`
+- `docs/feature-specs/rendering-texture-quality.md`
+- `docs/investigations/INV-0004-texture-atlas-quality-2026-09-10.md`
+- `MASTER.md`
+- `FEATURE_INVENTORY.md`
+- `ARCHITECTURE.md`
+- `COMPATIBILITY.md`
+- `MIGRATION_PLAN.md`
+- `TESTING.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+
+---
+
 ## HFC-2026-09-10-019 — Use exact pre-enable atlas baseline for protected textures
 
 Date: 2026-09-10
@@ -35,7 +96,7 @@ No `instantSettingsChange()`, `data.change()`, bundle patch, character-specific 
 - v0.1.1 metadata rollback: **PASS** for body/head sizes;
 - v0.1.1 atlas rollback: **FAIL** — pre-enable atlas identity/allocation was not preserved;
 - v0.1.2 JavaScript syntax: **PASS** (`node --check`);
-- v0.1.2 clean-load human enable/disable/figure-change acceptance: **pending**.
+- v0.1.2 clean-load human enable/disable/figure-change acceptance: **failed at initial activation; superseded by v0.1.3**.
 
 ### Touched files
 
