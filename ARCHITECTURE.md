@@ -131,13 +131,14 @@ Rules for this feature:
 - body/head destination resolution is protected without hard-coding character-specific assets;
 - `character.data.atlasScale` is not persisted/modified by the standalone candidate; protected scale values are supplied through a cloned atlas policy;
 - the per-display `buildAtlas` override is configurable/reversible and only owns the active experimental session;
-- HeroForge's original `buildAtlas()` establishes the current native allocation baseline before protected allocation;
-- the protected allocator supplies `CK.Atlas` with a per-slot maximum allocation map derived from that native baseline, preserving unrelated slots at their native allocation caps while allowing bodyLower/bodyUpper/face up to 2048;
-- a protected layout that fails to reach 2048 for any target slot or reduces any unrelated slot below native allocation is rejected before display assignment;
+- the exact atlas HeroForge is displaying immediately before enable is the initial safety/allocation baseline; the feature does not call native `buildAtlas()` merely to synthesize a reference atlas;
+- the protected allocator supplies `CK.Atlas` with a per-slot maximum allocation map derived from that pre-enable displayed baseline, preserving unrelated slots at those allocation caps while allowing bodyLower/bodyUpper/face up to 2048;
+- a protected layout that fails to reach 2048 for any target slot or reduces any unrelated slot below its pre-enable allocation is rejected before display assignment;
+- initial failure and manual disable restore the exact captured active/resource atlas objects plus owned metadata rather than generating a replacement native atlas;
+- allocation caps are scoped to a part-set fingerprint; a changed part set requires reinitialization rather than reuse of stale caps;
 - only the narrow color-bake invalidation/refresh path is used;
 - broad `instantSettingsChange()`/character reconstruction is prohibited for this feature;
-- repeated lifecycle failures auto-disable instead of fighting HeroForge indefinitely;
-- disable restores runtime metadata/wrapper ownership and asks HeroForge to rebuild through its native atlas path.
+- repeated lifecycle failures auto-disable instead of fighting HeroForge indefinitely.
 
 If this behavior passes standalone acceptance, repeated raw `CK` access should later be extracted into maintained bridge/adapters before or during Witch Dock Dev integration.
 

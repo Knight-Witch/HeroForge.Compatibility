@@ -1,5 +1,53 @@
 # Pre-Flight Check Log
 
+## PFC-2026-09-10-016 — Preserve exact pre-enable atlas during protected-texture apply
+
+Date: 2026-09-10
+
+### Target files
+
+- `entries/tampermonkey-standalone/rendering-texture-quality.user.js`
+- `docs/feature-specs/rendering-texture-quality.md`
+- `ARCHITECTURE.md`
+- `TESTING.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+
+### Reviewed
+
+- binding `PROJECT_CONTRACT.md` and current texture-quality feature branch state;
+- standalone v0.1.1 source and second clean-load Blood Moon failure;
+- read-only post-failure runtime snapshot from HF-Chat-Bridge issue #1191;
+- live `CK.Atlas` constructor and `getTargetTextureSize()` source;
+- successful manual protected-2048 history for Blood Moon and D4;
+- current feature spec, architecture boundary, testing record, and changelog.
+
+### Confirmed
+
+- v0.1.1 again failed with `Protected atlas could not allocate 2048px for bodyLower.`
+- v0.1.1 restored bodyLower/bodyUpper/face `bakeSize` and `_usedTextureSize` to 1024 after failure.
+- v0.1.1 did **not** preserve the pre-enable atlas state: its rollback/native-reference path left both active and resource atlas at 8192x4096.
+- Calling HeroForge's original `buildAtlas()` to create a safety baseline is therefore not behavior-neutral on an extreme figure; it can produce a different allocation budget than the atlas HeroForge was actually displaying.
+- The correct initial safety reference is the exact current `display.atlas` captured before any feature mutation, with the exact `modded.resourceAtlas` retained for restoration.
+- Initial protected allocation can derive unrelated-slot caps from that displayed baseline while allowing only bodyLower/bodyUpper/face up to 2048.
+- Failure/disable can restore the exact captured atlas objects instead of generating another native atlas.
+
+### Material conflict risks
+
+- A displayed atlas captured after previous experimental contamination is not a clean native baseline; human retry must begin after page refresh.
+- Allocation caps are valid only for the captured part set. The feature must detect part-set changes and reinitialize instead of reusing stale caps.
+- Failure rollback must restore original part metadata, mask overrides, `buildAtlas` ownership, active atlas, and resource atlas.
+- `/legacy/` and public Witch Dock remain untouched.
+- No broad settings/character rebuild is permitted.
+
+### Recommended action
+
+Commit standalone v0.1.2 using the exact pre-enable displayed atlas as the initial allocation baseline and exact atlas-object restoration on failure/disable. Re-run Blood Moon from a clean page refresh. If allocation still fails, use the new baseline/attempted allocation diagnostics rather than adding further speculative state changes.
+
+**Runtime behavior changed:** yes, limited to the opt-in experimental standalone feature branch. Existing maintained runtime modules and public Witch Dock are unchanged.
+
+---
+
 ## PFC-2026-09-10-015 — Repair standalone protected-atlas allocation gate
 
 Date: 2026-09-10

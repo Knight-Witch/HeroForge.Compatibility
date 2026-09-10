@@ -20,8 +20,8 @@ Blood Moon:
 - native pressure state observed at 4096x4096 atlas, bodyLower/bodyUpper 256px, face 512px;
 - protected 8192x4096 atlas produced bodyLower/bodyUpper/face 2048px;
 - valid 1024 human body masks loaded and pinned;
-- body display UV, base color-bake UV, and decal-bake UV confirmed at protected size during successful runs;
-- final user visual result: body texture correct, seams correct, paints/material channels correct, decals high-confidence correct (~95% due Booth appearance ambiguity);
+- body display UV, base color-bake UV, and decal-bake UV confirmed at protected size during successful manual runs;
+- final manual user visual result: body texture correct, seams correct, paints/material channels correct, decals high-confidence correct (~95% due Booth appearance ambiguity);
 - user additionally reported no apparent degradation elsewhere on the figure with protected body/head 2048 active;
 - detached 4096-body/8192x8192 layout packed successfully but is not an approved maintained target.
 
@@ -42,29 +42,55 @@ Clean Blood Moon load with standalone initially disabled:
 - fail-closed behavior: **PASS mechanically** — toggle returned off and body/head bake ceilings were restored to native 1024 values;
 - diagnosis: `CK.Atlas` fourth constructor argument is the per-slot maximum allocation map; v0.1.0 omitted it, allowing unrelated slots to compete at ideal resolution and forcing the global packer to step the protected body allocation below 2048.
 
-### Standalone v0.1.1 correction
+### Standalone v0.1.1 result
 
-The corrected allocator:
+v0.1.1 added per-slot caps derived from a newly generated native-reference atlas, but the clean Blood Moon enable attempt still returned the same bodyLower allocation refusal.
 
-- runs HeroForge's original `buildAtlas()` to establish the current native allocation baseline;
-- derives a per-slot cap map from those native allocations;
-- preserves unrelated slots at no more than their native allocation while permitting bodyLower/bodyUpper/face up to 2048;
-- supplies that cap map to the 8192x4096 `CK.Atlas` constructor;
-- retains the existing postcondition that any unrelated slot below native allocation aborts activation.
+Post-failure read-only runtime snapshot:
 
-### Standalone v0.1.1 acceptance checklist
+- active atlas: 8192x4096;
+- `modded.resourceAtlas`: 8192x4096;
+- bodyLower/bodyUpper/face `bakeSize`: 1024;
+- bodyLower/bodyUpper/face `_usedTextureSize`: 1024;
+- no bodyLower/bodyUpper/face entries persisted in `character.data.atlasScale`.
 
-Pending from a clean HeroForge load:
+Conclusion:
 
-1. Load Blood Moon with the script disabled; confirm native appearance.
-2. Enable v0.1.1; confirm status reports protected 2048 active rather than allocator refusal.
-3. Confirm body, seams, paints/material channels, and decals remain correct.
-4. Confirm no visible unrelated armor/prop/kitbash texture regression.
-5. Disable; confirm native atlas/appearance returns without page reload.
-6. Re-enable; confirm repeated enable/disable is stable.
-7. Switch to another figure while enabled; confirm the feature discovers that figure's own masks and reapplies rather than reusing prior mask objects.
-8. Exercise edits that cause normal atlas/material refresh; confirm lifecycle watcher preserves/reapplies protected state without repeated-loop failures.
-9. Confirm auto-disable/fail-closed behavior on a deliberately unavailable required capability if practical.
+- metadata rollback worked;
+- atlas rollback did **not** preserve the actual pre-enable allocation state;
+- calling HeroForge's original `buildAtlas()` to establish/restore the safety baseline can itself generate a different atlas on an extreme figure;
+- a recomputed native atlas is therefore not a valid behavior-neutral reference for this feature.
+
+### Standalone v0.1.2 correction
+
+v0.1.2 changes the transaction boundary:
+
+- capture the exact currently displayed `display.atlas` before any mutation;
+- capture the exact current `modded.resourceAtlas` alongside it;
+- derive unrelated-slot caps directly from the displayed pre-enable atlas;
+- do **not** call native `buildAtlas()` during initial baseline capture;
+- permit only bodyLower/bodyUpper/face to rise to 2048;
+- record attempted target allocations before failing the gate;
+- restore the exact captured atlas objects on failed enable and manual disable;
+- fingerprint the current part set and reinitialize rather than reusing stale caps after a part-set change.
+
+Static validation:
+
+- v0.1.2 JavaScript syntax: **PASS** (`node --check`).
+
+### Standalone v0.1.2 acceptance checklist
+
+Pending from a clean HeroForge page refresh:
+
+1. Load Blood Moon with the script disabled; confirm native appearance and allow the figure to settle.
+2. Enable v0.1.2; confirm status reports protected 2048 active rather than allocator refusal.
+3. If enable fails, record the new panel baseline/attempted BL/BU/face values and stop; do not stack additional mutations.
+4. If enable succeeds, confirm body, seams, paints/material channels, and decals remain correct.
+5. Confirm no visible unrelated armor/prop/kitbash texture regression.
+6. Disable; confirm the exact pre-enable atlas/appearance returns without page reload.
+7. Re-enable; confirm repeated enable/disable is stable.
+8. Switch to another figure while enabled; confirm the feature reinitializes against that figure and discovers its own masks.
+9. Exercise edits that change the part set or normal atlas/material lifecycle; confirm reinitialization/reapply does not loop or corrupt paints.
 10. Reload with the standalone installed; confirm it remains disabled by default and does not mutate HeroForge until enabled.
 
 Witch Dock Dev integration is blocked until this checklist passes.

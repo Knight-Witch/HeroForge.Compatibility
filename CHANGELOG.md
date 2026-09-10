@@ -1,5 +1,53 @@
 # Changelog
 
+## HFC-2026-09-10-019 — Use exact pre-enable atlas baseline for protected textures
+
+Date: 2026-09-10
+
+### Summary
+
+Fixes the second standalone `rendering.texture-quality` enable failure observed on Blood Moon. v0.1.1 still failed with `Protected atlas could not allocate 2048px for bodyLower.` because its safety baseline was recomputed by calling HeroForge's native `buildAtlas()` instead of preserving the atlas HeroForge was actually displaying before enable.
+
+### Confirmed failure
+
+A read-only post-failure snapshot confirmed that v0.1.1 restored bodyLower/bodyUpper/face `bakeSize` and `_usedTextureSize` to 1024, but its rollback had replaced the pre-enable atlas with a newly generated 8192x4096 native atlas. That proved the baseline/rollback path itself could change renderer allocation state even though activation failed.
+
+### Runtime behavior changed
+
+Standalone v0.1.2 only:
+
+- captures the exact current `display.atlas` and `modded.resourceAtlas` before any feature mutation;
+- derives unrelated-slot allocation caps directly from that displayed pre-enable atlas;
+- does not call HeroForge's original `buildAtlas()` to establish the initial safety baseline;
+- raises only bodyLower/bodyUpper/face runtime bake ceilings/caps to 2048 and retains the validated current-figure 1024 body-mask pinning;
+- constructs the protected 8192x4096 atlas against the exact pre-enable allocation budget;
+- records baseline and attempted target allocations when allocation fails, so a future refusal reports what the packer actually produced;
+- restores the exact pre-enable atlas objects on failed enable and manual disable instead of generating a new native atlas;
+- fingerprints the current part set and reinitializes when the part set changes rather than applying stale allocation caps;
+- preserves reversible `buildAtlas` ownership, narrow color-bake refresh, lifecycle monitoring, and fail-closed behavior.
+
+No `instantSettingsChange()`, `data.change()`, bundle patch, character-specific mask hard-code, or public Witch Dock change is introduced.
+
+### Validation status
+
+- v0.1.0 clean-load enable: **FAIL / diagnosed**;
+- v0.1.1 clean-load enable: **FAIL / diagnosed**;
+- v0.1.1 metadata rollback: **PASS** for body/head sizes;
+- v0.1.1 atlas rollback: **FAIL** — pre-enable atlas identity/allocation was not preserved;
+- v0.1.2 JavaScript syntax: **PASS** (`node --check`);
+- v0.1.2 clean-load human enable/disable/figure-change acceptance: **pending**.
+
+### Touched files
+
+- `entries/tampermonkey-standalone/rendering-texture-quality.user.js`
+- `docs/feature-specs/rendering-texture-quality.md`
+- `ARCHITECTURE.md`
+- `TESTING.md`
+- `PRE_FLIGHT_Check.md`
+- `CHANGELOG.md`
+
+---
+
 ## HFC-2026-09-10-018 — Fix protected texture allocator to preserve native slot budgets
 
 Date: 2026-09-10
@@ -33,7 +81,7 @@ No `instantSettingsChange()`, `data.change()`, bundle patch, character-specific 
 - v0.1.0 failure rollback: **PASS mechanically**;
 - corrected allocator source reasoning: **confirmed against live `CK.Atlas` constructor source**;
 - v0.1.1 JavaScript syntax: **passed before commit**;
-- v0.1.1 clean-load human enable/disable/figure-change acceptance: **pending**.
+- v0.1.1 clean-load human enable/disable/figure-change acceptance: **failed at initial activation; superseded by v0.1.2**.
 
 ### Touched files
 
