@@ -106,6 +106,39 @@ The patch engine must eventually centralize:
 - boot coordination,
 - diagnostics.
 
+## Experimental Rendering Texture-Quality Boundary
+
+`rendering.texture-quality` is currently a standalone experimental runtime feature, not a bundle patch.
+
+The maintained candidate separates concerns as follows:
+
+```text
+Standalone test UI
+    ↓
+protected-texture feature lifecycle
+    ↓
+capability/resource validation
+    ↓
+reversible per-display atlas builder ownership
+    ↓
+CK.Atlas + CK.Resources + colorBake narrow refresh
+```
+
+Rules for this feature:
+
+- normal HeroForge atlas mode remains enabled;
+- current-figure body-mask resources are discovered through named part/resource APIs;
+- body/head destination resolution is protected without hard-coding character-specific assets;
+- `character.data.atlasScale` is not persisted/modified by the standalone candidate; protected scale values are supplied through a cloned atlas policy;
+- the per-display `buildAtlas` override is configurable/reversible and only owns the active experimental session;
+- a detached native-reference atlas is built before apply, and a protected layout that would reduce any unrelated slot is rejected before display assignment;
+- only the narrow color-bake invalidation/refresh path is used;
+- broad `instantSettingsChange()`/character reconstruction is prohibited for this feature;
+- repeated lifecycle failures auto-disable instead of fighting HeroForge indefinitely;
+- disable restores runtime metadata/wrapper ownership and asks HeroForge to rebuild through its native atlas path.
+
+If this behavior passes standalone acceptance, repeated raw `CK` access should later be extracted into maintained bridge/adapters before or during Witch Dock Dev integration.
+
 ## HeroForge Integration Priority
 
 Prefer, where practical:
@@ -236,6 +269,8 @@ on failure
 → disable affected optional feature
 → report incompatibility
 ```
+
+`rendering.texture-quality` currently requires no bundle patch.
 
 ## Witch Dock Boundary
 

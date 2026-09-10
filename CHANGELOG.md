@@ -1,46 +1,61 @@
 # Changelog
 
-## HFC-2026-09-05-016 — Record Photo Booth Stable acceptance
+## HFC-2026-09-10-017 — Add experimental protected texture-quality standalone
 
-Date: 2026-09-05
+Date: 2026-09-10
 
 ### Summary
 
-Documentation-only status update recording final public Witch Dock Stable acceptance of `media.screenshot-resolution`.
+Adds the first standalone test implementation of `rendering.texture-quality`, based on the validated D4/Blood Moon protected-2048 runtime mechanism.
 
-### Confirmed public result
+### Runtime behavior
 
-- Temporary standalone v0.6 and WITCH_DEV_PHOTO test scripts were disabled for the clean public test.
-- Public readiness adapter worked without requiring the repair toggle to be cycled.
-- Public HeroForge/Lob 4096 capture routed through Witch Dock and passed perfectly.
-- Public HeroForge/Lob 8192 grouped capture routed through Witch Dock and passed perfectly.
-- Public Witch Dock direct TRUE 4K capture passed perfectly.
-- Public Witch Dock direct TRUE 8K capture passed perfectly.
-- Amanda reported the public integration works perfectly.
+New opt-in standalone script only:
 
-### Status
+- requires HeroForge texture-atlas mode and named runtime capabilities;
+- loads each current figure's valid 1024 body masks and pins them through runtime overrides;
+- raises current bodyLower/bodyUpper/face bake ceilings to 2048;
+- installs a reversible per-display atlas builder that constructs 8192x4096 with cloned body/head scale priority;
+- refuses the protected layout if any unrelated slot would be smaller than a detached native-reference allocation;
+- uses narrow `colorBake.invalidateCache()` + `colorBake.refresh(true)` only;
+- verifies protected atlas/material/bake bindings;
+- watches character/display/atlas lifecycle and reapplies with cooldown;
+- auto-disables/restores native ownership after repeated failures;
+- exposes manual enable/disable/dispose through the standalone test UI/global.
 
-- standalone: validated;
-- Witch Dock Dev: validated with Lob present;
-- Witch Dock Stable: **validated**;
-- Lob-absent native HeroForge resolution-menu adapter: pending separately;
-- primary feature maintainer: unresolved; Amanda is not silently assigned feature maintenance by this validation.
+Existing maintained runtime files are unchanged. Public Witch Dock is unchanged.
 
-### Runtime impact
+### Confirmed design decisions
 
-**No Compatibility runtime behavior changed.** `entries/tampermonkey-standalone/photo-booth-true-resolution.user.js` remains the validated v0.6 regression baseline. This commit updates durable documentation only.
+- 2048 body/head protection is the maintained first target.
+- 4096 body allocation remains an unshipped experiment.
+- `instantSettingsChange()` is rejected for this feature.
+- nonexistent 2048 body-mask asset requests are rejected; valid current-figure 1024 masks are required.
+- `character.data.atlasScale` is not persistently mutated by the standalone candidate.
+
+### Validation status
+
+- underlying runtime mechanism: passed D4 and Blood Moon visual/runtime probes;
+- standalone JavaScript syntax: passed `node --check` before commit;
+- standalone human enable/disable/figure-change acceptance: pending;
+- Witch Dock Dev: not started;
+- Witch Dock Stable: not approved.
 
 ### Touched files
 
+- `entries/tampermonkey-standalone/rendering-texture-quality.user.js`
+- `docs/feature-specs/rendering-texture-quality.md`
+- `docs/investigations/INV-0004-texture-atlas-quality-2026-09-10.md`
 - `MASTER.md`
+- `ARCHITECTURE.md`
 - `FEATURE_INVENTORY.md`
 - `COMPATIBILITY.md`
+- `OWNERSHIP.md`
+- `MIGRATION_PLAN.md`
 - `TESTING.md`
-- `docs/feature-specs/photo-booth-screenshot-resolution.md`
-- `docs/investigations/INV-0003-photo-booth-high-res-capture-2026-09-05.md`
 - `PRE_FLIGHT_Check.md`
 - `CHANGELOG.md`
 
 ---
 
-Historical changelog entries through HFC-2026-09-05-015 remain preserved in Git history at/before `94289f9dcb8364fb94cd19e8c8a9838c9c616d95`.
+Historical changelog entries through HFC-2026-09-05-016 remain preserved in Git history at/before `732dae09e83d712a26ac383f7b64ce9e27e07a59`.

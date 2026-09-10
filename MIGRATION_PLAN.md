@@ -8,7 +8,7 @@ Nothing is automatically migrated into Witch Dock.
 
 Required path:
 
-`legacy reference` → `standalone reconstructed module` → `standalone validated` → `Witch Dock Dev candidate` → `Witch Dock Dev testing` → `explicit stable promotion review`
+`legacy reference or runtime investigation` → `standalone reconstructed module` → `standalone validated` → `Witch Dock Dev candidate` → `Witch Dock Dev testing` → `explicit stable promotion review`
 
 The corrected bound decal gizmo is the first current decal reconstruction to complete that path. Its production copy lives in `Knight-Witch/KnightWitch.Heroforge`; public Witch Dock does not load runtime code from this repository.
 
@@ -27,6 +27,7 @@ The corrected bound decal gizmo is the first current decal reconstruction to com
 
 | Area | Current disposition | Reason / next gate |
 |---|---|---|
+| `rendering.texture-quality` | **Experimental standalone candidate** | Runtime protected-2048 mechanism validated on D4 + Blood Moon; clean-load standalone enable/disable/figure-change testing required before any Witch Dock Dev consideration |
 | ADP v0.99.30 decal posing subsystem | Reconstruction target | ADP-side audit complete; archive source, audit Full Res v0.80 renderer dependency, audit HF Core Tweaks slots if included |
 | `decals.advanced-posing` Witch Dock host | Planned Witch Dock Dev candidate | Must first exist as maintained production-style standalone module and pass Lob coexistence testing for remaining overlapping features |
 | Corrected bound decal gizmo | **Witch Dock Stable** | WITCH_DEV v0.4.2 behavior validated and promoted; retain regression coverage, defer unequal bound rendering/center-wireframe polish |
@@ -38,9 +39,25 @@ The corrected bound decal gizmo is the first current decal reconstruction to com
 | Extra mini slots | Standalone reconstruction candidate | Named runtime surface; must preserve original behavior while making override reversible where possible |
 | Character local I/O | Standalone reconstruction committed | Core Save/Load passed live; finish lifecycle/repeated-use acceptance before promotion |
 | Photo Booth settings I/O | Standalone reconstruction candidate | Requires current runtime capability validation |
-| Texture atlas/render overrides | Experimental only pending audit | High-risk creationkit bundle behavior |
+| Texture atlas/render overrides | Replaced by concrete `rendering.texture-quality` track | Generic bucket decomposed after current-runtime audit; detached 4096-body work remains experimental-only |
 | ReCK for Hero Forge | External reference | Not Lob-authored; do not silently absorb |
 | Public Witch Dock | Bound gizmo promoted; otherwise no dependency on Compatibility head | Continue explicit per-feature promotion only after Dev validation |
+
+## Protected Texture Quality Gate
+
+The previous generic texture-atlas/render-override investigation has now been decomposed into the concrete feature ID `rendering.texture-quality`.
+
+Promotion requirements before Witch Dock Dev:
+
+- standalone v0.1.0 enable/disable passes from a clean load;
+- current-figure mask discovery passes across multiple figures/body families where available;
+- no unrelated slot allocation regression is detected;
+- body/seams/paints/material channels/decals remain visually correct;
+- figure-change and ordinary atlas-refresh lifecycle behavior pass;
+- fail-closed/auto-disable behavior is acceptable;
+- long-term maintenance disposition is explicitly recorded.
+
+The detached 4096-body experiment remains experimental-only and is not bundled into the first maintained target.
 
 ## Corrected Bound Gizmo Promotion Record
 

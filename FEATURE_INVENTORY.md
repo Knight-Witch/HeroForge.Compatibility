@@ -4,6 +4,7 @@ This is the canonical feature-ID inventory. Historical/provisional inventory det
 
 | Feature ID | Purpose | Risk | Status |
 |---|---|---|---|
+| `rendering.texture-quality` | Protect body/head/decal bake detail from atlas-pressure downgrade | High | **Runtime mechanism validated on D4 + Blood Moon; standalone v0.1.0 candidate pending human lifecycle acceptance.** Target: 8192x4096 atlas, bodyLower/bodyUpper/face 2048px, valid 1024 body-mask pinning, fail closed. |
 | `media.screenshot-resolution` | Restore genuine 4K/8K Photo Booth still-image rendering | Medium | **Standalone validated; Witch Dock Stable validated on `heroforge07.1.9.98`**. 4K = one 4096 source; 8K = four shifted 4096 sources. Public promotion `e155f2c2f961463b4a0e26f7c88f21f603ce1b95`; clean public smoke passed perfectly. |
 | `decals.gizmo.bound-correction` | Correct bound/Project-OFF decal transform gizmo | High | Witch Dock Stable; validated Move/Rotate/Scale, undo/redo, Project state/artwork transform preservation, fresh-slot bad-default normalization. |
 | `character.local-export` | Export character JSON locally | Medium | Standalone reconstruction committed; core Save passed live. |
@@ -12,10 +13,14 @@ This is the canonical feature-ID inventory. Historical/provisional inventory det
 | `decals.advanced-posing` | Coherent reconstructed posing family | High | Planned host/family; dependency audits pending. |
 | `photo-booth.settings-export` | Export Photo Booth settings | High | Provisional. |
 | `photo-booth.settings-import` | Import Photo Booth settings | High | Provisional. |
-| `media.spin-gif-quality` | Higher-quality spin/media export | High | Provisional; separate from still capture. |
+| `media.spin-gif-quality` | Higher-quality spin/media export | High | Provisional; separate from still capture and texture atlas quality. |
 | `camera.extended-bounds` | Extend camera control bounds | Low/Medium | Standalone reconstruction candidate. |
 | `kitbash.capacity` | Raise kitbash capacity policy | High | Provisional. |
 | `slots.extra-minis` | Additional mini slots | Medium | Standalone reconstruction candidate. |
+
+## Texture-quality note
+
+The maintained first target is 2048 body/head allocation protection, not the detached 4096-body experiment. The standalone test must reject an atlas layout that reduces any unrelated slot below its detached native-reference allocation.
 
 ## Photo Booth note
 

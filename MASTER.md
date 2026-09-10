@@ -4,9 +4,9 @@ This is the canonical high-level source for current project state. Historical de
 
 ## Current Phase
 
-**Legacy feature decomposition plus current-runtime compatibility reconstruction, with `media.screenshot-resolution` now standalone validated, Witch Dock Dev validated, and Witch Dock Stable validated.**
+**Legacy feature decomposition plus current-runtime compatibility reconstruction, with `media.screenshot-resolution` and the corrected bound decal gizmo already Witch Dock Stable, while `rendering.texture-quality` enters standalone experimental validation after live D4/Blood Moon runtime proof.**
 
-The corrected bound decal gizmo is also Witch Dock Stable. Character JSON and projected-decal work remain separate reconstruction tracks.
+Character JSON and projected-decal work remain separate reconstruction tracks.
 
 ## Repository Roles
 
@@ -15,6 +15,7 @@ The corrected bound decal gizmo is also Witch Dock Stable. Character JSON and pr
 - Development-only live transport: private `Knight-Witch/HF-Chat-Bridge`
 - Public Witch Dock runtime dependency on Compatibility `main`: **none**
 - Maintained standalone Photo Booth baseline: `entries/tampermonkey-standalone/photo-booth-true-resolution.user.js` v0.6
+- Experimental texture-quality standalone: `entries/tampermonkey-standalone/rendering-texture-quality.user.js` v0.1.0 on the texture-quality feature branch pending human acceptance
 
 ## Photo Booth True Resolution
 
@@ -31,6 +32,21 @@ Validated on HeroForge `heroforge07.1.9.98`:
 - Clean public Stable smoke then passed: HeroForge/Lob 4K, HeroForge/Lob 8K, Witch Dock direct TRUE 4K, Witch Dock direct TRUE 8K, and readiness-without-toggle-cycle all worked perfectly.
 - Public Stable remains self-contained on `Witch_Scripts`; it does not load Compatibility `main` or HF-Chat-Bridge.
 
+## Protected Texture Quality
+
+Feature ID: `rendering.texture-quality`.
+
+Runtime investigation on 2026-09-08 through 2026-09-10 confirmed:
+
+- extreme atlas pressure can reduce Blood Moon to 4096x4096 with 256px bodyLower/bodyUpper and 512px face allocations;
+- an explicit 8192x4096 atlas can protect bodyLower/bodyUpper/face at 2048px;
+- valid 1024 body masks must be pinned to avoid nonexistent 2048 body-mask asset fallbacks;
+- broad `instantSettingsChange()` reconstruction is rejected because it produced derived material-channel corruption during experiments;
+- the narrow atlas + color-bake refresh path produced correct body, seams, paints/channels, and high-confidence correct decal detail on Blood Moon, and previously passed D4 visually;
+- a detached 4096-body layout is technically packable but remains intentionally out of scope.
+
+The next gate is a standalone v0.1.0 human lifecycle test from a clean HeroForge load. Witch Dock remains untouched.
+
 ## Current Gates
 
 - `media.screenshot-resolution` standalone: **validated**.
@@ -38,11 +54,16 @@ Validated on HeroForge `heroforge07.1.9.98`:
 - `media.screenshot-resolution` Witch Dock Stable: **validated**.
 - Lob-absent injection of 4096/8192 into HeroForge's own resolution selector: **separate future UI-adapter gate**. Witch Dock direct buttons already provide Lob-free capture.
 - Feature primary-maintainer assignment: **unresolved**. Stable validation does not silently assign Amanda primary maintenance of the Lob-derived feature.
+- `decals.gizmo.bound-correction`: **Witch Dock Stable**.
+- `rendering.texture-quality` runtime mechanism: **validated on D4/Blood Moon**.
+- `rendering.texture-quality` standalone: **implementation candidate; human enable/disable/figure-change acceptance pending**.
+- `rendering.texture-quality` Witch Dock Dev: **not approved yet**.
 
 ## Migration Queue
 
 | Area | Current state | Next gate |
 |---|---|---|
+| Protected texture quality | Runtime mechanism validated; standalone v0.1.0 candidate | Clean-load standalone enable/disable, figure-change, allocation-regression and visual acceptance |
 | Photo Booth high-resolution still capture | Standalone + Witch Dock Stable validated | Later Lob-absent HF UI adapter; future Foundation extraction; build regression only when triggered |
 | Character local JSON | Standalone reconstruction committed; core Save/Load passed live | Finish lifecycle/repeated-use acceptance |
 | Projected decal state/control | Runtime state/control path confirmed | Complete renderer dependency audit then consolidate |
@@ -51,4 +72,4 @@ Validated on HeroForge `heroforge07.1.9.98`:
 
 ## Public Integration Rule
 
-Current Stable consumer code is copied/promoted from validated feature behavior. When Foundation exists, public Witch Dock should consume a pinned/versioned stable Foundation release rather than an unstable development head.
+Current Stable consumer code is copied/promoted from validated feature behavior. When Foundation exists, public Witch Dock should consume a pinned/versioned stable Foundation release rather than an unstable development head. New features still require standalone testing, Witch Dock Dev validation, and separate Stable review.

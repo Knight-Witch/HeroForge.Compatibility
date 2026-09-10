@@ -1,53 +1,57 @@
 # Pre-Flight Check Log
 
-## PFC-2026-09-05-013 — Record public Photo Booth Stable acceptance
+## PFC-2026-09-10-014 — Create experimental protected texture-quality standalone
 
-Date: 2026-09-05
+Date: 2026-09-10
 
 ### Target files
 
+- `entries/tampermonkey-standalone/rendering-texture-quality.user.js`
+- `docs/feature-specs/rendering-texture-quality.md`
+- `docs/investigations/INV-0004-texture-atlas-quality-2026-09-10.md`
 - `MASTER.md`
+- `ARCHITECTURE.md`
 - `FEATURE_INVENTORY.md`
 - `COMPATIBILITY.md`
+- `OWNERSHIP.md`
+- `MIGRATION_PLAN.md`
 - `TESTING.md`
-- `docs/feature-specs/photo-booth-screenshot-resolution.md`
-- `docs/investigations/INV-0003-photo-booth-high-res-capture-2026-09-05.md`
 - `PRE_FLIGHT_Check.md`
 - `CHANGELOG.md`
 
 ### Reviewed
 
-- binding `PROJECT_CONTRACT.md`
-- validated standalone v0.6 baseline
-- WITCH_DEV_PHOTO integration result
-- public Witch Dock promotion commit `e155f2c2f961463b4a0e26f7c88f21f603ce1b95`
-- current Compatibility master/inventory/compatibility/testing/spec/investigation state
-- Amanda's clean public Stable smoke result after disabling temporary Dev/standalone test scripts
+- binding `PROJECT_CONTRACT.md`;
+- `README.md`, `MASTER.md`, `PRE_FLIGHT_Check.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `COMPATIBILITY.md`, `OWNERSHIP.md`, `MIGRATION_PLAN.md`, and `TESTING.md`;
+- current standalone Tampermonkey packaging pattern (`photo-booth-true-resolution.user.js`);
+- current feature-spec pattern;
+- HF-Chat-Bridge runtime findings from D4 and Blood Moon, including mask-path/resource probes, atlas allocation probes, color/decal bake UV probes, and broad-rebuild failure states;
+- current live visual acceptance from Amanda.
 
 ### Confirmed
 
-- Public readiness adapter fixed the stale-disabled-button caveat without changing capture math.
-- Public HeroForge/Lob 4096 capture through Witch Dock passed perfectly.
-- Public HeroForge/Lob 8192 grouped capture through Witch Dock passed perfectly.
-- Public Witch Dock direct TRUE 4K and TRUE 8K both passed perfectly.
-- Amanda reported the public integration works perfectly.
-- Public Stable remains self-contained and does not depend on Compatibility `main` or HF-Chat-Bridge.
-- Primary feature maintainer remains unassigned; public acceptance does not silently assign Amanda maintenance ownership.
+- Blood Moon can be degraded natively to 256px bodyLower/bodyUpper and 512px face within a 4096x4096 atlas.
+- D4 and Blood Moon both support a protected 8192x4096 atlas with 2048 bodyLower/bodyUpper/face allocations.
+- Valid 1024 body masks prevent the nonexistent 2048-mask fallback corruption observed during experiments.
+- Narrow color-bake refresh preserves correct final materials on the accepted path; broad `instantSettingsChange()` is rejected.
+- Final Blood Moon protected state was visually accepted for body, seams, paints/channels and high-confidence decal quality.
+- A 4096-body detached layout is possible but is outside the maintained first target.
 
-### Risks / next gate
+### Material conflict risks
 
-- The `media.screenshot-resolution` Stable gate is closed.
-- Lob-absent HeroForge-native resolution-menu injection remains separate future work.
-- Do not reintroduce one-shot 8192 Effects rendering.
-- Future build/effect-profile changes require regression validation when triggered.
-- Foundation/shared ownership architecture remains future work.
+- `/legacy/` is immutable and is not touched.
+- Public Witch Dock is not touched.
+- No bundle patch is introduced.
+- No character-specific mask path/object is persisted.
+- Feature starts disabled and fails closed if required capabilities/resources/postconditions fail.
+- Loaded mask resource cache ownership has no confirmed explicit release API yet; this limitation is documented.
 
 ### Recommended action
 
-Record final Stable acceptance as a documentation-only Compatibility checkpoint. Do not change the validated standalone v0.6 runtime baseline.
+Create one isolated feature-branch commit containing the experimental standalone v0.1.0 and durable documentation. Human standalone lifecycle acceptance is the next gate; do not integrate Witch Dock yet.
 
-**Runtime behavior changed:** no.
+**Runtime behavior changed:** yes, but only by adding a new opt-in standalone experimental userscript on the Compatibility feature branch. Existing maintained runtime files and public Witch Dock behavior are unchanged.
 
 ---
 
-Historical pre-flight entries through PFC-2026-09-05-012 remain preserved in Git history at/before `94289f9dcb8364fb94cd19e8c8a9838c9c616d95`.
+Historical pre-flight entries through PFC-2026-09-05-013 remain preserved in Git history at/before `732dae09e83d712a26ac383f7b64ce9e27e07a59`.
