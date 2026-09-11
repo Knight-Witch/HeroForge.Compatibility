@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HF Compatibility - Protected 2048 Textures TEST
 // @namespace    https://github.com/Knight-Witch/HeroForge.Compatibility
-// @version      0.1.4
+// @version      0.1.5
 // @description  Experimental protected 2048 body/head texture atlas policy for HeroForge complex scenes.
 // @author       Knight Witch
 // @match        https://www.heroforge.com/*
@@ -16,7 +16,7 @@
 
   const GLOBAL = 'HFProtectedTextureQualityTest';
   const FEATURE_ID = 'rendering.texture-quality';
-  const BUILD = '0.1.4-protected-2048-lifecycle-coherence';
+  const BUILD = '0.1.5-protected-2048-rectangular-atlas';
   const PANEL_ID = 'hfc-protected-texture-quality-test';
   const STYLE_ID = `${PANEL_ID}-style`;
   const TARGET_SIZE = 2048;
@@ -25,7 +25,9 @@
   const BODY_MASK_SLOTS = ['bodyLower', 'bodyUpper'];
   const ATLAS_CANDIDATES = [
     [8192, 4096],
-    [8192, 8192]
+    [8192, 5120],
+    [8192, 6144],
+    [8192, 7168]
   ];
   const RESOURCE_OWNER = 82042048;
   const BAKE_WAIT_MS = 5500;
@@ -987,7 +989,7 @@
     syncApi();
     if (toggle) toggle.checked = true;
     setStatus('Applying protected 2048 textures…');
-    setDetail('Testing 8192×4096 first, then 8192×8192 only if more atlas area is required.');
+    setDetail('Testing bounded rectangular atlas candidates from 8192×4096 through 8192×7168; selecting the smallest safe fit.');
     recordTimeline();
 
     try {
@@ -1002,7 +1004,7 @@
       unhealthySince = null;
       const [w, h] = activeSession.selectedAtlasSize;
       setStatus('Protected 2048 textures active');
-      setDetail(`${w}×${h} atlas; bodyLower/bodyUpper/face protected at 2048px.${h === 8192 ? ' High-atlas-area mode is active.' : ''}`);
+      setDetail(`${w}×${h} atlas; bodyLower/bodyUpper/face protected at 2048px.${h > 4096 ? ' Expanded atlas-area mode is active.' : ''}`);
       recordTimeline();
     } catch (error) {
       const verification = error.hfcVerification;

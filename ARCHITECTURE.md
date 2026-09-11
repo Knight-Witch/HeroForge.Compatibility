@@ -43,68 +43,35 @@ HeroForge.Compatibility capability/adapter design
 Rules:
 
 - HF-Chat-Bridge must remain chat/project independent.
-- Its initial command set is read-only and allowlisted; arbitrary remote `eval` is not part of the approved design.
 - Diagnostic observations do not become stable capability contracts automatically.
 - Public Witch Dock and reconstructed feature modules must not depend on the GitHub mailbox or local diagnostic relay at runtime.
-- A future transport change such as MCP should not require rewriting HeroForge probe semantics or maintained feature modules.
+- A future transport change should not require rewriting maintained feature modules.
 
 ## Core Boundaries
 
 ### Feature modules
 
-Own feature-specific behavior and state transitions.
-
-They should not directly know about minified HeroForge identifiers or independently intercept core bundles.
+Own feature-specific behavior and state transitions. They should not directly know about minified HeroForge identifiers or independently intercept core bundles.
 
 ### Feature services
 
 Expose domain-level operations to UI hosts and test entrypoints.
 
-Examples:
-
-- set decal transform,
-- export character data,
-- apply camera profile,
-- change kitbash capacity policy.
-
 ### Compatibility bridge
 
-Owns normalized access to HeroForge runtime capabilities.
-
-Feature code should depend on bridge capabilities instead of raw `CK`, `TN`, minified React aliases, or compiled closure-local identifiers wherever practical.
+Owns normalized access to HeroForge runtime capabilities. Feature code should depend on bridge capabilities instead of raw `CK`, `TN`, minified React aliases, or compiled closure-local identifiers wherever practical.
 
 ### Capability detection
 
-Reports whether required behavior is:
-
-- available,
-- unavailable,
-- degraded,
-- untested.
-
-A feature must not initialize when a required capability is unavailable.
+Reports whether required behavior is available, unavailable, degraded, or untested. A feature must not initialize when a required capability is unavailable.
 
 ### Adapters
 
-Translate stable project-facing operations into current HeroForge runtime operations.
-
-A HeroForge internal rename or shape change should ideally require one adapter repair rather than multiple feature rewrites.
+Translate stable project-facing operations into current HeroForge runtime operations. A HeroForge internal rename or shape change should ideally require one adapter repair rather than multiple feature rewrites.
 
 ### Patch engine
 
-Owns unavoidable pre-execution bundle modification.
-
-The patch engine must eventually centralize:
-
-- interception,
-- patch registration,
-- expected match counts,
-- validation,
-- postconditions,
-- failure severity,
-- untouched-bundle fallback,
-- boot coordination,
-- diagnostics.
+Owns unavoidable pre-execution bundle modification, including interception, patch registration, match validation, postconditions, failure severity, untouched-bundle fallback, boot coordination, and diagnostics.
 
 ## Experimental Rendering Texture-Quality Boundary
 
@@ -119,7 +86,7 @@ protected-texture feature lifecycle
     ↓
 capability/resource validation
     ↓
-detached adaptive atlas candidate selection
+detached bounded rectangular atlas candidate selection
     ↓
 reversible per-display atlas builder ownership
     ↓
@@ -136,15 +103,15 @@ Rules for this feature:
 - current-figure body-mask resources are discovered through named part/resource APIs;
 - body/head destination resolution is protected without hard-coding character-specific assets;
 - the maintained quality target is bodyLower/bodyUpper/face at 2048px; the separate 4096-body experiment remains out of scope;
-- `character.data.atlasScale` is not persisted/modified by the standalone candidate; protected scale values are supplied through a cloned atlas policy;
+- `character.data.atlasScale` is not persistently modified; protected scale values are supplied through a cloned atlas policy;
 - the per-display `buildAtlas` override is configurable/reversible and only owns the active experimental session;
 - the exact atlas HeroForge is displaying immediately before enable is the initial safety/allocation baseline; the feature does not call native `buildAtlas()` merely to synthesize a reference atlas;
 - the protected allocator supplies `CK.Atlas` with a per-slot maximum allocation map derived from that pre-enable displayed baseline, preserving unrelated slots at those allocation caps while allowing bodyLower/bodyUpper/face up to 2048;
-- candidate atlas area is selected adaptively: test 8192x4096 detached first, then 8192x8192 only if the smaller area cannot satisfy all target/postcondition requirements;
+- v0.1.5 selects atlas area through a bounded ascending rectangular ladder: **8192x4096 -> 8192x5120 -> 8192x6144 -> 8192x7168**;
 - a candidate that fails to reach 2048 for any target slot or reduces any unrelated slot below its pre-enable allocation is rejected before display assignment;
 - only the smallest candidate that passes both target-allocation and unrelated-slot checks may become the active/resource atlas;
-- 8192x8192 is an atlas-area fallback, not approval for 4096 body textures or a general UHD escalation;
-- `display`, `display.modded`, protected `buildAtlas` ownership, `display.atlas`, and `modded.resourceAtlas` coherence are session invariants; dimension equality alone is not sufficient;
+- current Blood Moon testing found 8192x6144 is the first passing candidate; 8192x8192 is not retained as a maintained fallback because it is unnecessary for the validated scene;
+- `display`, `display.modded`, protected `buildAtlas` ownership, `display.atlas`, and `modded.resourceAtlas` coherence are session invariants; dimension equality alone is insufficient;
 - while the feature owns a session, `display.atlas` and `modded.resourceAtlas` must reference the same protected atlas object and target display/color/decal bake UV vectors must match the full protected atlas UV location, including X/Y offset as well as scale;
 - if HeroForge/Booth replaces `display.modded`, replaces the protected `buildAtlas` wrapper, or causes display/resource atlas divergence, the old session is invalid and must not be blindly reapplied;
 - lifecycle recovery releases only stale feature-owned metadata/wrapper state, waits for the current HeroForge renderer to settle, aligns the visible display to the current HeroForge `resourceAtlas` through the narrow color-bake path when needed, waits again, and then creates a fresh protected session against that coherent current state;
@@ -155,8 +122,9 @@ Rules for this feature:
 - only the narrow color-bake invalidation/refresh path is used;
 - broad `instantSettingsChange()`/character reconstruction is prohibited for this feature;
 - test diagnostics are plain bounded data (`diagnostics`, `lastError`, `lastVerification`, `attemptHistory`, `timeline`) exposed by the standalone feature so development tooling can inspect behavior without adding renderer mutations;
-- telemetry includes renderer ownership/coherence state, including display/resource atlas identity and protected wrapper ownership;
 - user-visible errors remain latched while the feature is disabled until another explicit enable attempt, explicit diagnostic clear, or page reload.
+
+The corrected 2026-09-11 sweep also established a testing rule: detached atlas probes must reproduce the feature's actual target `bakeSize` metadata. A sweep run after disable, when target ceilings have already returned to 1024, cannot be used to evaluate 2048 candidate viability.
 
 If this behavior passes standalone acceptance, repeated raw `CK` access should later be extracted into maintained bridge/adapters before or during Witch Dock Dev integration.
 
@@ -178,8 +146,8 @@ The same underlying feature module should be reusable by different hosts where p
 
 Planned hosts:
 
-- standalone Tampermonkey test UI,
-- Witch Dock Dev UI,
+- standalone Tampermonkey test UI;
+- Witch Dock Dev UI;
 - possibly no UI for background compatibility utilities.
 
 HeroForge native React UI should not be a dependency merely for presentation parity.
@@ -234,16 +202,7 @@ The exact directories may evolve. The separation of concerns is the binding requ
 
 ## Feature Lifecycle
 
-Where technically possible, features should support:
-
-- initialize,
-- enable,
-- disable,
-- dispose/restore.
-
-Disabling should remove or restore owned listeners, observers, timers, DOM, styles, subscriptions, wrappers, and runtime overrides.
-
-Boot-time patch features must explicitly state when reload is required.
+Where technically possible, features should support initialize, enable, disable, and dispose/restore. Disabling should remove or restore owned listeners, observers, timers, DOM, styles, subscriptions, wrappers, and runtime overrides. Boot-time patch features must explicitly state when reload is required.
 
 ## Failure Isolation
 
@@ -262,19 +221,7 @@ On failure, roll back where possible and report the affected capability/feature.
 
 ## Bundle Patching Model
 
-Unavoidable patches should be declarative definitions with:
-
-- patch ID,
-- owner,
-- target bundle,
-- dependent feature,
-- discovery strategy,
-- expected match count,
-- required captures,
-- transformation,
-- validation/postconditions,
-- failure severity,
-- compatibility status.
+Unavoidable patches should be declarative definitions with patch ID, owner, target bundle, dependent feature, discovery strategy, expected match count, captures, transformation, validation/postconditions, failure severity, and compatibility status.
 
 The desired boot path is:
 

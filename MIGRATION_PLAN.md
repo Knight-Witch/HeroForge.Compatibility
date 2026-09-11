@@ -27,12 +27,12 @@ The corrected bound decal gizmo is the first current decal reconstruction to com
 
 | Area | Current disposition | Reason / next gate |
 |---|---|---|
-| `rendering.texture-quality` | **Experimental standalone candidate** | Runtime protected-2048 mechanism validated manually on D4 + Blood Moon; v0.1.3 reached the quality target but failed Booth renderer-lifecycle coherence; v0.1.4 must pass clean activation, Booth off/on recovery, disable/re-enable, and figure-change testing before any Witch Dock Dev consideration |
+| `rendering.texture-quality` | **Experimental standalone candidate** | Protected-2048 runtime mechanism and live 8192x6144 Blood Moon layout validated; v0.1.5 must pass actual standalone clean activation, Booth off/on recovery, disable/re-enable, and figure-change testing before any Witch Dock Dev consideration |
 | ADP v0.99.30 decal posing subsystem | Reconstruction target | ADP-side audit complete; archive source, audit Full Res v0.80 renderer dependency, audit HF Core Tweaks slots if included |
 | `decals.advanced-posing` Witch Dock host | Planned Witch Dock Dev candidate | Must first exist as maintained production-style standalone module and pass Lob coexistence testing for remaining overlapping features |
 | Corrected bound decal gizmo | **Witch Dock Stable** | WITCH_DEV v0.4.2 behavior validated and promoted; retain regression coverage, defer unequal bound rendering/center-wireframe polish |
 | Projected decal state/control | Consolidate into Advanced Decal Posing | Named runtime path confirmed; renderer capability still depends on current Full Res audit |
-| Unequal bound scaling | Deferred | Product decision: useful later perk, not required for initial Advanced Decal Posing release |
+| Unequal bound scaling | Deferred | Useful later perk, not required for initial Advanced Decal Posing release |
 | Decal Full List/filtering | Consolidate into Advanced Decal Posing | Current behavior confirmed; target should avoid native React/bundle dependency where practical |
 | Decal slot/schema expansion | Pending dependency audit | Current v0.99.30 does not confirm schema expansion; audit HF Core Tweaks before inclusion |
 | Camera bounds | Standalone reconstruction candidate | Lower-risk runtime feature suitable for later lifecycle testing |
@@ -45,34 +45,46 @@ The corrected bound decal gizmo is the first current decal reconstruction to com
 
 ## Protected Texture Quality Gate
 
-The previous generic texture-atlas/render-override investigation has now been decomposed into the concrete feature ID `rendering.texture-quality`.
+The previous generic texture-atlas/render-override investigation is decomposed into the concrete feature ID `rendering.texture-quality`.
 
-The maintained quality target remains bodyLower/bodyUpper/face at 2048. Standalone v0.1.3 proved the adaptive allocator can select 8192x8192 when 8192x4096 cannot preserve the exact pre-enable no-regression budget, and it visibly improved decal detail. It also exposed a separate lifecycle failure: Booth/HeroForge replaced the feature-owned `buildAtlas` path while the old protected display atlas remained active, leaving incompatible display/resource atlas layouts and corrupt body/face sampling.
+The maintained quality target remains bodyLower/bodyUpper/face at 2048 with valid current-figure 1024 body masks and no unrelated pre-enable allocation regression.
 
-Standalone v0.1.4 keeps the same allocation/mask recipe but treats renderer identity, wrapper ownership, active/resource atlas object identity, and full UV locations as hard postconditions. A stale protected session is never blindly reapplied after HeroForge replaces renderer ownership. The feature instead releases stale ownership, waits for the current HeroForge renderer to settle, aligns the display to the current resource atlas through the narrow rebake path when necessary, then initializes a fresh protected session. Repeated rapid lifecycle replacement must fail closed rather than loop.
+v0.1.3 proved more atlas area can reach the target but exposed a separate lifecycle failure: Booth/HeroForge replaced the feature-owned `buildAtlas` path while the old protected display atlas remained active, leaving incompatible display/resource atlas layouts and corrupt body/face sampling. v0.1.4 repaired that ownership/coherence contract.
+
+On 2026-09-11, a corrected detached rectangular sweep reproduced the actual protected pre-build metadata and established the smallest current Blood Moon safe candidate:
+
+- 8192x4096 -> BL/BU/face `1024/1024/2048`, 116 unrelated regressions;
+- 8192x5120 -> `1024/1024/2048`, 116 unrelated regressions;
+- **8192x6144 -> `2048/2048/2048`, zero unrelated regressions**;
+- 8192x7168 -> `2048/2048/2048`, zero unrelated regressions.
+
+The earlier post-disable rectangular sweep is not valid evidence because target `bakeSize` had already returned to 1024. This is explicitly excluded from migration decisions.
+
+A reversible live 8192x6144 test then passed valid-mask, atlas ownership, full UV coherence, no-regression, and user visual checks. v0.1.5 therefore carries a bounded candidate ladder of 8192x4096 -> 5120 -> 6144 -> 7168 and does not retain 8192x8192 as a maintained fallback. The larger square remains historical experimental evidence, not the current migration target.
 
 Promotion requirements before Witch Dock Dev:
 
-- standalone v0.1.4 clean-load activation succeeds on Blood Moon and reports BL/BU/face 2048 with no unrelated allocation regression;
-- a Booth off/on transition does not leave persistent body/face corruption and ends with coherent protected ownership (`display.atlas === modded.resourceAtlas === protectedAtlas`, wrapper still owned);
+- standalone v0.1.5 clean-load activation succeeds and reports BL/BU/face 2048 with no unrelated allocation regression;
+- the standalone selects the smallest passing candidate; on the current Blood Moon baseline that should be 8192x6144 if the scene/baseline remains equivalent;
+- a Booth off/on transition does not leave persistent body/face corruption and ends with coherent protected ownership (`display.atlas === modded.resourceAtlas === protectedAtlas`, wrapper still owned) or a bounded fresh-session recovery;
 - current-figure mask discovery passes across multiple figures/body families where available;
 - body/seams/paints/material channels/decals remain visually correct;
-- 8192x8192 fallback, when required, has acceptable GPU/VRAM behavior in human testing;
 - manual disable returns the current renderer to a coherent HeroForge state, and re-enable works without reload;
 - figure-change and ordinary atlas-refresh lifecycle behavior pass without stale-session reuse or recovery loops;
 - fail-closed/auto-disable/error-latch behavior is acceptable;
+- long-session/performance behavior is acceptable for the selected bounded rectangle;
 - long-term maintenance disposition is explicitly recorded.
 
 The detached 4096-body experiment remains experimental-only and is not bundled into the first maintained target.
 
 ## Corrected Bound Gizmo Promotion Record
 
-The accepted production path is now complete for `decals.gizmo.bound-correction`:
+The accepted production path is complete for `decals.gizmo.bound-correction`:
 
 1. current-runtime investigation established the projector-volume anchor and direct H/V/D adaptation;
-2. standalone v0.4.1 behavior passed the defined current-build transform/lifecycle tests;
-3. Witch Dock Dev native-visual v0.3.1 behavior passed human use after a duplicate Dev script was removed;
-4. later WITCH_DEV v0.4.0-v0.4.2 repaired undo transaction behavior and Project-OFF transform initialization/preservation;
+2. standalone behavior passed the defined current-build transform/lifecycle tests;
+3. Witch Dock Dev native-visual behavior passed human use;
+4. later WITCH_DEV repaired undo transaction behavior and Project-OFF transform initialization/preservation;
 5. v0.4.2 passed Move/Rotate/Scale undo-redo, Project memory, bound artwork swap, and fresh-slot initialization tests;
 6. the repair was promoted to Witch Dock Stable in commit `1712b0ba24c8303d8d446d88cdf66199978045e7`.
 
