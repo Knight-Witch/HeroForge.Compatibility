@@ -10,78 +10,55 @@ Before material committed work:
 4. Identify material conflict/rollback risks.
 5. Define the narrow validation required for the change.
 
-Do not reread the entire changelog, old preflight history, unrelated root docs, or archived investigations merely for process. Historical verbose preflight records remain durable in Git history.
+## PFC-2026-09-12-025 — Native-reconcile texture alpha
+
+**Scope:** add a separate standalone alpha after read-only source/runtime tracing established the native data/modded/atlas/display lifecycle. Do not replace v0.1.5 or mutate the protected Blood Moon baseline.
+
+**Reviewed:** `PROJECT_CONTRACT.md`; branch `ACTIVE_CONTEXT.md`; current INV-0004 state and evidence ledger; v0.1.5 standalone source; texture-quality feature spec; Bridge #1699/#1700/#1702/#1703/#1706/#1681/#1715/#1716/#1718.
+
+**Confirmed before edit:**
+
+- `data.change(...)` invokes `modded.change(data)`, which ends in native `buildAtlas()`;
+- native `buildAtlas()` assigns `resourceAtlas` from current parts, UHD state, and `data.atlasScale`;
+- `character.refresh()` schedules `character.update()`, which calls `display.change(data)` then `display.update()`;
+- high-level `character.change` adds events/history semantics that are not required for the first prototype;
+- v0.1.5 persistently wraps `buildAtlas`, owns/assigns atlas objects, and watches/reasserts ownership;
+- the current correct Blood Moon uses real 1024 bodyLower/bodyUpper mask overrides as its actual color-bake masks.
+
+**Target changes:**
+
+- add `entries/tampermonkey-standalone/rendering-texture-quality-native-reconcile.user.js` v`0.2.0-alpha.1`;
+- add compact native-reconcile evidence supplement;
+- update branch active context, changelog, and this preflight record.
+
+**Architecture constraints:**
+
+- no custom `CK.Atlas` construction;
+- no `modded.buildAtlas` replacement/wrapper;
+- no direct `display.atlas` or `modded.resourceAtlas` assignment;
+- no automatic watcher fighting HeroForge;
+- source policy limited to target atlasScale=4, bakeSize=2048, `_usedTextureSize=1024`, and validated 1024 body masks;
+- restore every scale/part/mesh object actually touched, including objects refreshed during native reconciliation;
+- live acceptance requires separate safe figure/state plus human visual validation.
+
+**Static validation:** `node --check` PASS; grep audit found no custom atlas construction, buildAtlas replacement, or direct atlas assignment. SHA-256 `a6f835156bc52da024933699462fc8d51fe95e743afa3fa265b75ee246242a23`.
+
+**Runtime validation:** not yet performed by design. Only read-only bridge probes were run against the preserved correct Blood Moon; health check remained idle/coherent at `4096x4096`.
+
+**Rollback:** alpha is a new parallel file; v0.1.5 is unchanged. Alpha enable snapshots all owned source fields. Disable/failure restores those snapshots and requests native `data.change({}) + refresh()` rather than restoring stale atlas objects.
+
+**Public impact:** none. Witch Dock Dev and Stable unchanged.
+
+---
 
 ## PFC-2026-09-12-024 — Native Kitbash reconciliation checkpoint
 
-**Scope:** documentation-only checkpoint after Amanda triggered a decisive native HeroForge reconciliation by entering Kitbash and clicking the figure.
+Recorded the decisive user-triggered Kitbash/click repair: all accessory channels corrected while body/decal quality remained accepted; native atlas became `4096x4096` with scale `4/4/4` and target allocations `1024x1024`.
 
-**Targets:** `ACTIVE_CONTEXT.md`, `docs/investigations/INV-0004-current-state-2026-09-12.md`, `docs/investigations/INV-0004-evidence-ledger.md`, `CHANGELOG.md`, `PRE_FLIGHT_Check.md`.
-
-**Reviewed:** compact `PROJECT_CONTRACT.md`; texture branch `ACTIVE_CONTEXT.md`; current INV-0004 state/ledger; broken-generation evidence; corrected scratch/final AtlasBaker pipeline; Bridge #1664/#1666/#1668/#1670/#1671/#1672; Amanda's exact part names and post-Kitbash visual confirmation.
-
-**Confirmed before documentation edit:**
-
-- wrong state was high-res/no-poop but accessory channels wrong in an `8192x4096` generation;
-- Kitbash + figure click repaired all visible channels without poop;
-- body/decal visual quality remained accepted;
-- native rebuilt state is `4096x4096` with scale `4/4/4` and BL/BU/face each `1024x1024`;
-- body/head part state remains `bakeSize=2048`, `_usedTextureSize=1024`;
-- accessory resource-size/binding state changed during the native generation rebuild;
-- all 16 Discus instances are now free of 1x1 AAID/mask fallbacks on color/emissive.
-
-**Material risks:** preserving the stale assumption that the correct state requires a giant protected atlas; overclaiming that one particular resource caused the repair; disturbing the uniquely valuable current correct figure while investigating the event chain.
-
-**Mitigation:** rewrite active/current-state docs around the post-reconcile generation; classify the architecture conclusion as supported rather than final proof; preserve direct-fix failures as DO-NOT-REPEAT evidence; make the next stage read-only source/lifecycle inspection first.
-
-**Validation:** documentation content cross-checked against runtime snapshots and Amanda's visual report. Repository diff must contain documentation files only.
-
-**Runtime/public impact:** none from this commit. The native runtime transition was user-triggered before the documentation update. No JavaScript, HF-Chat-Bridge runtime, or public Witch Dock source changes.
-
----
-
-## PFC-2026-09-12-023 — Bake-input execution boundary checkpoint
-
-**Scope:** documentation checkpoint after bounded diagnostics narrowed the then-current accessory paint-channel defect.
-
-The later native reconciliation result in PFC-2026-09-12-024 supersedes the old “uniform upload is next” direction and corrects the early scratch/final atlas interpretation. Preserve the underlying observations, but use the newer lifecycle direction for future work.
-
-**Runtime/public impact:** none from the documentation commit.
-
----
-
-## PFC-2026-09-12-022 — Prior-chat texture evidence audit
-
-**Scope:** documentation-only audit of recoverable prior HF texture investigation context against the canonical evidence ledger.
-
-**Result:** backfilled historical baseline/recipe/dead-end/provenance facts and resolved old mutation-readback ambiguity without reopening completed probes.
-
-**Runtime/public impact:** none.
-
----
-
-## PFC-2026-09-12-021 — Context/documentation architecture refactor
-
-**Scope:** documentation/governance only.
-
-Created the compact contract/current-context/policy/evidence architecture and selective preflight model.
-
-**Runtime/public impact:** none.
-
----
-
-## PFC-2026-09-12-020 — Canonical texture investigation checkpoint
-
-**Scope:** documentation-only cross-chat checkpoint.
-
-Established the first durable current-state / DO-NOT-REPEAT handoff for INV-0004.
-
-**Runtime/public impact:** none.
+**Runtime/public impact of that documentation commit:** none.
 
 ---
 
 ## Historical records
 
-Verbose preflight history through 2026-09-11 remains in Git history at and before commit `19234039cd4993f4a17b47123a9150d1c5a4fd83` and earlier branch history. Fetch/search a historical record only when that specific change is relevant.
-
-Future entries should stay concise and reference the feature investigation/evidence record rather than restating it.
+Older detailed preflight records remain in Git history. Fetch only the record relevant to the current decision.

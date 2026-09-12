@@ -2,128 +2,122 @@
 
 **Updated:** 2026-09-12  
 **Active feature:** `rendering.texture-quality`  
-**Current task:** identify and reproduce the native HeroForge reconciliation that preserves high-resolution body/decal quality while restoring accessory material channels  
-**Runtime mutation posture:** **protect the current correct live Blood Moon state; read-only unless a new mutation is specifically justified**
+**Current task:** validate a native-reconcile high-resolution prototype that preserves proven source-side quality inputs while leaving atlas/resource generation ownership to HeroForge  
+**Runtime posture:** **protect the current correct Blood Moon state; do not activate experimental texture code on it**
 
-## Read first for this branch
+## Minimum continuation set
 
-For texture-quality work, the minimum continuation set is:
+Read, in order:
 
 1. `PROJECT_CONTRACT.md`
 2. this file
 3. `docs/investigations/INV-0004-current-state-2026-09-12.md`
 4. `docs/investigations/INV-0004-evidence-ledger.md`
+5. `docs/investigations/INV-0004-native-reconcile-alpha-2026-09-12.md`
 
-Read the older investigation, feature source/spec, or policy docs only when the next decision requires them.
+Read the old full investigation, feature spec, v0.1.5 source, or policies only when the next decision requires them.
 
-## Current protected live Blood Moon state — CORRECT
+## Protected live Blood Moon — CORRECT
 
-Amanda triggered a native HeroForge transition by entering **Kitbash** and clicking the figure. Immediately afterward:
+Amanda's native **Kitbash → click figure** transition repaired all previously wrong accessory material/color/emissive channels while preserving high-resolution body texture, sharp decals, and a no-poop state.
 
-- all previously incorrect accessory color/material/emissive channels became visually correct;
-- body texture remains visually high-resolution/good;
-- decals remain visually sharp/high-resolution;
-- no poop corruption is present;
-- `display.atlas` is now **4096x4096**;
-- `atlasScale.bodyLower/bodyUpper/face = 4/4/4` remains live;
-- bodyLower/bodyUpper/face each currently occupy **1024x1024** atlas regions;
-- their part state remains `bakeSize=2048`, `_usedTextureSize=1024`;
-- Protected Textures standalone is **OFF**;
-- Lob High Res Decals is **OFF**.
+Current accepted state:
 
-Do not reload, resize, force a mode transition, invoke broad settings changes, or intentionally recreate the broken state on this live figure without a specific reason.
+- `display.atlas = 4096x4096`;
+- `atlasScale.bodyLower/bodyUpper/face = 4/4/4`;
+- bodyLower/bodyUpper/face allocations = `1024x1024` each;
+- target parts remain `bakeSize=2048`, `_usedTextureSize=1024`;
+- bodyLower and bodyUpper each use a real validated 1024 mask override, and their color-bake `masksMap` is the exact same texture object as that override (Bridge #1716/#1718);
+- Protected Textures standalone OFF;
+- Lob High Res Decals OFF.
 
-## Decisive lifecycle result
+Do not reload, resize, broad-refresh, force a mode transition, or intentionally recreate the broken generation on this figure merely for instrumentation.
 
-Immediately before the Kitbash/click event, the same figure had:
+## Native lifecycle now traced
 
-- good high-resolution body and decals;
-- no poop;
-- an `8192x4096` atlas generation;
-- incorrect accessory channels.
+Confirmed source/runtime chain:
 
-The Kitbash/click event produced a new native `4096x4096` generation and repaired all visible channel errors **without reducing the visually accepted body/decal quality and without requiring poop**.
+1. `CK.character.change(e, ...)` normally calls `character.data.change(e, character.settings)` and then `character.refresh()`; using the high-level method also participates in character events/history semantics. Bridge #1699.
+2. `character.data.change(...)` runs `this.modded.change(this)`, later `this.modded._changePaints()`, and sets `needsDisplayUpdate=true`. Bridge #1706.
+3. `modded.change(data)` runs HeroForge's normal mod/resource derivation stages and ends with `this.buildAtlas()`. Bridge #1681.
+4. Native `modded.buildAtlas()` assigns `this.resourceAtlas = new CK.Atlas({...this.parts}, ..., this.data.isUHD(), this.data.atlasScale)`. It does not need or return a custom protected atlas. Bridge #1715.
+5. `character.refresh()` sets `_needsUpdating`; `character.update()` consumes it, calls `display.change(character.data)`, then `display.update()`. Bridge #1700/#1702.
+6. `display.change(data)` loads resources selected by `data.modded` and then adopts them through its normal `_loaded(...)` path. Bridge #1703.
 
-Therefore:
+This closes the old uncertainty about the scheduler/build boundary. The exact UI-internal Kitbash click handler is no longer required to prototype the native generation path.
 
-- poop is **not required** for material recovery;
-- a native HeroForge reconciliation/rebuild can repair accessory state while preserving the high-resolution source settings;
-- the investigation should no longer treat persistent `8192x4096` ownership as synonymous with the desired result.
+## Architecture conclusion
 
-## Exact user-facing affected parts
+**Confirmed:** v0.1.5 owns much more than the successful native recovery requires. It installs a persistent `modded.buildAtlas` wrapper, constructs large detached atlas candidates, assigns `modded.resourceAtlas` and `display.atlas`, and watches/reasserts ownership.
 
-Amanda identified the previously wrong HeroForge parts as:
+**Supported inference:** that persistent ownership can preserve an internally coherent but stale/wrong generation and interfere with HeroForge's native resource-size/material reconciliation.
 
-- **Short Crown Horn** → internal `spikeSmall`, confirmed slots `k_157` / `k_158`;
-- **Celestial Circlet** → internal `starCirclet`, slot `k_139`;
-- **Discus** → multiple `discus` instances; 16 are present in the current reconciled figure.
+**Leading replacement:** keep only the source-side inputs that coexist in the historical working recipe and the current correct generation, then invoke/allow the native generation lifecycle.
 
-Do not resume broad pelvis guessing or treat the earlier six-piece meteorHammer family as the visible discs.
+Those inputs are:
 
-## Post-reconciliation resource state
+- `data.atlasScale.bodyLower/bodyUpper/face = 4`;
+- target `bakeSize = 2048`;
+- target `_usedTextureSize = 1024`;
+- validated per-figure bodyLower/bodyUpper 1024 mask overrides.
 
-Confirmed after the Kitbash/click rebuild:
+Do **not** custom-build/assign an atlas, override `buildAtlas`, or continuously fight native lifecycle ownership.
 
-- `k_157/k_158` Short Crown Horn now use real `spikeSmall_aaid_64.png` plus real `spikeSmall_mask_128.webp` on color/emissive;
-- in the prior broken generation those same Short Crown Horn slots used the real **128x128** AAID variant, so the rebuild changed native resource-size selection as well as atlas packing;
-- `k_139` Celestial Circlet currently uses real `starCirclet_aaid_64.png` plus real `starCirclet_mask_128.webp`;
-- all **16 Discus** instances now have non-fallback AAID and mask resources on both color and emissive;
-- the main `elegantSimple` horns, which had 1x1 fallback resources in the broken generation, now have real AAID/mask resources.
+## New standalone alpha
 
-These changes establish a generation-level reconciliation event. They do **not** prove that any single resource change alone caused the visual repair.
+Parallel prototype:
 
-## Current architecture direction
+`entries/tampermonkey-standalone/rendering-texture-quality-native-reconcile.user.js`
 
-The historical minimal high-resolution recipe and the new correct state now share the important source-side settings:
+Version: `0.2.0-alpha.1`
 
-- `atlasScale.bodyLower/bodyUpper/face = 4`;
-- target `bakeSize=2048`;
-- `_usedTextureSize=1024`.
+The alpha deliberately leaves v0.1.5 untouched as historical comparison evidence. It:
 
-The historical recipe then allowed native `modded.buildAtlas` lifecycle ownership. The current correct state was likewise reached only after HeroForge performed a native rebuild/repack.
+- snapshots only fields it owns;
+- validates/loads current figure's 1024 body masks;
+- applies scale/bake/used-size/mask policy;
+- calls `data.change({}, settings)` for full native generation derivation;
+- reapplies only the proven source-side policy in case native change refreshed part objects;
+- calls the unmodified native `modded.buildAtlas()` once;
+- calls `character.refresh()` and waits for native display/resource coherence;
+- verifies target scale/bake/used-size, >=1024 target allocations, shared display/resource atlas identity, and actual 1024 color-bake masks;
+- has no atlas wrapper, no direct `display.atlas`/`resourceAtlas` assignment, and no automatic ownership watcher;
+- on disable/failure, restores every source object it actually touched and lets `data.change({}) + refresh()` rebuild natively rather than restoring stale atlas objects.
 
-**Strong supported direction:** preserve the high-resolution source/allocation inputs while returning atlas packing/resource selection/reconciliation ownership to native HeroForge as much as possible. The persistent protected-atlas lifecycle introduced by later Protected Textures revisions may be owning too much of the generation lifecycle.
+**Status:** static/source validated only. It has not been activated in HeroForge and must not be activated on the preserved Blood Moon baseline.
 
-This is not yet a final root-cause proof. The exact Kitbash/click call chain still needs to be identified.
-
-## Binding DO-NOT-REPEAT summary
+## Binding DO-NOT-REPEAT
 
 Do not repeat without genuinely new evidence:
 
+- poop creation as a recovery strategy;
+- broad `instantSettingsChange()`;
 - generic physical/physical2/emissive rebakes;
 - broad color-cache invalidation;
 - accessory skinMask synchronization;
 - GPU prewarm;
-- cloned/shared body-mask variants;
-- duplicate bake/refresh;
-- broad `instantSettingsChange()`;
+- cloned/shared mask variations;
+- duplicate bake/refresh attempts;
 - atlas-size-only fixes;
-- direct per-slot real-resource corrections to guessed Discus slots;
-- the six-slot meteorHammer family color rebake as a hip-disc fix;
-- direct targeted AAID/mask substitutions as a substitute for native generation reconciliation.
+- meteorHammer as the visible hip-disc fix;
+- direct guessed Discus resource substitutions as a substitute for full native generation reconciliation.
 
-Also remember the corrected bake pipeline: `bakeAtlas()` writes a `*Src` scratch target; normal visible completion requires the native `bakePartDecals` / `dilate` path when `useLiveTextures=false`.
+Remember: `bakeAtlas()` writes scratch `*Src`; visible completion requires the ordinary decal/dilate path when live textures are off.
 
-## Next investigation sequence
+## Next test sequence
 
-1. Preserve the current correct generation and inspect source/runtime **read-only**.
-2. Identify the native event chain invoked by **enter Kitbash → click figure** that caused the atlas/resource/material generation rebuild.
-3. Determine which of those calls are necessary versus incidental: likely candidates include native `modded.buildAtlas`, paint/material setup, colorBake refresh, resource-size selection, atlas packing, and `updateDisplayMaterials`.
-4. Design an instrumented reproduction that keeps `atlasScale=4`, `bakeSize=2048`, `_usedTextureSize=1024` while allowing HeroForge's native reconciliation to complete.
-5. Do not intentionally break this current figure merely to obtain a before-state. Use source inspection, existing bad-state evidence, hooks, or a safely reproducible separate state first.
-6. Only after the lifecycle is understood should the standalone v0.1.5 architecture be changed.
-
-## HF-Chat-Bridge boundary
-
-HF-Chat-Bridge is healthy development infrastructure. Use narrow compact probes autonomously; do not load Bridge repo documentation unless the transport itself becomes the subject.
+1. Keep Blood Moon untouched.
+2. Install/run `0.2.0-alpha.1` only on a separate safely reproducible figure/state.
+3. Capture baseline atlas/allocation/material appearance.
+4. Enable alpha once; read back runtime verification before any retry.
+5. Amanda visually checks body quality, decals, paint/material/emissive channels, and absence of corruption.
+6. Test disable/restore once and read back state.
+7. If standalone passes, exercise an ordinary native lifecycle transition/figure change.
+8. Only after standalone acceptance consider replacing v0.1.5 and promoting narrowly to Witch Dock Dev. Stable remains untouched until Dev validation.
 
 ## Promotion state
 
-- current standalone source remains experimental v0.1.5 on this branch;
-- the live correct state was reached by native HeroForge interaction, not by a committed feature fix;
-- Witch Dock Dev/Stable promotion remains blocked;
-- public Witch Dock is untouched.
-
-## Update rule
-
-Update this file only when the branch-level current state, protected runtime baseline, or next investigation direction materially changes. Put individual probe history in the evidence ledger rather than expanding this router indefinitely.
+- v0.1.5 remains historical experimental reference, not promoted;
+- v0.2.0-alpha.1 is the leading standalone architecture but is unvalidated live;
+- Witch Dock Dev unchanged;
+- public Witch Dock unchanged.
