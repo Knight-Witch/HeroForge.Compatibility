@@ -1,256 +1,119 @@
 # Architecture
 
-This document defines the intended technical direction for HeroForge.Compatibility. It describes target boundaries, not completed implementation.
+This file defines **repo-wide architecture boundaries only**. Feature-specific architecture belongs in feature specs/investigations and should not be duplicated here.
 
-## System Goal
+## System goal
 
 Reduce the number of places that directly depend on unstable HeroForge internals.
-
-Target direction:
 
 ```text
 Feature Module
     ↓
 Feature Service
     ↓
-Shared HeroForge Compatibility Bridge
+HeroForge Compatibility Bridge
     ↓
-Capability Detection / Adapters / Patch Engine
+Capabilities / Adapters / Discovery / Patch Engine
     ↓
 HeroForge
 ```
 
-## External Live Diagnostic Transport
+## External live diagnostic transport
 
-`Knight-Witch/HF-Chat-Bridge` is a separate private diagnostic/control-plane repository used during development to request bounded live observations from Amanda's authenticated HeroForge browser session.
+`Knight-Witch/HF-Chat-Bridge` is a separate private development control plane used to inspect/test Amanda's authenticated HeroForge browser session.
 
-It is **not** the shared HeroForge Compatibility Bridge in the feature architecture above.
-
-Relationship:
+It is **not** the maintained Compatibility Bridge above and must never become a public Witch Dock/runtime feature dependency.
 
 ```text
-Authorized ChatGPT chat/project
+Authorized development chat
     ↓
-HF-Chat-Bridge diagnostic transport
+HF-Chat-Bridge transport
     ↓
-live HeroForge observation
+live HeroForge observation/experiment
     ↓
-validated compatibility finding
+validated finding
     ↓
-HeroForge.Compatibility capability/adapter design
+HeroForge.Compatibility design/implementation
 ```
 
-Rules:
+Healthy routine Bridge use does not require loading Bridge architecture/history into a Compatibility investigation. Bridge docs are relevant only when Bridge itself is being modified/debugged or a protocol capability is material.
 
-- HF-Chat-Bridge must remain chat/project independent.
-- Diagnostic observations do not become stable capability contracts automatically.
-- Public Witch Dock and reconstructed feature modules must not depend on the GitHub mailbox or local diagnostic relay at runtime.
-- A future transport change should not require rewriting maintained feature modules.
-
-## Core Boundaries
+## Core boundaries
 
 ### Feature modules
 
-Own feature-specific behavior and state transitions. They should not directly know about minified HeroForge identifiers or independently intercept core bundles.
+Own feature-specific behavior/state transitions. They should not independently know minified HeroForge identifiers or intercept shared core bundles when a maintained adapter can own that dependency.
 
 ### Feature services
 
-Expose domain-level operations to UI hosts and test entrypoints.
+Expose domain-level operations to standalone/Witch Dock/test hosts.
 
 ### Compatibility bridge
 
-Owns normalized access to HeroForge runtime capabilities. Feature code should depend on bridge capabilities instead of raw `CK`, `TN`, minified React aliases, or compiled closure-local identifiers wherever practical.
+Own normalized maintained access to HeroForge capabilities. Feature code should prefer capabilities/adapters over raw `CK`, `TN`, private React aliases, or compiled closure-local identifiers where practical.
 
-### Capability detection
+### Capability detection / adapters
 
-Reports whether required behavior is available, unavailable, degraded, or untested. A feature must not initialize when a required capability is unavailable.
-
-### Adapters
-
-Translate stable project-facing operations into current HeroForge runtime operations. A HeroForge internal rename or shape change should ideally require one adapter repair rather than multiple feature rewrites.
+Detect current availability/shape and translate project-facing operations into current HeroForge behavior. A HeroForge internal change should ideally require one adapter repair, not many feature rewrites.
 
 ### Patch engine
 
-Owns unavoidable pre-execution bundle modification, including interception, patch registration, match validation, postconditions, failure severity, untouched-bundle fallback, boot coordination, and diagnostics.
+Own unavoidable pre-execution bundle modification: interception, patch registration, match/context validation, postconditions, failure severity, untouched-source fallback, boot coordination, and diagnostics.
 
-## Experimental Rendering Texture-Quality Boundary
+Detailed integration/patch rules: `docs/policies/INTEGRATION_AND_PATCHING.md`.
 
-`rendering.texture-quality` is currently a standalone experimental runtime feature, not a bundle patch.
+## UI hosts
 
-The maintained candidate separates concerns as follows:
-
-```text
-Standalone test UI
-    ↓
-protected-texture feature lifecycle
-    ↓
-capability/resource validation
-    ↓
-detached bounded rectangular atlas candidate selection
-    ↓
-reversible per-display atlas builder ownership
-    ↓
-renderer ownership/coherence verification
-    ↓
-settled-current-renderer recovery when HeroForge replaces ownership
-    ↓
-CK.Atlas + CK.Resources + colorBake narrow refresh
-```
-
-Rules for this feature:
-
-- normal HeroForge atlas mode remains enabled;
-- current-figure body-mask resources are discovered through named part/resource APIs;
-- body/head destination resolution is protected without hard-coding character-specific assets;
-- the maintained quality target is bodyLower/bodyUpper/face at 2048px; the separate 4096-body experiment remains out of scope;
-- `character.data.atlasScale` is not persistently modified; protected scale values are supplied through a cloned atlas policy;
-- the per-display `buildAtlas` override is configurable/reversible and only owns the active experimental session;
-- the exact atlas HeroForge is displaying immediately before enable is the initial safety/allocation baseline; the feature does not call native `buildAtlas()` merely to synthesize a reference atlas;
-- the protected allocator supplies `CK.Atlas` with a per-slot maximum allocation map derived from that pre-enable displayed baseline, preserving unrelated slots at those allocation caps while allowing bodyLower/bodyUpper/face up to 2048;
-- v0.1.5 selects atlas area through a bounded ascending rectangular ladder: **8192x4096 -> 8192x5120 -> 8192x6144 -> 8192x7168**;
-- a candidate that fails to reach 2048 for any target slot or reduces any unrelated slot below its pre-enable allocation is rejected before display assignment;
-- only the smallest candidate that passes both target-allocation and unrelated-slot checks may become the active/resource atlas;
-- current Blood Moon testing found 8192x6144 is the first passing candidate; 8192x8192 is not retained as a maintained fallback because it is unnecessary for the validated scene;
-- `display`, `display.modded`, protected `buildAtlas` ownership, `display.atlas`, and `modded.resourceAtlas` coherence are session invariants; dimension equality alone is insufficient;
-- while the feature owns a session, `display.atlas` and `modded.resourceAtlas` must reference the same protected atlas object and target display/color/decal bake UV vectors must match the full protected atlas UV location, including X/Y offset as well as scale;
-- if HeroForge/Booth replaces `display.modded`, replaces the protected `buildAtlas` wrapper, or causes display/resource atlas divergence, the old session is invalid and must not be blindly reapplied;
-- lifecycle recovery releases only stale feature-owned metadata/wrapper state, waits for the current HeroForge renderer to settle, aligns the visible display to the current HeroForge `resourceAtlas` through the narrow color-bake path when needed, waits again, and then creates a fresh protected session against that coherent current state;
-- stale pre-transition atlas objects must not be forced onto a new renderer lifecycle during recovery or disable;
-- repeated lifecycle replacement is bounded; the experimental feature auto-disables instead of fighting HeroForge indefinitely;
-- initial failure and ordinary manual disable restore the exact captured active/resource atlas objects only while that exact protected session still owns the current renderer; after lifecycle replacement, disable falls back to the current coherent HeroForge resource atlas instead of restoring stale objects;
-- allocation caps are scoped to a part-set fingerprint; a changed part set requires fresh initialization rather than reuse of stale caps;
-- only the narrow color-bake invalidation/refresh path is used;
-- broad `instantSettingsChange()`/character reconstruction is prohibited for this feature;
-- test diagnostics are plain bounded data (`diagnostics`, `lastError`, `lastVerification`, `attemptHistory`, `timeline`) exposed by the standalone feature so development tooling can inspect behavior without adding renderer mutations;
-- user-visible errors remain latched while the feature is disabled until another explicit enable attempt, explicit diagnostic clear, or page reload.
-
-The corrected 2026-09-11 sweep also established a testing rule: detached atlas probes must reproduce the feature's actual target `bakeSize` metadata. A sweep run after disable, when target ceilings have already returned to 1024, cannot be used to evaluate 2048 candidate viability.
-
-If this behavior passes standalone acceptance, repeated raw `CK` access should later be extracted into maintained bridge/adapters before or during Witch Dock Dev integration.
-
-## HeroForge Integration Priority
-
-Prefer, where practical:
-
-1. Independent UI using runtime-accessible state/functions.
-2. Shared bridge using named runtime APIs.
-3. Runtime object-shape or capability discovery.
-4. Webpack/module discovery.
-5. Semantic/AST bundle transformation.
-6. Contextual regex transformation with captured identifiers.
-7. Exact compiled-string replacement only as a last resort.
-
-## UI Hosts
-
-The same underlying feature module should be reusable by different hosts where practical.
-
-Planned hosts:
+Underlying feature behavior should be reusable across hosts where practical:
 
 - standalone Tampermonkey test UI;
-- Witch Dock Dev UI;
-- possibly no UI for background compatibility utilities.
+- Witch Dock Dev/Stable host after promotion;
+- no UI for background compatibility utilities when appropriate.
 
-HeroForge native React UI should not be a dependency merely for presentation parity.
+Do not depend on HeroForge private React internals merely for appearance parity.
 
-## Expected Source Layout
+## Feature lifecycle / failure isolation
+
+Where practical, features support initialize, enable, disable, and dispose/restore. Owned listeners/observers/timers/DOM/styles/wrappers/runtime overrides should be reversible. A missing required capability blocks that feature rather than destabilizing unrelated behavior.
+
+Detailed lifecycle/testing/release rules: `docs/policies/FEATURE_LIFECYCLE_TESTING_RELEASE.md`.
+
+## Expected source layout
 
 ```text
 src/
   bridge/
-    capabilities/
-    adapters/
-    discovery/
-    readiness/
   patch-engine/
-    interceptors/
-    validators/
-    patches/
-    fallback/
   features/
-    decals/
-    kitbash/
-    character-io/
-    photo-booth/
-    materials/
-    camera/
-    rendering/
-    slots/
   shared/
-
 entries/
   tampermonkey-standalone/
   witch-dock-dev/
-
 tests/
-  fixtures/
-  compatibility/
-  reports/
-
 docs/
+  policies/
   script-audits/
   feature-specs/
   investigations/
   decisions/
-
 legacy/
-  lob-originals/
-  third-party/
-  tampermonkey-metadata/
 ```
 
-The exact directories may evolve. The separation of concerns is the binding requirement.
+Exact directories may evolve; separation of concerns is the requirement.
 
-## Feature Lifecycle
+## Witch Dock boundary
 
-Where technically possible, features should support initialize, enable, disable, and dispose/restore. Disabling should remove or restore owned listeners, observers, timers, DOM, styles, subscriptions, wrappers, and runtime overrides. Boot-time patch features must explicitly state when reload is required.
-
-## Failure Isolation
-
-One optional feature failure must not intentionally take down unrelated features, Witch Dock core, or unmodified HeroForge.
-
-Preferred initialization flow:
-
-1. Probe dependencies.
-2. Validate capabilities.
-3. Prepare changes.
-4. Apply changes.
-5. Verify postconditions.
-6. Mark active.
-
-On failure, roll back where possible and report the affected capability/feature.
-
-## Bundle Patching Model
-
-Unavoidable patches should be declarative definitions with patch ID, owner, target bundle, dependent feature, discovery strategy, expected match count, captures, transformation, validation/postconditions, failure severity, and compatibility status.
-
-The desired boot path is:
-
-```text
-intercept original
-→ obtain untouched source
-→ apply registered patches in memory
-→ validate
-→ execute modified source
-
-on failure
-→ execute untouched source when technically possible
-→ disable affected optional feature
-→ report incompatibility
-```
-
-`rendering.texture-quality` currently requires no bundle patch.
-
-## Witch Dock Boundary
-
-Witch Dock is an external consumer, not the laboratory.
-
-Integration path:
+Witch Dock is an external production consumer, not the laboratory.
 
 ```text
 standalone validated module
-→ Witch Dock Dev adapter/host
+→ Witch Dock Dev
 → integration testing
-→ explicit stable promotion
+→ explicit Stable promotion
 ```
 
-Public Witch Dock must not load the unstable development head of this repository or depend on HF-Chat-Bridge at runtime.
+Public Witch Dock must not load an unstable Compatibility branch or depend on HF-Chat-Bridge at runtime.
+
+## Active feature architecture
+
+Do not add detailed active-feature state here. For current branch/task architecture and constraints, start with `ACTIVE_CONTEXT.md`, then the routed feature spec/investigation.
