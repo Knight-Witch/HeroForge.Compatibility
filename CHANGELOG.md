@@ -2,34 +2,65 @@
 
 This is a **rolling current changelog**. Older verbose entries remain durable in Git history and should be fetched only when relevant.
 
+## HFC-2026-09-12-027 — Confirm native reconciliation restores channels while high-res survives
+
+**Date:** 2026-09-12
+
+### Summary
+
+Recorded the decisive Blood Moon lifecycle transition: entering Kitbash and clicking the figure caused HeroForge to rebuild/reconcile the render generation, immediately restoring all previously incorrect accessory material/color/emissive channels while preserving visually high-resolution body texture, sharp decals, and a no-poop state.
+
+### Confirmed post-reconciliation state
+
+- atlas changed from the broken-generation `8192x4096` state to native `4096x4096`;
+- `atlasScale.bodyLower/bodyUpper/face` remains `4/4/4`;
+- bodyLower/bodyUpper/face each occupy `1024x1024` atlas regions;
+- body/head parts remain `bakeSize=2048`, `_usedTextureSize=1024`;
+- Amanda visually confirmed body/decal quality remained good and all accessory channels became correct;
+- Short Crown Horn (`spikeSmall`, `k_157/k_158`) changed from the broken generation's 128 AAID selection to the correct generation's 64 AAID selection with real 128 mask;
+- Celestial Circlet (`starCirclet`, `k_139`) currently uses real 64 AAID + 128 mask;
+- all 16 Discus instances in the correct generation have real/non-fallback AAID and mask resources on color and emissive;
+- main `elegantSimple` horns changed from fallback resources in the broken generation to real resources after reconciliation.
+
+### Corrections to prior interpretation
+
+- poop is **not required** for channel repair; it was an intermediate/incoherent-generation symptom in historical cases;
+- persistent `8192x4096` ownership is not required for the desired high-resolution visual result;
+- early targeted `bakeAtlas()` tests that did not account for `*Src -> dilate -> visible target` are no longer treated as definitive final-atlas causality tests;
+- the six-piece meteorHammer family is not the user-identified hip-disc asset; Amanda identified the affected part family as Discus.
+
+### Current direction
+
+Investigate the native **Kitbash -> figure click** reconciliation call chain and determine the minimum programmatic sequence that preserves scale=4 / bakeSize=2048 / usedTextureSize=1024 while allowing native HeroForge to own atlas packing/resource reselection/material reconciliation.
+
+### Runtime impact
+
+None from this commit. Documentation only. The decisive runtime transition was user-triggered in HeroForge before the documentation update. No JavaScript, Compatibility runtime, HF-Chat-Bridge runtime, or public Witch Dock source changed.
+
+### Validation
+
+Post-transition runtime snapshots: Bridge #1664, #1666, #1668, #1670, #1671, #1672 plus Amanda's visual confirmation.
+
+---
+
 ## HFC-2026-09-12-026 — Narrow paint-channel defect to bake-input execution path
 
 **Date:** 2026-09-12
 
 ### Summary
 
-Recorded the live Blood Moon accessory-channel investigation through the left/right horn GPU A/B. The current evidence rules out missing AAID/mask assets, per-slot atlas UV mismatch, and stale visible atlas bindings as sufficient explanations for the visible horn/skirt errors.
+Recorded the live Blood Moon accessory-channel investigation through the left/right horn GPU A/B. The then-current evidence ruled out simple per-slot UV mismatch and stale visible atlas bindings and narrowed the next boundary. Later HFC-2026-09-12-027 supersedes the uniform-upload focus with a confirmed native generation-reconciliation event and corrects the scratch/final atlas interpretation.
 
-### Added / corrected
+### Added / corrected at that stage
 
 - documented BakeLayers patch selection: `aaidMap` selects patch IDs, `gradientsMap` supplies patch palettes, and `masksMap` mixes within the selected patch;
-- confirmed real shared meteorHammer 512 AAID and real `spikeSmall` 128 AAID, while `k_107` and main `elegantSimple` horns currently carry 1×1 black fallback AAIDs;
-- recorded successful fetch of the missing real 256 AAID resources;
-- recorded targeted `k_107` and left-main-horn real-AAID+mask A/Bs and Amanda's no-change result while body/decals stayed high-res and no poop returned;
-- confirmed packed atlas coordinates, color-bake UVs, and visible-material UVs agree on affected/control slots;
-- confirmed affected/control meshes sample the same live AtlasBaker color/emissive targets;
-- recorded GPU readback proving left and right main-horn color regions remained byte-identical after the left-only correction;
-- confirmed the real main-horn AAID is nontrivial and horn patch-0/patch-1 gradient rows differ;
-- narrowed the next diagnostic boundary to Patched-material uniform upload / `enterBakeRender` renderer submission;
+- confirmed broken-generation resource state on candidate accessories;
+- recorded targeted real-AAID/mask A/Bs and Amanda's no-change results;
+- confirmed packed atlas coordinates, bake UVs, and visible-material UVs agree on sampled slots;
+- confirmed sampled meshes reference current visible AtlasBaker targets;
 - closed the old #1507 / `HFCCandidate264` uncertainty because #1527 supplied the required later readback.
 
-### Runtime impact
-
-None from this commit. Documentation only. The runtime probes referenced above were bounded bridge diagnostics and have already completed/restored; no JavaScript or public Witch Dock source changed.
-
-### Validation
-
-Evidence rows cross-checked against Bridge #1573–#1590 and Amanda's visual confirmation. Current 8192×4096 high-res/no-poop state remains the protected baseline.
+**Runtime impact:** none from the documentation commit.
 
 ---
 
@@ -37,30 +68,9 @@ Evidence rows cross-checked against Bridge #1573–#1590 and Amanda's visual con
 
 **Date:** 2026-09-12
 
-### Summary
+Cross-checked the INV-0004 evidence ledger against recoverable prior project conversations, handoffs, investigation documents, and bridge landmarks. Backfilled the clean native baseline, historical manual high-res recipe, AAID fallback dead ends, skinMask details, exact Bridge provenance, and old mutation-readback obligations.
 
-Cross-checked the new INV-0004 evidence ledger against recoverable prior project conversations, the prior continuation handoff, current investigation documents, and bridge landmarks so completed texture tests do not disappear at chat rollover.
-
-### Added / corrected
-
-- clean native Blood Moon baseline (`4096x4096`, BL/BU `256`, face `512`, bakeSize `1024`, no live atlasScale override);
-- exact historical pre-Protected-Textures manual high-res recipe around #1178/#1184 (`atlasScale=4`, `bakeSize=2048`, `_usedTextureSize=1024`, valid 1024 masks, native `buildAtlas`, no persistent wrapper);
-- AAID 1x1-black fallback as a real but insufficient cause;
-- 8192x5376 / `.3333333` skinMask = 1792px threshold detail;
-- the full 15-channel body bake-material UV-sync failure result;
-- bridge IDs for the physical/emissive rebake and skinMask sequence;
-- explicit human visual survival of the defects after #1481/#1482;
-- the #1507 / `HFCCandidate264` uncertain-mutation readback obligation;
-- the older account/session-specific potato-resolution problem as separate/unproven relative to the current atlas-pressure mechanism;
-- stronger wording that historical poop could self-heal without Booth, mode switch, resize, or user action.
-
-### Runtime impact
-
-None. Documentation only. No JavaScript, HeroForge runtime state, HF-Chat-Bridge runtime behavior, or public Witch Dock behavior changed.
-
-### Validation
-
-Ledger was compared against the current active-context exclusions and no previously ruled-out path was reopened.
+**Runtime impact:** none; documentation only.
 
 ---
 
@@ -68,28 +78,9 @@ Ledger was compared against the current active-context exclusions and no previou
 
 **Date:** 2026-09-12
 
-### Summary
+Slimmed the binding contract, added `ACTIVE_CONTEXT.md`, split targeted policies, created the evidence-ledger/current-state architecture, and compacted root tracking docs so continuation chats load only relevant current truth.
 
-Refactors project governance/documentation so fresh ChatGPT continuation chats can recover current truth without loading the entire repository history before every task.
-
-### Changed
-
-- slimmed `PROJECT_CONTRACT.md` to broadly binding rules plus policy routing;
-- added branch/task `ACTIVE_CONTEXT.md`;
-- split detailed policy into targeted files under `docs/policies/`;
-- added a compact INV-0004 evidence ledger with explicit dispositions/DO-NOT-REPEAT results;
-- compacted `MASTER.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `TESTING.md`, `PRE_FLIGHT_Check.md`, and README to current-state/navigation roles instead of duplicated history;
-- added a paste-ready compact ChatGPT Project-instructions template;
-- formalized context-efficient bridge probing and cross-repository ownership boundaries;
-- changed preflight from “read every root document every time” to `PROJECT_CONTRACT.md` + `ACTIVE_CONTEXT.md` + only relevant targeted documents/source.
-
-### Runtime impact
-
-None. Documentation/governance only. No JavaScript, HeroForge runtime behavior, HF-Chat-Bridge runtime behavior, or public Witch Dock behavior changed.
-
-### Validation
-
-Final tree/diff review passed: documentation/governance paths only.
+**Runtime impact:** none; documentation/governance only.
 
 ---
 
@@ -97,7 +88,7 @@ Final tree/diff review passed: documentation/governance paths only.
 
 **Date:** 2026-09-12
 
-Added `docs/investigations/INV-0004-current-state-2026-09-12.md` so continuation chats preserve the current Blood Moon high-resolution/no-poop baseline, binding DO-NOT-REPEAT exclusions, meteorHammer mapping/corrections, paint-gradient findings, and the renderer-generation reconciliation hypothesis/next step.
+Added the canonical cross-chat INV-0004 current-state checkpoint.
 
 **Runtime impact:** none; documentation only.
 
@@ -107,9 +98,7 @@ Added `docs/investigations/INV-0004-current-state-2026-09-12.md` so continuation
 
 **Date:** 2026-09-11
 
-Advanced experimental `rendering.texture-quality` standalone to v0.1.5 after corrected detached/live testing established `8192x6144` as the smallest tested Blood Moon candidate reaching bodyLower/bodyUpper/face 2048 with zero unrelated allocation regression. v0.1.4 lifecycle ownership/coherence safeguards were preserved; maintained 8192x8192 fallback was removed.
-
-Key result: live 8192x6144 passed target allocation, valid 1024 masks, display/resource atlas identity, UV coherence, and human visual acceptance before rollback.
+Advanced experimental `rendering.texture-quality` standalone to v0.1.5 after corrected detached/live testing established `8192x6144` as the smallest tested Blood Moon protected candidate reaching bodyLower/bodyUpper/face 2048 with zero unrelated allocation regression. This remains historical candidate evidence; the later native-reconciled 4096 state changes the architecture direction.
 
 **Runtime impact:** opt-in experimental standalone only; public Witch Dock unchanged.
 

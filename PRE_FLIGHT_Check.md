@@ -12,41 +12,51 @@ Before material committed work:
 
 Do not reread the entire changelog, old preflight history, unrelated root docs, or archived investigations merely for process. Historical verbose preflight records remain durable in Git history.
 
+## PFC-2026-09-12-024 — Native Kitbash reconciliation checkpoint
+
+**Scope:** documentation-only checkpoint after Amanda triggered a decisive native HeroForge reconciliation by entering Kitbash and clicking the figure.
+
+**Targets:** `ACTIVE_CONTEXT.md`, `docs/investigations/INV-0004-current-state-2026-09-12.md`, `docs/investigations/INV-0004-evidence-ledger.md`, `CHANGELOG.md`, `PRE_FLIGHT_Check.md`.
+
+**Reviewed:** compact `PROJECT_CONTRACT.md`; texture branch `ACTIVE_CONTEXT.md`; current INV-0004 state/ledger; broken-generation evidence; corrected scratch/final AtlasBaker pipeline; Bridge #1664/#1666/#1668/#1670/#1671/#1672; Amanda's exact part names and post-Kitbash visual confirmation.
+
+**Confirmed before documentation edit:**
+
+- wrong state was high-res/no-poop but accessory channels wrong in an `8192x4096` generation;
+- Kitbash + figure click repaired all visible channels without poop;
+- body/decal visual quality remained accepted;
+- native rebuilt state is `4096x4096` with scale `4/4/4` and BL/BU/face each `1024x1024`;
+- body/head part state remains `bakeSize=2048`, `_usedTextureSize=1024`;
+- accessory resource-size/binding state changed during the native generation rebuild;
+- all 16 Discus instances are now free of 1x1 AAID/mask fallbacks on color/emissive.
+
+**Material risks:** preserving the stale assumption that the correct state requires a giant protected atlas; overclaiming that one particular resource caused the repair; disturbing the uniquely valuable current correct figure while investigating the event chain.
+
+**Mitigation:** rewrite active/current-state docs around the post-reconcile generation; classify the architecture conclusion as supported rather than final proof; preserve direct-fix failures as DO-NOT-REPEAT evidence; make the next stage read-only source/lifecycle inspection first.
+
+**Validation:** documentation content cross-checked against runtime snapshots and Amanda's visual report. Repository diff must contain documentation files only.
+
+**Runtime/public impact:** none from this commit. The native runtime transition was user-triggered before the documentation update. No JavaScript, HF-Chat-Bridge runtime, or public Witch Dock source changes.
+
+---
+
 ## PFC-2026-09-12-023 — Bake-input execution boundary checkpoint
 
-**Scope:** documentation checkpoint after bounded live diagnostics narrowed the current accessory paint-channel defect.
+**Scope:** documentation checkpoint after bounded diagnostics narrowed the then-current accessory paint-channel defect.
 
-**Targets:** `docs/investigations/INV-0004-evidence-ledger.md`, `CHANGELOG.md`, `PRE_FLIGHT_Check.md`.
+The later native reconciliation result in PFC-2026-09-12-024 supersedes the old “uniform upload is next” direction and corrects the early scratch/final atlas interpretation. Preserve the underlying observations, but use the newer lifecycle direction for future work.
 
-**Reviewed:** texture branch `ACTIVE_CONTEXT.md`; current evidence ledger; live BakeLayers shader / `getAAID` behavior; Bridge #1573–#1590; current AtlasBaker/visible target identities; Amanda's latest visual confirmation.
-
-**Confirmed before next mutation:** real horn AAID is nontrivial; prepared horn gradients differ by patch; direct real-AAID+mask left-horn A/B produced no visual difference and byte-identical left/right color-atlas blocks; packed/bake/visible UVs agree; visible meshes bind the same live AtlasBaker target.
-
-**Risks:** repeating a now-disproven AAID/mask fix; incorrectly jumping downstream to visible-material interpretation; broad refresh or lifecycle transition damaging the current high-res/no-poop baseline.
-
-**Mitigation:** direct `.uniforms.*.value` AAID substitution is marked DO-NOT-REPEAT; next work is read-only source inspection of Patched uniform APIs and `enterBakeRender`; any later mutation must be color-only, left/right bounded, evidence-driven, and immediately GPU-read back.
-
-**Validation baseline:** atlas remains 8192×4096; body/decal visually good; no poop; Protected Textures OFF; Lob High Res Decals OFF.
-
-**Runtime/public impact:** none from this documentation commit. Public Witch Dock/source unchanged.
+**Runtime/public impact:** none from the documentation commit.
 
 ---
 
 ## PFC-2026-09-12-022 — Prior-chat texture evidence audit
 
-**Scope:** documentation-only audit of recoverable prior HF texture investigation context against the new canonical INV-0004 evidence ledger.
+**Scope:** documentation-only audit of recoverable prior HF texture investigation context against the canonical evidence ledger.
 
-**Targets:** `docs/investigations/INV-0004-evidence-ledger.md`, `CHANGELOG.md`, `PRE_FLIGHT_Check.md`.
+**Result:** backfilled historical baseline/recipe/dead-end/provenance facts and resolved old mutation-readback ambiguity without reopening completed probes.
 
-**Reviewed:** compact `PROJECT_CONTRACT.md`; texture-branch `ACTIVE_CONTEXT.md`; current evidence ledger; recoverable Sep 8–12 texture investigation conversations; prior continuation handoff; historical bridge landmarks around #1178/#1184, #1466, #1474/#1478/#1479/#1480, #1481/#1482, and uncertain #1507/#1508 state.
-
-**Risks:** importing stale or superseded chat claims; conflating the historical manual 8192x4096 recipe with v0.1.5 candidate-selection results; reopening completed mutations/tests by accident.
-
-**Mitigation:** current-conversation Amanda corrections override stale historical handoff wording; additions are recorded as confirmed/supported/open with explicit dispositions; uncertain #1507 is recorded as a readback obligation, not a mutation to repeat.
-
-**Validation:** ledger additions checked against `ACTIVE_CONTEXT.md`; no runtime/source file touched and no ruled-out path reopened.
-
-**Runtime/public impact:** none. No JavaScript, HeroForge runtime behavior, HF-Chat-Bridge runtime behavior, or public Witch Dock behavior changes.
+**Runtime/public impact:** none.
 
 ---
 
@@ -54,38 +64,24 @@ Do not reread the entire changelog, old preflight history, unrelated root docs, 
 
 **Scope:** documentation/governance only.
 
-**Targets:** compact contract/current-context architecture, policy split, `MASTER.md`, `ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `TESTING.md`, README/startup routing, INV-0004 evidence ledger/current-state routing, changelog/preflight.
+Created the compact contract/current-context/policy/evidence architecture and selective preflight model.
 
-**Reviewed:** existing binding `PROJECT_CONTRACT.md`; current root tracking docs; current INV-0004 investigation/checkpoint; active feature branch state; HF-Chat-Bridge repository boundary/current transport status.
-
-**Risks:** accidentally dropping a binding rule while slimming; duplicating active-state truth; making Bridge or public Witch Dock part of feature runtime architecture.
-
-**Mitigation:** binding core retained in compact contract; detailed rules moved to targeted policy files; active texture truth routed through `ACTIVE_CONTEXT.md` + current-state/evidence ledger; public Witch Dock/runtime source untouched.
-
-**Validation:** Git tree/diff review passed; documentation-only paths changed and no JavaScript/runtime files changed.
-
-**Runtime/public impact:** none. No JavaScript, HeroForge runtime behavior, bridge runtime behavior, or public Witch Dock behavior changes.
+**Runtime/public impact:** none.
 
 ---
 
 ## PFC-2026-09-12-020 — Canonical texture investigation checkpoint
 
-**Scope:** documentation-only cross-chat checkpoint created after repeated investigation handoff loss/retesting risk.
+**Scope:** documentation-only cross-chat checkpoint.
 
-**Targets:** `docs/investigations/INV-0004-current-state-2026-09-12.md`, `CHANGELOG.md`.
+Established the first durable current-state / DO-NOT-REPEAT handoff for INV-0004.
 
-**Reviewed:** current Blood Moon runtime findings and prior handoff exclusions, including generic channel rebakes, color-cache invalidation, skinMask mismatch, `k_107`, meteorHammer mapping, and paint/gradient path findings.
-
-**Risk:** recording inference as fact or accidentally reopening ruled-out paths.
-
-**Result:** checkpoint explicitly separates confirmed/support/hypothesis and binds DO-NOT-REPEAT results pending new evidence.
-
-**Runtime/public impact:** none. Documentation only.
+**Runtime/public impact:** none.
 
 ---
 
 ## Historical records
 
-Verbose preflight history through 2026-09-11 remains in Git history at and before commit `19234039cd4993f4a17b47123a9150d1c5a4fd83` (and earlier branch history). Fetch/search a historical record only when that specific change is relevant.
+Verbose preflight history through 2026-09-11 remains in Git history at and before commit `19234039cd4993f4a17b47123a9150d1c5a4fd83` and earlier branch history. Fetch/search a historical record only when that specific change is relevant.
 
 Future entries should stay concise and reference the feature investigation/evidence record rather than restating it.
