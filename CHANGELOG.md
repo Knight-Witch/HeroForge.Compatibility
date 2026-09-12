@@ -2,6 +2,37 @@
 
 This is a **rolling current changelog**. Older verbose entries remain durable in Git history and should be fetched only when relevant.
 
+## HFC-2026-09-12-026 — Narrow paint-channel defect to bake-input execution path
+
+**Date:** 2026-09-12
+
+### Summary
+
+Recorded the live Blood Moon accessory-channel investigation through the left/right horn GPU A/B. The current evidence rules out missing AAID/mask assets, per-slot atlas UV mismatch, and stale visible atlas bindings as sufficient explanations for the visible horn/skirt errors.
+
+### Added / corrected
+
+- documented BakeLayers patch selection: `aaidMap` selects patch IDs, `gradientsMap` supplies patch palettes, and `masksMap` mixes within the selected patch;
+- confirmed real shared meteorHammer 512 AAID and real `spikeSmall` 128 AAID, while `k_107` and main `elegantSimple` horns currently carry 1×1 black fallback AAIDs;
+- recorded successful fetch of the missing real 256 AAID resources;
+- recorded targeted `k_107` and left-main-horn real-AAID+mask A/Bs and Amanda's no-change result while body/decals stayed high-res and no poop returned;
+- confirmed packed atlas coordinates, color-bake UVs, and visible-material UVs agree on affected/control slots;
+- confirmed affected/control meshes sample the same live AtlasBaker color/emissive targets;
+- recorded GPU readback proving left and right main-horn color regions remained byte-identical after the left-only correction;
+- confirmed the real main-horn AAID is nontrivial and horn patch-0/patch-1 gradient rows differ;
+- narrowed the next diagnostic boundary to Patched-material uniform upload / `enterBakeRender` renderer submission;
+- closed the old #1507 / `HFCCandidate264` uncertainty because #1527 supplied the required later readback.
+
+### Runtime impact
+
+None from this commit. Documentation only. The runtime probes referenced above were bounded bridge diagnostics and have already completed/restored; no JavaScript or public Witch Dock source changed.
+
+### Validation
+
+Evidence rows cross-checked against Bridge #1573–#1590 and Amanda's visual confirmation. Current 8192×4096 high-res/no-poop state remains the protected baseline.
+
+---
+
 ## HFC-2026-09-12-025 — Backfill prior-chat texture evidence into the canonical ledger
 
 **Date:** 2026-09-12

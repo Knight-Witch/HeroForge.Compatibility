@@ -12,6 +12,26 @@ Before material committed work:
 
 Do not reread the entire changelog, old preflight history, unrelated root docs, or archived investigations merely for process. Historical verbose preflight records remain durable in Git history.
 
+## PFC-2026-09-12-023 — Bake-input execution boundary checkpoint
+
+**Scope:** documentation checkpoint after bounded live diagnostics narrowed the current accessory paint-channel defect.
+
+**Targets:** `docs/investigations/INV-0004-evidence-ledger.md`, `CHANGELOG.md`, `PRE_FLIGHT_Check.md`.
+
+**Reviewed:** texture branch `ACTIVE_CONTEXT.md`; current evidence ledger; live BakeLayers shader / `getAAID` behavior; Bridge #1573–#1590; current AtlasBaker/visible target identities; Amanda's latest visual confirmation.
+
+**Confirmed before next mutation:** real horn AAID is nontrivial; prepared horn gradients differ by patch; direct real-AAID+mask left-horn A/B produced no visual difference and byte-identical left/right color-atlas blocks; packed/bake/visible UVs agree; visible meshes bind the same live AtlasBaker target.
+
+**Risks:** repeating a now-disproven AAID/mask fix; incorrectly jumping downstream to visible-material interpretation; broad refresh or lifecycle transition damaging the current high-res/no-poop baseline.
+
+**Mitigation:** direct `.uniforms.*.value` AAID substitution is marked DO-NOT-REPEAT; next work is read-only source inspection of Patched uniform APIs and `enterBakeRender`; any later mutation must be color-only, left/right bounded, evidence-driven, and immediately GPU-read back.
+
+**Validation baseline:** atlas remains 8192×4096; body/decal visually good; no poop; Protected Textures OFF; Lob High Res Decals OFF.
+
+**Runtime/public impact:** none from this documentation commit. Public Witch Dock/source unchanged.
+
+---
+
 ## PFC-2026-09-12-022 — Prior-chat texture evidence audit
 
 **Scope:** documentation-only audit of recoverable prior HF texture investigation context against the new canonical INV-0004 evidence ledger.
