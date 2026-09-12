@@ -1,46 +1,51 @@
 # HeroForge.Compatibility
 
-Compatibility, stabilization, and reconstruction project for unofficial HeroForge scripts and utilities.
+Compatibility, stabilization, reverse-engineering, and reconstruction project for unofficial HeroForge scripts/utilities.
 
-This repository is the development laboratory for:
-
-- auditing legacy HeroForge userscripts,
-- splitting mixed legacy scripts into coherent feature modules,
-- replacing brittle integration methods where practical,
-- building shared HeroForge compatibility infrastructure,
-- testing reconstructed features as standalone Tampermonkey scripts,
-- and preparing validated modules for possible Witch Dock Dev integration.
-
-This is **not** the public Witch Dock production repository. Nothing in this repository is automatically approved for public distribution or Witch Dock Stable.
+This repository is the development laboratory, **not** public Witch Dock production.
 
 ## Development path
 
-`legacy reference` → `standalone reconstructed module` → `shared compatibility bridge` → `Witch Dock Dev` → `separate stable promotion review`
+`legacy/reference` → `standalone reconstructed/experimental module` → `standalone validation` → `Witch Dock Dev` → `integration validation` → `explicit Stable promotion`
 
-## Start here
+## Start here — context-efficient bootstrap
+
+For material work:
 
 1. Read [`PROJECT_CONTRACT.md`](./PROJECT_CONTRACT.md).
-2. Read [`MASTER.md`](./MASTER.md) for current project state.
-3. Read [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the intended technical direction.
-4. Check [`FEATURE_INVENTORY.md`](./FEATURE_INVENTORY.md) before creating or renaming a feature.
-5. Check [`PRE_FLIGHT_Check.md`](./PRE_FLIGHT_Check.md) and [`CHANGELOG.md`](./CHANGELOG.md) before committed work.
+2. Read [`ACTIVE_CONTEXT.md`](./ACTIVE_CONTEXT.md) on the branch being worked.
+3. Follow the routes in `ACTIVE_CONTEXT.md` to only the relevant policy/spec/investigation/source files.
+4. Inspect the target file and directly connected modules before editing.
 
-## Canonical tracking
+Do **not** automatically read every root tracking file, the full changelog, or historical preflight logs.
 
-- `PROJECT_CONTRACT.md` — binding development rules.
-- `MASTER.md` — current project state, active work, blockers, and migration queue.
-- `ARCHITECTURE.md` — intended architecture and system boundaries.
-- `FEATURE_INVENTORY.md` — canonical feature IDs and provisional feature map.
-- `COMPATIBILITY.md` — HeroForge build and feature compatibility status.
-- `OWNERSHIP.md` — maintenance ownership and review responsibilities.
-- `MIGRATION_PLAN.md` — disposition and Witch Dock promotion status.
-- `TESTING.md` — standalone, compatibility, and integration test requirements.
-- `docs/` — audits, feature specifications, investigations, and decisions.
+## Durable memory layers
+
+- `PROJECT_CONTRACT.md` — compact binding rules.
+- `ACTIVE_CONTEXT.md` — branch/task router and protected current state.
+- `MASTER.md` — compact repo-wide status/navigation.
+- `FEATURE_INVENTORY.md` — compact canonical feature registry.
+- `docs/policies/` — detailed rules loaded only when relevant.
+- `docs/feature-specs/` — feature behavior/architecture/acceptance.
+- `docs/investigations/` — technical investigations and evidence ledgers.
+- `CHANGELOG.md` — committed change history; search/fetch relevant entries rather than rereading all history.
+- `PRE_FLIGHT_Check.md` — compact current operational preflight log; historical detail remains in Git history.
+- `ARCHITECTURE.md` — repo-wide architecture boundaries only.
+- `COMPATIBILITY.md`, `OWNERSHIP.md`, `MIGRATION_PLAN.md`, `TESTING.md` — domain tracking, read when the task affects that domain.
 - `legacy/` — immutable source/reference material.
-- `tests/` — fixtures, compatibility tests, and reports.
 
-## Relationship to Witch Dock
+## Current active work
 
-The public Witch Dock repository is `Knight-Witch/KnightWitch.Heroforge`.
+Texture-quality work currently lives on `feature/rendering-texture-quality`. On that branch, `ACTIVE_CONTEXT.md` routes to the current INV-0004 checkpoint/evidence ledger and records the live Blood Moon state that must be preserved.
 
-HeroForge.Compatibility is an upstream development and compatibility project. Public Witch Dock must not depend on the unstable head of this repository.
+## Repository boundaries
+
+- `Knight-Witch/HeroForge.Compatibility` — maintained compatibility/reconstruction work and feature investigations.
+- private `Knight-Witch/HF-Chat-Bridge` — development diagnostic/control transport only.
+- `Knight-Witch/KnightWitch.Heroforge` — public Witch Dock production code/releases.
+
+Public Witch Dock and maintained feature modules must not depend at runtime on HF-Chat-Bridge or an unstable Compatibility development branch.
+
+## ChatGPT Project instructions
+
+A compact paste-ready Project-instructions template lives at [`docs/policies/CHATGPT_PROJECT_INSTRUCTIONS.md`](./docs/policies/CHATGPT_PROJECT_INSTRUCTIONS.md). Repository changes do not modify ChatGPT Project settings automatically.

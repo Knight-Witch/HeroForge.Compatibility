@@ -1,46 +1,30 @@
 # Changelog
 
-## HFC-2026-09-05-016 — Record Photo Booth Stable acceptance
+This is a rolling current changelog. Older verbose entries remain durable in Git history and should be fetched only when relevant.
 
-Date: 2026-09-05
+## HFC-2026-09-12-024 — Refactor project documentation for selective context loading
 
-### Summary
+**Date:** 2026-09-12
 
-Documentation-only status update recording final public Witch Dock Stable acceptance of `media.screenshot-resolution`.
+Refactors project governance so fresh ChatGPT chats start from a compact binding contract plus `ACTIVE_CONTEXT.md`, then load only relevant policy/spec/source/history.
 
-### Confirmed public result
+Main-branch changes:
 
-- Temporary standalone v0.6 and WITCH_DEV_PHOTO test scripts were disabled for the clean public test.
-- Public readiness adapter worked without requiring the repair toggle to be cycled.
-- Public HeroForge/Lob 4096 capture routed through Witch Dock and passed perfectly.
-- Public HeroForge/Lob 8192 grouped capture routed through Witch Dock and passed perfectly.
-- Public Witch Dock direct TRUE 4K capture passed perfectly.
-- Public Witch Dock direct TRUE 8K capture passed perfectly.
-- Amanda reported the public integration works perfectly.
+- slim `PROJECT_CONTRACT.md`;
+- add `ACTIVE_CONTEXT.md` router;
+- add targeted policy files under `docs/policies/`;
+- add compact paste-ready ChatGPT Project-instructions template;
+- update README bootstrap guidance;
+- compact root preflight/changelog behavior so old detail is retrieved from Git history rather than mandatory startup context.
 
-### Status
+The current texture-quality investigation remains on `feature/rendering-texture-quality`; main `ACTIVE_CONTEXT.md` routes texture work there rather than duplicating branch-specific investigation state.
 
-- standalone: validated;
-- Witch Dock Dev: validated with Lob present;
-- Witch Dock Stable: **validated**;
-- Lob-absent native HeroForge resolution-menu adapter: pending separately;
-- primary feature maintainer: unresolved; Amanda is not silently assigned feature maintenance by this validation.
-
-### Runtime impact
-
-**No Compatibility runtime behavior changed.** `entries/tampermonkey-standalone/photo-booth-true-resolution.user.js` remains the validated v0.6 regression baseline. This commit updates durable documentation only.
-
-### Touched files
-
-- `MASTER.md`
-- `FEATURE_INVENTORY.md`
-- `COMPATIBILITY.md`
-- `TESTING.md`
-- `docs/feature-specs/photo-booth-screenshot-resolution.md`
-- `docs/investigations/INV-0003-photo-booth-high-res-capture-2026-09-05.md`
-- `PRE_FLIGHT_Check.md`
-- `CHANGELOG.md`
+**Runtime impact:** none. Documentation/governance only. No JavaScript, HeroForge runtime behavior, HF-Chat-Bridge runtime behavior, or public Witch Dock behavior changed.
 
 ---
 
-Historical changelog entries through HFC-2026-09-05-015 remain preserved in Git history at/before `94289f9dcb8364fb94cd19e8c8a9838c9c616d95`.
+## Historical entries
+
+Main-branch project history through the Photo Booth Stable acceptance remains in Git history at/before commit `732dae09e83d712a26ac383f7b64ce9e27e07a59`.
+
+Feature-branch-only experimental work is documented on its feature branch and is not retroactively presented as merged main behavior.
