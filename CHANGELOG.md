@@ -2,6 +2,37 @@
 
 This is a **rolling current changelog**. Older verbose entries remain durable in Git history and should be fetched only when relevant.
 
+## HFC-2026-09-12-025 — Backfill prior-chat texture evidence into the canonical ledger
+
+**Date:** 2026-09-12
+
+### Summary
+
+Cross-checked the new INV-0004 evidence ledger against recoverable prior project conversations, the prior continuation handoff, current investigation documents, and bridge landmarks so completed texture tests do not disappear at chat rollover.
+
+### Added / corrected
+
+- clean native Blood Moon baseline (`4096x4096`, BL/BU `256`, face `512`, bakeSize `1024`, no live atlasScale override);
+- exact historical pre-Protected-Textures manual high-res recipe around #1178/#1184 (`atlasScale=4`, `bakeSize=2048`, `_usedTextureSize=1024`, valid 1024 masks, native `buildAtlas`, no persistent wrapper);
+- AAID 1x1-black fallback as a real but insufficient cause;
+- 8192x5376 / `.3333333` skinMask = 1792px threshold detail;
+- the full 15-channel body bake-material UV-sync failure result;
+- bridge IDs for the physical/emissive rebake and skinMask sequence;
+- explicit human visual survival of the defects after #1481/#1482;
+- the #1507 / `HFCCandidate264` uncertain-mutation readback obligation;
+- the older account/session-specific potato-resolution problem as separate/unproven relative to the current atlas-pressure mechanism;
+- stronger wording that historical poop could self-heal without Booth, mode switch, resize, or user action.
+
+### Runtime impact
+
+None. Documentation only. No JavaScript, HeroForge runtime state, HF-Chat-Bridge runtime behavior, or public Witch Dock behavior changed.
+
+### Validation
+
+Ledger was compared against the current active-context exclusions and no previously ruled-out path was reopened.
+
+---
+
 ## HFC-2026-09-12-024 — Refactor project documentation for selective context loading
 
 **Date:** 2026-09-12
@@ -27,7 +58,7 @@ None. Documentation/governance only. No JavaScript, HeroForge runtime behavior, 
 
 ### Validation
 
-Pending final tree/diff review of this documentation-only commit.
+Final tree/diff review passed: documentation/governance paths only.
 
 ---
 
