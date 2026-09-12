@@ -2,12 +2,10 @@
 
 **Updated:** 2026-09-12  
 **Active feature:** `rendering.texture-quality`  
-**Current task:** validate a native-reconcile high-resolution prototype that preserves proven source-side quality inputs while leaving atlas/resource generation ownership to HeroForge  
-**Runtime posture:** **protect the current correct Blood Moon state; do not activate experimental texture code on it**
+**Current task:** validate `0.2.0-alpha.2` on Blood Moon, then validate D4 specifically for the body color/glyph channel  
+**Runtime posture:** old Protected 2048 standalone OFF; Lob High Res Decals OFF; use native-reconcile alpha only.
 
 ## Minimum continuation set
-
-Read, in order:
 
 1. `PROJECT_CONTRACT.md`
 2. this file
@@ -15,109 +13,82 @@ Read, in order:
 4. `docs/investigations/INV-0004-evidence-ledger.md`
 5. `docs/investigations/INV-0004-native-reconcile-alpha-2026-09-12.md`
 
-Read the old full investigation, feature spec, v0.1.5 source, or policies only when the next decision requires them.
+## Decisive live result — native-reconcile architecture works
 
-## Protected live Blood Moon — CORRECT
+Blood Moon was reloaded to a genuine native potato baseline with the old Protected 2048 test disabled:
 
-Amanda's native **Kitbash → click figure** transition repaired all previously wrong accessory material/color/emissive channels while preserving high-resolution body texture, sharp decals, and a no-poop state.
+- atlas `4096x4096`;
+- bodyLower/bodyUpper `256x256`;
+- face `512x512`;
+- target bake ceilings `1024`;
+- `_usedTextureSize = 256/256/512`;
+- no target atlasScale overrides;
+- native-reconcile alpha present but OFF.
 
-Current accepted state:
+Bridge then invoked `0.2.0-alpha.1` once. The script reported failure only because its `sameSession()` guard treated HeroForge's expected display/modded-generation replacement as stale-session corruption. The resulting HeroForge generation itself was successful:
 
-- `display.atlas = 4096x4096`;
-- `atlasScale.bodyLower/bodyUpper/face = 4/4/4`;
-- bodyLower/bodyUpper/face allocations = `1024x1024` each;
-- target parts remain `bakeSize=2048`, `_usedTextureSize=1024`;
-- bodyLower and bodyUpper each use a real validated 1024 mask override, and their color-bake `masksMap` is the exact same texture object as that override (Bridge #1716/#1718);
-- Protected Textures standalone OFF;
-- Lob High Res Decals OFF.
+- atlas `4096x4096`;
+- display/resource atlas coherent;
+- scale `4/4/4`;
+- bodyLower/bodyUpper/face allocations `1024x1024` each;
+- target `bakeSize=2048`;
+- target `_usedTextureSize=1024`;
+- valid 1024 bodyLower/bodyUpper masks active;
+- fallback scan for Discus / Short Crown Horn / Celestial Circlet = `0 / 0 / 0`.
 
-Do not reload, resize, broad-refresh, force a mode transition, or intentionally recreate the broken generation on this figure merely for instrumentation.
+Amanda visually confirmed the resulting Blood Moon state is **perfect**:
 
-## Native lifecycle now traced
+- body texture high-resolution;
+- decals sharp/high-resolution;
+- no poop;
+- no incorrect accessory color/material/emissive channels.
 
-Confirmed source/runtime chain:
+This is the first direct standalone-path visual validation of the replacement architecture.
 
-1. `CK.character.change(e, ...)` normally calls `character.data.change(e, character.settings)` and then `character.refresh()`; using the high-level method also participates in character events/history semantics. Bridge #1699.
-2. `character.data.change(...)` runs `this.modded.change(this)`, later `this.modded._changePaints()`, and sets `needsDisplayUpdate=true`. Bridge #1706.
-3. `modded.change(data)` runs HeroForge's normal mod/resource derivation stages and ends with `this.buildAtlas()`. Bridge #1681.
-4. Native `modded.buildAtlas()` assigns `this.resourceAtlas = new CK.Atlas({...this.parts}, ..., this.data.isUHD(), this.data.atlasScale)`. It does not need or return a custom protected atlas. Bridge #1715.
-5. `character.refresh()` sets `_needsUpdating`; `character.update()` consumes it, calls `display.change(character.data)`, then `display.update()`. Bridge #1700/#1702.
-6. `display.change(data)` loads resources selected by `data.modded` and then adopts them through its normal `_loaded(...)` path. Bridge #1703.
+## Alpha.1 bookkeeping defect
 
-This closes the old uncertainty about the scheduler/build boundary. The exact UI-internal Kitbash click handler is no longer required to prototype the native generation path.
+**Confirmed:** HeroForge replaces the display/modded generation during the successful native reconcile. Alpha.1 incorrectly required the original display/modded object identities to survive and therefore declared a false failure after the useful native transition had already succeeded.
 
-## Architecture conclusion
+This is not evidence against the architecture. The successful output is exactly the lifecycle we intended to permit.
 
-**Confirmed:** v0.1.5 owns much more than the successful native recovery requires. It installs a persistent `modded.buildAtlas` wrapper, constructs large detached atlas candidates, assigns `modded.resourceAtlas` and `display.atlas`, and watches/reasserts ownership.
+## Alpha.2 correction
 
-**Supported inference:** that persistent ownership can preserve an internally coherent but stale/wrong generation and interfere with HeroForge's native resource-size/material reconciliation.
+`entries/tampermonkey-standalone/rendering-texture-quality-native-reconcile.user.js` is now `0.2.0-alpha.2`.
 
-**Leading replacement:** keep only the source-side inputs that coexist in the historical working recipe and the current correct generation, then invoke/allow the native generation lifecycle.
+Alpha.2:
 
-Those inputs are:
+- still anchors safety to the same `CK.character` and `character.data` objects plus the same target body/head part identities;
+- **adopts** a replacement `character.display` / `display.modded` generation when HeroForge creates one during reconciliation;
+- counts adopted generations in verification;
+- continues to fail closed if the actual character/data or target part identities change unexpectedly;
+- retains the same source policy: atlasScale 4, bakeSize 2048, `_usedTextureSize=1024`, valid 1024 body masks;
+- still does not construct a custom `CK.Atlas`, override `buildAtlas`, assign display/resource atlas objects, or run an ownership watcher.
 
-- `data.atlasScale.bodyLower/bodyUpper/face = 4`;
-- target `bakeSize = 2048`;
-- target `_usedTextureSize = 1024`;
-- validated per-figure bodyLower/bodyUpper 1024 mask overrides.
+Static validation: `node --check` PASS; alpha.2 SHA-256 `27a8a0bba0b001d518d71b768ac4493eac93e15b441cebce63865f67a1a685ea`.
 
-Do **not** custom-build/assign an atlas, override `buildAtlas`, or continuously fight native lifecycle ownership.
+## Why D4 is the second acceptance figure
 
-## New standalone alpha
+Blood Moon is excellent for atlas-pressure, decal sharpness, poop, and accessory-channel validation, but it does not expose the historical body color/glyph failure as clearly as D4.
 
-Parallel prototype:
+After alpha.2 passes once on Blood Moon, switch to D4 and validate specifically:
 
-`entries/tampermonkey-standalone/rendering-texture-quality-native-reconcile.user.js`
+- body color/glyph channel correctness;
+- body/face resolution;
+- decal quality;
+- no poop/corruption;
+- valid 1024 body masks;
+- normal accessory channels.
 
-Version: `0.2.0-alpha.1`
-
-The alpha deliberately leaves v0.1.5 untouched as historical comparison evidence. It:
-
-- snapshots only fields it owns;
-- validates/loads current figure's 1024 body masks;
-- applies scale/bake/used-size/mask policy;
-- calls `data.change({}, settings)` for full native generation derivation;
-- reapplies only the proven source-side policy in case native change refreshed part objects;
-- calls the unmodified native `modded.buildAtlas()` once;
-- calls `character.refresh()` and waits for native display/resource coherence;
-- verifies target scale/bake/used-size, >=1024 target allocations, shared display/resource atlas identity, and actual 1024 color-bake masks;
-- has no atlas wrapper, no direct `display.atlas`/`resourceAtlas` assignment, and no automatic ownership watcher;
-- on disable/failure, restores every source object it actually touched and lets `data.change({}) + refresh()` rebuild natively rather than restoring stale atlas objects.
-
-**Status:** static/source validated only. It has not been activated in HeroForge and must not be activated on the preserved Blood Moon baseline.
+Do not promote to Witch Dock Dev until the D4 body-channel check passes.
 
 ## Binding DO-NOT-REPEAT
 
-Do not repeat without genuinely new evidence:
-
-- poop creation as a recovery strategy;
-- broad `instantSettingsChange()`;
-- generic physical/physical2/emissive rebakes;
-- broad color-cache invalidation;
-- accessory skinMask synchronization;
-- GPU prewarm;
-- cloned/shared mask variations;
-- duplicate bake/refresh attempts;
-- atlas-size-only fixes;
-- meteorHammer as the visible hip-disc fix;
-- direct guessed Discus resource substitutions as a substitute for full native generation reconciliation.
-
-Remember: `bakeAtlas()` writes scratch `*Src`; visible completion requires the ordinary decal/dilate path when live textures are off.
-
-## Next test sequence
-
-1. Keep Blood Moon untouched.
-2. Install/run `0.2.0-alpha.1` only on a separate safely reproducible figure/state.
-3. Capture baseline atlas/allocation/material appearance.
-4. Enable alpha once; read back runtime verification before any retry.
-5. Amanda visually checks body quality, decals, paint/material/emissive channels, and absence of corruption.
-6. Test disable/restore once and read back state.
-7. If standalone passes, exercise an ordinary native lifecycle transition/figure change.
-8. Only after standalone acceptance consider replacing v0.1.5 and promoting narrowly to Witch Dock Dev. Stable remains untouched until Dev validation.
+Do not return to persistent protected-atlas ownership, giant-atlas forcing, generic rebakes, broad cache invalidation, skinMask sync, GPU prewarm, poop creation, meteorHammer hip-disc guesses, or per-slot Discus fixes. Those paths are already disposed in the evidence ledger.
 
 ## Promotion state
 
-- v0.1.5 remains historical experimental reference, not promoted;
-- v0.2.0-alpha.1 is the leading standalone architecture but is unvalidated live;
+- v0.1.5: historical experimental reference only;
+- v0.2.0-alpha.1: architecture visually validated on Blood Moon, but bookkeeping false-negative on native display replacement;
+- v0.2.0-alpha.2: current standalone candidate, pending Blood Moon bookkeeping retest and D4 body-channel validation;
 - Witch Dock Dev unchanged;
-- public Witch Dock unchanged.
+- Stable unchanged.

@@ -10,52 +10,48 @@ Before material committed work:
 4. Identify material conflict/rollback risks.
 5. Define the narrow validation required for the change.
 
-## PFC-2026-09-12-025 — Native-reconcile texture alpha
+## PFC-2026-09-12-026 — Alpha.2 native-generation adoption after Blood Moon live pass
 
-**Scope:** add a separate standalone alpha after read-only source/runtime tracing established the native data/modded/atlas/display lifecycle. Do not replace v0.1.5 or mutate the protected Blood Moon baseline.
+**Scope:** correct alpha.1 bookkeeping after the first real standalone-path Blood Moon validation proved the native-reconcile architecture visually works.
 
-**Reviewed:** `PROJECT_CONTRACT.md`; branch `ACTIVE_CONTEXT.md`; current INV-0004 state and evidence ledger; v0.1.5 standalone source; texture-quality feature spec; Bridge #1699/#1700/#1702/#1703/#1706/#1681/#1715/#1716/#1718.
+**Reviewed:** `PROJECT_CONTRACT.md`; `ACTIVE_CONTEXT.md`; current INV-0004 state; native-reconcile evidence supplement; alpha.1 source; Blood Moon baseline/readback Bridge #1719/#1723/#1725; Amanda's visual confirmation.
 
 **Confirmed before edit:**
 
-- `data.change(...)` invokes `modded.change(data)`, which ends in native `buildAtlas()`;
-- native `buildAtlas()` assigns `resourceAtlas` from current parts, UHD state, and `data.atlasScale`;
-- `character.refresh()` schedules `character.update()`, which calls `display.change(data)` then `display.update()`;
-- high-level `character.change` adds events/history semantics that are not required for the first prototype;
-- v0.1.5 persistently wraps `buildAtlas`, owns/assigns atlas objects, and watches/reasserts ownership;
-- the current correct Blood Moon uses real 1024 bodyLower/bodyUpper mask overrides as its actual color-bake masks.
+- genuine native baseline was 4096x4096 with BL/BU 256, face 512, bakeSize 1024, used 256/256/512, no target scale overrides;
+- one actual alpha.1 enable path produced native 4096x4096 with scale 4/4/4, BL/BU/face 1024, bakeSize 2048, used 1024, valid 1024 body masks, and zero fallbacks across Discus/Short Crown Horn/Celestial Circlet;
+- Amanda confirmed body/decal quality is excellent, no poop, and all visible accessory channels are correct;
+- alpha.1's only observed failure was its strict display/modded identity guard; HeroForge legitimately replaced those generation objects during the successful reconcile.
 
-**Target changes:**
+**Target change:** advance standalone to `0.2.0-alpha.2` and adopt replacement display/modded generations while preserving character/data/target-part identity as the stale-session safety boundary.
 
-- add `entries/tampermonkey-standalone/rendering-texture-quality-native-reconcile.user.js` v`0.2.0-alpha.1`;
-- add compact native-reconcile evidence supplement;
-- update branch active context, changelog, and this preflight record.
-
-**Architecture constraints:**
+**Architecture constraints preserved:**
 
 - no custom `CK.Atlas` construction;
-- no `modded.buildAtlas` replacement/wrapper;
-- no direct `display.atlas` or `modded.resourceAtlas` assignment;
-- no automatic watcher fighting HeroForge;
-- source policy limited to target atlasScale=4, bakeSize=2048, `_usedTextureSize=1024`, and validated 1024 body masks;
-- restore every scale/part/mesh object actually touched, including objects refreshed during native reconciliation;
-- live acceptance requires separate safe figure/state plus human visual validation.
+- no buildAtlas replacement/wrapper;
+- no direct `display.atlas` / `resourceAtlas` assignment;
+- no automatic ownership watcher;
+- source policy remains scale 4, bakeSize 2048, `_usedTextureSize=1024`, validated 1024 body masks;
+- actual character/data or target-part changes still fail closed.
 
-**Static validation:** `node --check` PASS; grep audit found no custom atlas construction, buildAtlas replacement, or direct atlas assignment. SHA-256 `a6f835156bc52da024933699462fc8d51fe95e743afa3fa265b75ee246242a23`.
+**Static validation:** `node --check` PASS; source audit PASS; SHA-256 `27a8a0bba0b001d518d71b768ac4493eac93e15b441cebce63865f67a1a685ea`.
 
-**Runtime validation:** not yet performed by design. Only read-only bridge probes were run against the preserved correct Blood Moon; health check remained idle/coherent at `4096x4096`.
+**Runtime validation required after commit:**
 
-**Rollback:** alpha is a new parallel file; v0.1.5 is unchanged. Alpha enable snapshots all owned source fields. Disable/failure restores those snapshots and requests native `data.change({}) + refresh()` rather than restoring stale atlas objects.
+1. reload/update alpha.2 on Blood Moon;
+2. verify alpha.2 remains ON after native generation replacement and reproduces the accepted visual result;
+3. switch to D4 and validate the body color/glyph channel specifically;
+4. do not promote to Witch Dock Dev before D4 passes.
+
+**Rollback:** v0.1.5 remains untouched historical reference; alpha.2 is standalone-only. Existing local HeroForge saves are not overwritten unless the user manually saves them.
 
 **Public impact:** none. Witch Dock Dev and Stable unchanged.
 
 ---
 
-## PFC-2026-09-12-024 — Native Kitbash reconciliation checkpoint
+## PFC-2026-09-12-025 — Native-reconcile texture alpha
 
-Recorded the decisive user-triggered Kitbash/click repair: all accessory channels corrected while body/decal quality remained accepted; native atlas became `4096x4096` with scale `4/4/4` and target allocations `1024x1024`.
-
-**Runtime/public impact of that documentation commit:** none.
+Added parallel `0.2.0-alpha.1` after tracing the native data/modded/build/display lifecycle. Static/source validation passed; the subsequent live Blood Moon run is recorded in PFC-026.
 
 ---
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HF Compatibility - Native Texture Reconcile TEST
 // @namespace    https://github.com/Knight-Witch/HeroForge.Compatibility
-// @version      0.2.0-alpha.1
+// @version      0.2.0-alpha.2
 // @description  Experimental high-resolution source policy with native HeroForge atlas/resource reconciliation.
 // @author       Knight Witch
 // @match        https://www.heroforge.com/*
@@ -14,7 +14,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '0.2.0-alpha.1-native-reconcile';
+  const BUILD = '0.2.0-alpha.2-native-reconcile';
   const API = 'HFNativeTextureReconcileTest';
   const TARGETS = ['bodyLower', 'bodyUpper', 'face'];
   const BODIES = ['bodyLower', 'bodyUpper'];
@@ -58,10 +58,22 @@
     return { ok: true, CK, c, d, display, m, parts, meshes, R };
   }
 
-  function sameSession(s) {
-    const CK = window.CK, c = CK && CK.character, display = c && c.display;
-    if (!s || c !== s.c || c.data !== s.d || display !== s.display || display.modded !== s.m) return false;
-    return TARGETS.every((k) => partId(s.m.parts[k]) === s.ids[k]);
+  function sameCharacter(s) {
+    const CK = window.CK, c = CK && CK.character;
+    return !!s && c === s.c && c.data === s.d;
+  }
+
+  function adoptCurrent(s) {
+    if (!sameCharacter(s)) return false;
+    const display = s.c.display, m = display && display.modded;
+    if (!display || !m || !m.parts || !display.meshes) return false;
+    if (!TARGETS.every((k) => partId(m.parts[k]) === s.ids[k])) return false;
+    if (display !== s.display || m !== s.m) {
+      s.display = display;
+      s.m = m;
+      s.adoptions += 1;
+    }
+    return true;
   }
 
   function rememberScale(s) {
@@ -88,7 +100,7 @@
   }
 
   function current(s) {
-    if (!sameSession(s)) throw new Error('HeroForge character/display changed; refusing stale mutation.');
+    if (!adoptCurrent(s)) throw new Error('HeroForge character/data/target parts changed; refusing stale mutation.');
     return { parts: s.m.parts, meshes: s.display.meshes };
   }
 
@@ -96,30 +108,35 @@
     const x = current(s);
     rememberScale(s);
     for (const k of TARGETS) s.d.atlasScale[k] = SCALE;
-    for (const k of TARGETS) { rememberPart(s, x.parts[k]); x.parts[k].bakeSize = BAKE; x.parts[k]._usedTextureSize = USED; }
-    for (const k of BODIES) { rememberMesh(s, x.meshes[k]); x.meshes[k].masksMapOverride = s.masks[k]; }
+    for (const k of TARGETS) {
+      rememberPart(s, x.parts[k]);
+      x.parts[k].bakeSize = BAKE;
+      x.parts[k]._usedTextureSize = USED;
+    }
+    for (const k of BODIES) {
+      rememberMesh(s, x.meshes[k]);
+      x.meshes[k].masksMapOverride = s.masks[k];
+    }
   }
 
   function restorePolicy(s) {
     for (const x of s.scales) for (const row of x.rows) restore(row);
-    for (const x of s.partsSeen) { try { x.o.bakeSize = x.bakeSize; x.o._usedTextureSize = x.used; } catch (_) {} }
+    for (const x of s.partsSeen) {
+      try { x.o.bakeSize = x.bakeSize; x.o._usedTextureSize = x.used; } catch (_) {}
+    }
     for (const x of s.meshesSeen) restore(x.mask);
   }
 
   function nativeReconcile(s) {
-    if (!sameSession(s)) throw new Error('HeroForge session changed before reconcile.');
-    // Full native derivation/reselection, confirmed to end in native buildAtlas().
+    if (!adoptCurrent(s)) throw new Error('HeroForge character/data changed before reconcile.');
     s.d.change({}, s.c.settings);
-    // Native change may refresh part/mesh objects. Reapply only proven source inputs.
     applyPolicy(s);
-    // Unmodified native buildAtlas consumes current parts + data.atlasScale.
     s.m.buildAtlas();
-    // Native scheduler: refresh -> character.update -> display.change(data) -> display.update.
     s.c.refresh();
   }
 
   function nativeRestore(s) {
-    if (!sameSession(s)) throw new Error('HeroForge session changed before restore.');
+    if (!adoptCurrent(s)) throw new Error('HeroForge character/data changed before restore.');
     s.d.change({}, s.c.settings);
     s.c.refresh();
   }
@@ -128,10 +145,18 @@
     const end = Date.now() + 12000;
     let last = '', stable = 0;
     while (Date.now() < end) {
-      if (!sameSession(s)) throw new Error('HeroForge replaced the character/display during reconcile.');
-      const a = s.display.atlas, r = s.m.resourceAtlas;
-      const sig = JSON.stringify([!s.c._needsUpdating, !s.c._inUpdate, s.display.resourcesReady, s.display.finished, a === r, atlasSize(a), TARGETS.map((k) => allocation(a, k))]);
-      if (!s.c._needsUpdating && !s.c._inUpdate && s.display.resourcesReady !== false && s.display.finished !== false && a && a === r) {
+      if (!sameCharacter(s)) throw new Error('HeroForge character/data changed during reconcile.');
+      const display = s.c.display, m = display && display.modded;
+      if (!display || !m || !m.parts || !display.meshes) { await sleep(150); continue; }
+      if (!TARGETS.every((k) => partId(m.parts[k]) === s.ids[k])) throw new Error('HeroForge target parts changed during reconcile.');
+      if (display !== s.display || m !== s.m) {
+        s.display = display;
+        s.m = m;
+        s.adoptions += 1;
+      }
+      const a = display.atlas, r = m.resourceAtlas;
+      const sig = JSON.stringify([!s.c._needsUpdating, !s.c._inUpdate, display.resourcesReady, display.finished, a === r, atlasSize(a), TARGETS.map((k) => allocation(a, k))]);
+      if (!s.c._needsUpdating && !s.c._inUpdate && display.resourcesReady !== false && display.finished !== false && a && a === r) {
         stable = sig === last ? stable + 1 : 1;
         if (stable >= 3) return;
       } else stable = 0;
@@ -142,12 +167,15 @@
   }
 
   function verify(s) {
-    if (!sameSession(s)) return { ok: false, reason: 'HeroForge session changed.' };
+    if (!adoptCurrent(s)) return { ok: false, reason: 'HeroForge character/data/target parts changed.' };
     const x = current(s), a = s.display.atlas, r = s.m.resourceAtlas;
-    const out = { ok: true, build: BUILD, atlas: atlasSize(a), sameAtlas: a === r, allocations: {}, scale: {}, bakeSize: {}, usedTextureSize: {}, masks: {} };
+    const out = { ok: true, build: BUILD, atlas: atlasSize(a), sameAtlas: a === r, adoptedGenerations: s.adoptions, allocations: {}, scale: {}, bakeSize: {}, usedTextureSize: {}, masks: {} };
     if (!out.sameAtlas) return { ...out, ok: false, reason: 'Display/resource atlas objects differ.' };
     for (const k of TARGETS) {
-      out.allocations[k] = allocation(a, k); out.scale[k] = s.d.atlasScale[k]; out.bakeSize[k] = x.parts[k].bakeSize; out.usedTextureSize[k] = x.parts[k]._usedTextureSize;
+      out.allocations[k] = allocation(a, k);
+      out.scale[k] = s.d.atlasScale[k];
+      out.bakeSize[k] = x.parts[k].bakeSize;
+      out.usedTextureSize[k] = x.parts[k]._usedTextureSize;
       if (Number(out.scale[k]) !== SCALE || Number(out.bakeSize[k]) !== BAKE || Number(out.usedTextureSize[k]) !== USED || !out.allocations[k] || out.allocations[k][0] < USED || out.allocations[k][1] < USED) return { ...out, ok: false, reason: `${k} high-resolution source/allocation verification failed.` };
     }
     for (const k of BODIES) {
@@ -161,42 +189,114 @@
 
   async function enable() {
     if (busy || enabled) return;
-    busy = true; lastError = null; paint('Preparing native reconcile…'); sync();
+    busy = true;
+    lastError = null;
+    paint('Preparing native reconcile…');
+    sync();
     let s = null;
     try {
-      const cap = capabilities(); if (!cap.ok) throw new Error(cap.reason);
-      s = { c: cap.c, d: cap.d, display: cap.display, m: cap.m, ids: Object.fromEntries(TARGETS.map((k) => [k, partId(cap.parts[k])])), scales: [], partsSeen: [], meshesSeen: [], baseline: { atlas: atlasSize(cap.display.atlas), allocations: Object.fromEntries(TARGETS.map((k) => [k, allocation(cap.display.atlas, k)])) }, masks: null };
-      s.masks = await loadMasks(cap); if (!sameSession(s)) throw new Error('HeroForge changed while masks loaded.');
-      applyPolicy(s); session = s; nativeReconcile(s); await settle(s);
-      lastVerification = verify(s); if (!lastVerification.ok) throw new Error(lastVerification.reason);
-      enabled = true; paint(`ON — ${lastVerification.atlas.join('×')}`);
+      const cap = capabilities();
+      if (!cap.ok) throw new Error(cap.reason);
+      s = {
+        c: cap.c,
+        d: cap.d,
+        display: cap.display,
+        m: cap.m,
+        ids: Object.fromEntries(TARGETS.map((k) => [k, partId(cap.parts[k])])),
+        scales: [],
+        partsSeen: [],
+        meshesSeen: [],
+        adoptions: 0,
+        baseline: {
+          atlas: atlasSize(cap.display.atlas),
+          allocations: Object.fromEntries(TARGETS.map((k) => [k, allocation(cap.display.atlas, k)]))
+        },
+        masks: null
+      };
+      s.masks = await loadMasks(cap);
+      if (!adoptCurrent(s)) throw new Error('HeroForge changed while masks loaded.');
+      applyPolicy(s);
+      session = s;
+      nativeReconcile(s);
+      await settle(s);
+      lastVerification = verify(s);
+      if (!lastVerification.ok) throw new Error(lastVerification.reason);
+      enabled = true;
+      paint(`ON — ${lastVerification.atlas.join('×')}`);
     } catch (e) {
-      lastError = String(e && e.message || e); enabled = false;
-      if (s && sameSession(s)) { try { restorePolicy(s); nativeRestore(s); await settle(s); } catch (r) { lastError += ` | restore: ${String(r && r.message || r)}`; } }
-      if (session === s) session = null; paint(`FAILED — ${lastError}`, true); console.error('[HFC native texture reconcile]', e);
-    } finally { busy = false; sync(); }
+      lastError = String(e && e.message || e);
+      enabled = false;
+      if (s && adoptCurrent(s)) {
+        try {
+          restorePolicy(s);
+          nativeRestore(s);
+          await settle(s);
+        } catch (r) {
+          lastError += ` | restore: ${String(r && r.message || r)}`;
+        }
+      }
+      if (session === s) session = null;
+      paint(`FAILED — ${lastError}`, true);
+      console.error('[HFC native texture reconcile]', e);
+    } finally {
+      busy = false;
+      sync();
+    }
   }
 
   async function disable() {
     if (busy || !session) return;
-    busy = true; paint('Restoring source policy…'); sync();
+    busy = true;
+    paint('Restoring source policy…');
+    sync();
     const s = session;
     try {
-      if (!sameSession(s)) throw new Error('HeroForge session changed; stale snapshots not restored.');
-      restorePolicy(s); nativeRestore(s); await settle(s); enabled = false; session = null; lastVerification = null; paint('OFF — source values restored; native atlas retained.');
-    } catch (e) { lastError = String(e && e.message || e); enabled = false; session = null; paint(`OFF / restore warning — ${lastError}`, true); console.error('[HFC native texture reconcile]', e); }
-    finally { busy = false; sync(); }
+      if (!adoptCurrent(s)) throw new Error('HeroForge character/data/target parts changed; stale snapshots not restored.');
+      restorePolicy(s);
+      nativeRestore(s);
+      await settle(s);
+      enabled = false;
+      session = null;
+      lastVerification = null;
+      paint('OFF — source values restored; native atlas retained.');
+    } catch (e) {
+      lastError = String(e && e.message || e);
+      enabled = false;
+      session = null;
+      paint(`OFF / restore warning — ${lastError}`, true);
+      console.error('[HFC native texture reconcile]', e);
+    } finally {
+      busy = false;
+      sync();
+    }
   }
 
   async function reconcile() {
     if (busy || !enabled || !session) return false;
-    busy = true; paint('Reconciling natively…'); sync();
-    try { applyPolicy(session); nativeReconcile(session); await settle(session); lastVerification = verify(session); if (!lastVerification.ok) throw new Error(lastVerification.reason); paint(`ON — ${lastVerification.atlas.join('×')}`); return true; }
-    catch (e) { lastError = String(e && e.message || e); paint(`Reconcile failed — ${lastError}`, true); return false; }
-    finally { busy = false; sync(); }
+    busy = true;
+    paint('Reconciling natively…');
+    sync();
+    try {
+      applyPolicy(session);
+      nativeReconcile(session);
+      await settle(session);
+      lastVerification = verify(session);
+      if (!lastVerification.ok) throw new Error(lastVerification.reason);
+      paint(`ON — ${lastVerification.atlas.join('×')}`);
+      return true;
+    } catch (e) {
+      lastError = String(e && e.message || e);
+      paint(`Reconcile failed — ${lastError}`, true);
+      return false;
+    } finally {
+      busy = false;
+      sync();
+    }
   }
 
-  function paint(text, error = false) { if (status) { status.textContent = text; status.style.color = error ? '#ff9c9c' : '#ddd'; } }
+  function paint(text, error = false) {
+    if (status) { status.textContent = text; status.style.color = error ? '#ff9c9c' : '#ddd'; }
+  }
   function sync() {
     if (button) { button.disabled = busy; button.textContent = busy ? 'WORKING…' : enabled ? 'DISABLE' : 'ENABLE'; }
     if (window[API]) Object.assign(window[API], { build: BUILD, enabled, busy, lastError, lastVerification, baseline: session && session.baseline });
@@ -204,12 +304,33 @@
 
   function install() {
     if (document.getElementById('hfc-native-reconcile-alpha')) return;
-    const el = document.createElement('div'); el.id = 'hfc-native-reconcile-alpha';
+    const el = document.createElement('div');
+    el.id = 'hfc-native-reconcile-alpha';
     el.style.cssText = 'position:fixed;right:14px;bottom:14px;z-index:2147483645;width:250px;background:#0b0b0ddd;color:#eee;border:1px solid #555;border-radius:7px;padding:10px;font:12px Arial;box-shadow:0 4px 18px #0008';
-    el.innerHTML = '<b>Native Texture Reconcile α</b><button style="display:block;width:100%;margin-top:8px;padding:7px;background:#222;color:#fff;border:1px solid #777;border-radius:5px">ENABLE</button><div class="s" style="margin-top:8px">OFF</div><div style="margin-top:6px;color:#999;font-size:11px">Alpha: do not test on the preserved Blood Moon baseline.</div>';
-    button = el.querySelector('button'); status = el.querySelector('.s'); button.onclick = () => enabled ? void disable() : void enable(); document.body.appendChild(el); sync();
+    el.innerHTML = '<b>Native Texture Reconcile α</b><button style="display:block;width:100%;margin-top:8px;padding:7px;background:#222;color:#fff;border:1px solid #777;border-radius:5px">ENABLE</button><div class="s" style="margin-top:8px">OFF</div><div style="margin-top:6px;color:#999;font-size:11px">Experimental native-generation texture test.</div>';
+    button = el.querySelector('button');
+    status = el.querySelector('.s');
+    button.onclick = () => enabled ? void disable() : void enable();
+    document.body.appendChild(el);
+    sync();
   }
 
-  window[API] = { build: BUILD, enabled, busy, lastError, lastVerification, baseline: null, enable, disable, reconcile, verify: () => session ? verify(session) : { ok: false, reason: 'No active session.' }, capabilities: () => { const c = capabilities(); return c.ok ? { ok: true, atlas: atlasSize(c.display.atlas), sameAtlas: c.display.atlas === c.m.resourceAtlas } : c; } };
+  window[API] = {
+    build: BUILD,
+    enabled,
+    busy,
+    lastError,
+    lastVerification,
+    baseline: null,
+    enable,
+    disable,
+    reconcile,
+    verify: () => session ? verify(session) : { ok: false, reason: 'No active session.' },
+    capabilities: () => {
+      const c = capabilities();
+      return c.ok ? { ok: true, atlas: atlasSize(c.display.atlas), sameAtlas: c.display.atlas === c.m.resourceAtlas } : c;
+    }
+  };
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true }); else install();
 })();

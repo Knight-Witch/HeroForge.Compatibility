@@ -6,98 +6,122 @@
 
 ## TLDR
 
-HeroForge's native generation path is now traced far enough to build a non-invasive architecture prototype. The important boundary is not a guessed Kitbash UI function; it is the ordinary data/modded/display lifecycle:
+The native-reconcile architecture is now visually validated on Blood Moon from a genuine native potato baseline. Alpha.1 produced the correct native `4096x4096` high-resolution generation with correct accessory channels and no poop, but incorrectly declared failure because its guard rejected HeroForge's expected display/modded replacement. Alpha.2 fixes only that bookkeeping boundary by adopting the new generation.
+
+Core lifecycle:
 
 `data.change(...) → modded.change(data) → native buildAtlas() → character.refresh() → character.update() → display.change(data) → display.update()`.
-
-A parallel standalone alpha now preserves only the proven high-resolution source inputs and lets HeroForge construct/select/adopt its own atlas/resources. It has not yet been activated live.
 
 ## Evidence
 
 ### NR-001 — Character scheduler consumer
 
-**Result:** `character.refresh()` sets `_needsUpdating`; `character.update()` consumes it, clears the flag, calls `display.change(character.data)`, then `display.update()`.
+`character.refresh()` sets `_needsUpdating`; `character.update()` consumes it, clears the flag, calls `display.change(character.data)`, then `display.update()`.
 
-**Disposition:** **CONFIRMED**.
+**Disposition:** CONFIRMED. Bridge #1700/#1702.
 
-**Evidence:** Bridge #1700, #1702.
+### NR-002 — Display adoption downstream of resource generation
 
-### NR-002 — Display adoption is downstream of resource-atlas construction
+`display.change(data)` loads resources selected by `data.modded` and adopts them through normal `_loaded(...)` handling.
 
-**Result:** `display.change(data)` asks `CustomDisplay._getResources(data.modded, ...)`, loads those resources, and calls its normal `_loaded(...)` path. The fresh `data.modded.resourceAtlas` therefore exists before display adoption.
-
-**Disposition:** **CONFIRMED**.
-
-**Evidence:** Bridge #1703.
+**Disposition:** CONFIRMED. Bridge #1703.
 
 ### NR-003 — Data change invokes full modded generation
 
-**Result:** `character.data.change(...)` invokes `this.modded.change(this)`, later `_changePaints()`, and sets `needsDisplayUpdate=true`.
+`character.data.change(...)` invokes `this.modded.change(this)`, later `_changePaints()`, and sets `needsDisplayUpdate=true`.
 
-**Disposition:** **CONFIRMED**.
-
-**Evidence:** Bridge #1706.
+**Disposition:** CONFIRMED. Bridge #1706.
 
 ### NR-004 — Modded change ends in native atlas construction
 
-**Result:** `modded.change(data)` runs normal mod/resource derivation and ends with `this.buildAtlas()`.
+`modded.change(data)` runs normal mod/resource derivation and ends with `this.buildAtlas()`.
 
-**Disposition:** **CONFIRMED**.
-
-**Evidence:** Bridge #1681.
+**Disposition:** CONFIRMED. Bridge #1681.
 
 ### NR-005 — Native buildAtlas contract
 
-**Result:** current native `modded.buildAtlas()` assigns:
+Native `modded.buildAtlas()` assigns `resourceAtlas = new CK.Atlas({...parts}, ..., data.isUHD(), data.atlasScale)`.
 
-`this.resourceAtlas = new CK.Atlas({...this.parts}, ..., this.data.isUHD(), this.data.atlasScale)`
+**Disposition:** CONFIRMED. Bridge #1715.
 
-It does not require a custom atlas object and does not need a persistent wrapper.
+### NR-006 — Avoid high-level character.change for the alpha
 
-**Disposition:** **CONFIRMED**.
+`CK.character.change(...)` adds event/history semantics beyond the lower-level generation path.
 
-**Evidence:** Bridge #1715.
+**Disposition:** CONFIRMED; lower-level lifecycle remains preferred. Bridge #1699.
 
-### NR-006 — High-level character.change adds unrelated semantics
+### NR-007 — Correct generation uses explicit valid body masks
 
-**Result:** `CK.character.change(e, ...)` calls `data.change(e, settings)` and `refresh()`, but also emits character events and normally participates in saved-change/undo history behavior.
+Correct Blood Moon uses real 1024 bodyLower/bodyUpper mask overrides, and each color-bake `masksMap` is that exact texture object.
 
-**Disposition:** **CONFIRMED; avoid as first alpha trigger when lower-level lifecycle is sufficient**.
+**Disposition:** CONFIRMED; retain mask pinning. Bridge #1716/#1718.
 
-**Evidence:** Bridge #1699.
+### NR-008 — Persistent protected-atlas ownership is not required
 
-### NR-007 — Correct generation still uses explicit valid 1024 body masks
+The successful native-reconciled state uses a native 4096 atlas while preserving accepted high-resolution source settings. v0.1.5's wrapper/custom-atlas/watch architecture is therefore not required for quality and is the prime lifecycle-interference suspect.
 
-**Result:** on the currently correct Blood Moon generation, both bodyLower and bodyUpper have own `masksMapOverride` textures at 1024x1024; each color-bake `masksMap` is the exact same texture object as its override.
+**Disposition:** SUPPORTED STRONGLY.
 
-**Disposition:** **CONFIRMED; retain validated 1024 mask pinning in alpha**.
+### NR-009 — Alpha.1 implementation
 
-**Evidence:** Bridge #1716, #1718.
+Alpha.1 owns only scale/bake/used-size/valid masks and lets HeroForge own atlas/resource generation.
 
-### NR-008 — Persistent protected-atlas ownership is no longer the leading design
+**Disposition:** IMPLEMENTED.
 
-**Result:** v0.1.5 installs a `buildAtlas` wrapper, creates detached giant atlases, assigns display/resource atlas objects, and watches/reasserts ownership. The successful native-reconciled generation instead uses a native 4096 atlas while retaining accepted high-resolution source settings.
+### NR-010 — Genuine potato baseline before standalone validation
 
-**Disposition:** **SUPPORTED STRONGLY as architecture problem; do not delete v0.1.5 until alpha passes**.
+With old Protected 2048 and Lob High Res Decals OFF, Blood Moon baseline was:
 
-**Evidence:** v0.1.5 source + main INV-0004 TQ-048–TQ-052.
+- atlas 4096x4096;
+- BL/BU 256x256;
+- face 512x512;
+- bakeSize 1024;
+- used 256/256/512;
+- no target scale overrides;
+- alpha present but OFF.
 
-### NR-009 — Native-reconcile standalone alpha
+**Disposition:** CONFIRMED. Bridge #1719.
 
-**Result:** added parallel `0.2.0-alpha.1` prototype that owns scale/bake/used-size/valid masks only, invokes native data/modded rebuild, requests one native buildAtlas after reapplying policy to refreshed parts, then lets the normal character scheduler adopt/display it. No custom atlas creation, buildAtlas wrapper, direct atlas assignment, or lifecycle watcher.
+### NR-011 — Alpha.1 produced the target native generation
 
-**Disposition:** **IMPLEMENTED / STATIC-VALIDATED / LIVE UNVALIDATED**.
+One actual alpha.1 enable path produced:
 
-**Source:** `entries/tampermonkey-standalone/rendering-texture-quality-native-reconcile.user.js`.
+- native 4096x4096 coherent display/resource atlas;
+- scale 4/4/4;
+- BL/BU/face 1024x1024 each;
+- bakeSize 2048;
+- used 1024;
+- valid 1024 body masks;
+- zero fallback resources across Discus / Short Crown Horn / Celestial Circlet.
 
-## Claim levels
+Amanda visually confirmed fantastic body/decal quality, no poop, and no incorrect channels.
 
-**Confirmed:** the core generation/scheduler chain above; native buildAtlas consumes `data.atlasScale`; current correct body masks remain pinned to valid 1024 resources; v0.1.5 owns atlas lifecycle persistently.
+**Disposition:** CONFIRMED ARCHITECTURE PASS. Bridge #1723/#1725 + Amanda visual confirmation.
 
-**Supported inference:** `data.change({}, settings)` is a suitable low-level way to request the same native generation derivation without `character.change` history/event semantics; a second native `buildAtlas()` after reapplying target metadata should preserve the refreshed resource selection while honoring current high-resolution source caps.
+### NR-012 — Alpha.1 false failure is an identity-guard defect
 
-**Hypothesis awaiting live test:** the alpha sequence reproduces the useful native reconciliation consistently on a safely reproducible non-Blood-Moon state and avoids v0.1.5's wrong-channel generation failure.
+Alpha.1 reported `HeroForge replaced the character/display during reconcile.` The resulting generation was nevertheless correct. HeroForge's native lifecycle legitimately replaced the display/modded generation, which alpha.1 had forbidden.
 
-## Test gate
+**Disposition:** CONFIRMED BOOKKEEPING DEFECT; architecture remains valid.
 
-Do not test on the preserved Blood Moon. First live validation must use a separate state and must include runtime readback plus Amanda's visual check. A timed-out or uncertain mutation must be read back before any retry.
+### NR-013 — Alpha.2 generation adoption
+
+Alpha.2 changes the safety boundary:
+
+- same `CK.character` and `character.data` are still required;
+- same target body/head part identities are still required;
+- replacement `character.display` / `display.modded` generations are adopted and counted;
+- true character/data/target changes still fail closed.
+
+No custom atlas creation, buildAtlas wrapper, direct atlas assignment, or watcher was added.
+
+**Disposition:** IMPLEMENTED / STATIC-VALIDATED; live retest pending.
+
+Static validation: `node --check` PASS; SHA-256 `27a8a0bba0b001d518d71b768ac4493eac93e15b441cebce63865f67a1a685ea`.
+
+## Next test gate
+
+1. Retest Blood Moon with alpha.2 and confirm the script stays ON after adopting the native generation.
+2. Visually reconfirm Blood Moon.
+3. Switch to D4 and validate the body color/glyph channel specifically, because Blood Moon does not expose that historical failure as well.
+4. Do not promote to Witch Dock Dev until D4 passes.
