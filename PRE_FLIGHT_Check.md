@@ -10,20 +10,24 @@ Before material committed work:
 4. Identify material conflict/rollback risks.
 5. Define the narrow validation required for the change.
 
-## PFC-2026-09-12-026 — Alpha.2 native-generation adoption after Blood Moon live pass
+## PFC-2026-09-12-027 — Alpha.3 native-promotion verifier correction after D4 probe
 
-**Scope:** correct alpha.1 bookkeeping after the first real standalone-path Blood Moon validation proved the native-reconcile architecture visually works.
+**Scope:** correct alpha.2's quality verifier after D4 proved HeroForge can legitimately promote `_usedTextureSize` and packed allocation above the 1024 seed during native reconciliation.
 
-**Reviewed:** `PROJECT_CONTRACT.md`; `ACTIVE_CONTEXT.md`; current INV-0004 state; native-reconcile evidence supplement; alpha.1 source; Blood Moon baseline/readback Bridge #1719/#1723/#1725; Amanda's visual confirmation.
+**Reviewed:** `PROJECT_CONTRACT.md`; branch `ACTIVE_CONTEXT.md`; native-reconcile standalone source; current native-reconcile investigation supplement; Blood Moon alpha.2 runtime pass #1727; D4 baseline #1729; D4 alpha.2 enable/readback #1730/#1731.
 
 **Confirmed before edit:**
 
-- genuine native baseline was 4096x4096 with BL/BU 256, face 512, bakeSize 1024, used 256/256/512, no target scale overrides;
-- one actual alpha.1 enable path produced native 4096x4096 with scale 4/4/4, BL/BU/face 1024, bakeSize 2048, used 1024, valid 1024 body masks, and zero fallbacks across Discus/Short Crown Horn/Celestial Circlet;
-- Amanda confirmed body/decal quality is excellent, no poop, and all visible accessory channels are correct;
-- alpha.1's only observed failure was its strict display/modded identity guard; HeroForge legitimately replaced those generation objects during the successful reconcile.
+- Blood Moon alpha.2 remained ON after one expected native generation adoption and reproduced the accepted 4096 atlas / scale 4 / 1024 allocations / bake 2048 / used 1024 / pinned 1024-mask state; Amanda visually reconfirmed it looks perfect;
+- D4 native baseline differs from Blood Moon: BL/BU used 512, face used 1024, with no body mask overrides;
+- on one D4 alpha.2 enable, HeroForge promoted bodyLower to used 2048 with a 2048x2048 allocation while scale remained 4 and bakeSize 2048;
+- alpha.2 rejected that generation only because `verify()` required `usedTextureSize === 1024`;
+- the failure path rolled back and left alpha OFF with an idle scheduler and no stale mask overrides;
+- no D4 visual verdict was taken from that rejected transient generation.
 
-**Target change:** advance standalone to `0.2.0-alpha.2` and adopt replacement display/modded generations while preserving character/data/target-part identity as the stale-session safety boundary.
+**Target change:** advance standalone to `0.2.0-alpha.3`; keep 1024 as the seeded/minimum source size but accept native promotion through the 2048 bake ceiling.
+
+**Safety tightening:** bodyLower/bodyUpper verification must still prove the actual color-bake `masksMap` is exactly the pinned valid 1024 override object. This prevents native source-size promotion from silently reopening the known nonexistent-2048-mask corruption path.
 
 **Architecture constraints preserved:**
 
@@ -31,27 +35,27 @@ Before material committed work:
 - no buildAtlas replacement/wrapper;
 - no direct `display.atlas` / `resourceAtlas` assignment;
 - no automatic ownership watcher;
-- source policy remains scale 4, bakeSize 2048, `_usedTextureSize=1024`, validated 1024 body masks;
-- actual character/data or target-part changes still fail closed.
+- character/data/target-part identity remains the stale-session safety boundary;
+- scale remains 4 and bakeSize remains 2048;
+- actual body masks remain hard-pinned/verified at 1024.
 
-**Static validation:** `node --check` PASS; source audit PASS; SHA-256 `27a8a0bba0b001d518d71b768ac4493eac93e15b441cebce63865f67a1a685ea`.
+**Required live validation after commit:**
 
-**Runtime validation required after commit:**
+1. update/reload alpha.3 on D4 so it starts OFF;
+2. capture baseline and run exactly one enable;
+3. verify native promotion is accepted only if allocations/source sizes remain within 1024..2048 and pinned 1024 masks survive as actual color-bake inputs;
+4. Amanda visually checks D4 body color/glyph correctness, body/face quality, decals, accessory channels, and no poop/corruption;
+5. do not promote to Witch Dock Dev before D4 passes.
 
-1. reload/update alpha.2 on Blood Moon;
-2. verify alpha.2 remains ON after native generation replacement and reproduces the accepted visual result;
-3. switch to D4 and validate the body color/glyph channel specifically;
-4. do not promote to Witch Dock Dev before D4 passes.
-
-**Rollback:** v0.1.5 remains untouched historical reference; alpha.2 is standalone-only. Existing local HeroForge saves are not overwritten unless the user manually saves them.
+**Rollback:** v0.1.5 and alpha.2 history remain intact. D4 is not autosaved by HeroForge; failure path retains snapshot restore + native rebuild behavior.
 
 **Public impact:** none. Witch Dock Dev and Stable unchanged.
 
 ---
 
-## PFC-2026-09-12-025 — Native-reconcile texture alpha
+## PFC-2026-09-12-026 — Alpha.2 native-generation adoption after Blood Moon live pass
 
-Added parallel `0.2.0-alpha.1` after tracing the native data/modded/build/display lifecycle. Static/source validation passed; the subsequent live Blood Moon run is recorded in PFC-026.
+Alpha.2 changed the stale-session boundary to adopt native display/modded replacement generations while preserving character/data/target-part identity checks. Subsequent Blood Moon retest passed; D4's native-promotion verifier case is superseded by PFC-027.
 
 ---
 

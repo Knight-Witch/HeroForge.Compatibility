@@ -2,51 +2,52 @@
 
 This is a **rolling current changelog**. Older verbose entries remain durable in Git history and should be fetched only when relevant.
 
-## HFC-2026-09-12-029 — Validate native-reconcile architecture on Blood Moon and fix generation adoption
+## HFC-2026-09-12-030 — Accept native source-size promotion for D4 alpha validation
 
 **Date:** 2026-09-12
 
 ### Summary
 
-Ran the new native-reconcile standalone from a genuine native potato Blood Moon baseline. The produced HeroForge generation was structurally coherent and visually perfect: high-resolution body/decal quality, no poop, and no incorrect accessory channels. Alpha.1 nevertheless reported failure because its session guard incorrectly treated HeroForge's expected display/modded replacement as stale-session corruption.
+Blood Moon alpha.2 retest passed both runtime and visual acceptance. D4 then exposed a distinct native behavior: after reconciliation HeroForge promoted bodyLower to `_usedTextureSize=2048` with a `2048x2048` packed allocation. Alpha.2 falsely rejected that generation because its verifier required `_usedTextureSize === 1024` exactly.
 
-### Confirmed live result
+### Confirmed live evidence
 
-Before alpha:
+Blood Moon alpha.2, Bridge #1727:
 
-- native atlas `4096x4096`;
-- bodyLower/bodyUpper `256x256`, face `512x512`;
-- target bakeSize `1024`;
-- used texture sizes `256/256/512`;
-- no target scale overrides.
-
-After the real native-reconcile path:
-
+- alpha stayed ON after one expected native generation adoption;
 - native coherent atlas `4096x4096`;
 - scale `4/4/4`;
 - BL/BU/face `1024x1024` each;
-- bakeSize `2048`;
-- `_usedTextureSize=1024`;
-- valid 1024 body masks;
-- Discus / Short Crown Horn / Celestial Circlet fallback counts `0/0/0`;
-- Amanda visually confirmed body and decals look fantastic, no poop, and all color/material/emissive channels are correct.
+- bakeSize `2048`, used `1024`;
+- actual body color-bake masks remained the pinned valid 1024 textures;
+- Amanda visually confirmed excellent body/decal quality, no poop, and correct accessory channels.
+
+D4 native baseline, Bridge #1729:
+
+- atlas `4096x4096`;
+- BL/BU bakeSize `1024`, used `512/512`;
+- face bakeSize `1024`, used `1024`;
+- no body mask overrides.
+
+D4 alpha.2 attempt, Bridge #1730/#1731:
+
+- one native generation was adopted;
+- bodyLower reached scale `4`, bakeSize `2048`, allocation `2048x2048`, used `2048`;
+- alpha.2 rejected only the exact-1024 verifier condition and then rolled back cleanly.
 
 ### Code change
 
-Advanced `rendering-texture-quality-native-reconcile.user.js` to `0.2.0-alpha.2`.
+Advanced `rendering-texture-quality-native-reconcile.user.js` to `0.2.0-alpha.3`.
 
-Alpha.2 keeps character/data/target-part identity as the safety boundary but adopts native replacement display/modded generations during settle/verification. It still does not create custom atlases, wrap `buildAtlas`, directly assign atlas objects, or run an ownership watcher.
+Alpha.3 keeps 1024 as the seeded/minimum protected source size but accepts native promotion through the 2048 bake ceiling. It also tightens body-mask verification: the actual color-bake `masksMap` must remain the exact pinned valid 1024 override object.
 
-### Validation
+### Architecture unchanged
 
-- `node --check` PASS;
-- source audit PASS: no custom `CK.Atlas`, no buildAtlas assignment/wrapper, no direct atlas assignment;
-- SHA-256 `27a8a0bba0b001d518d71b768ac4493eac93e15b441cebce63865f67a1a685ea`;
-- runtime evidence Bridge #1719/#1723/#1725 plus Amanda visual confirmation.
+No custom `CK.Atlas`, no buildAtlas wrapper/replacement, no direct display/resource atlas assignment, and no automatic ownership watcher.
 
 ### Next gate
 
-Retest Blood Moon once on alpha.2, then switch to D4 for the historically sensitive body color/glyph-channel validation before any Witch Dock Dev promotion.
+Reload/update alpha.3 on D4, run one enable, then Amanda visually validates the body color/glyph channel plus body/face quality, decals, accessory channels, and absence of poop/corruption. Do not promote to Witch Dock Dev before this passes.
 
 ### Public impact
 
@@ -54,18 +55,18 @@ Standalone experimental branch only. Witch Dock Dev and Stable unchanged.
 
 ---
 
-## HFC-2026-09-12-028 — Add native-reconcile texture alpha
+## HFC-2026-09-12-029 — Validate native-reconcile architecture on Blood Moon and fix generation adoption
 
-Traced the native data/modded/atlas/display lifecycle and added `0.2.0-alpha.1`, which preserves only scale/bake/used-size/valid-mask source policy while returning atlas/resource ownership to HeroForge. Static validation passed; live validation was pending at that commit.
+Blood Moon alpha.1 produced the correct native high-resolution generation and Amanda visually confirmed body/decal quality, no poop, and correct accessory channels. Alpha.2 fixed the false stale-session failure by adopting HeroForge replacement display/modded generations.
 
 ---
 
-## HFC-2026-09-12-027 — Confirm native reconciliation restores channels while high-res survives
+## HFC-2026-09-12-028 — Add native-reconcile texture alpha
 
-Entering Kitbash and clicking Blood Moon caused a native generation rebuild that repaired all visible accessory channels while preserving visually accepted high-resolution body/decals and no poop. Post-state: native `4096x4096`, scale `4/4/4`, BL/BU/face `1024x1024`, `bakeSize=2048`, `_usedTextureSize=1024`.
+Added the parallel native-reconcile standalone after tracing the native data/modded/build/display lifecycle.
 
 ---
 
 ## Historical entries
 
-Detailed HFC-2026-09-12-026 and earlier entries remain in Git history. Use the investigation/evidence ledger or Git history when older detail is material.
+Detailed HFC-2026-09-12-027 and earlier entries remain in Git history. Use the investigation/evidence ledger or Git history when older detail is material.

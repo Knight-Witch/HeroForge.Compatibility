@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HF Compatibility - Native Texture Reconcile TEST
 // @namespace    https://github.com/Knight-Witch/HeroForge.Compatibility
-// @version      0.2.0-alpha.2
+// @version      0.2.0-alpha.3
 // @description  Experimental high-resolution source policy with native HeroForge atlas/resource reconciliation.
 // @author       Knight Witch
 // @match        https://www.heroforge.com/*
@@ -14,13 +14,13 @@
 (() => {
   'use strict';
 
-  const BUILD = '0.2.0-alpha.2-native-reconcile';
+  const BUILD = '0.2.0-alpha.3-native-reconcile';
   const API = 'HFNativeTextureReconcileTest';
   const TARGETS = ['bodyLower', 'bodyUpper', 'face'];
   const BODIES = ['bodyLower', 'bodyUpper'];
   const SCALE = 4;
   const BAKE = 2048;
-  const USED = 1024;
+  const USED = 1024; // minimum protected source size; body masks remain exactly 1024px
   const OWNER = 82042049;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -169,20 +169,22 @@
   function verify(s) {
     if (!adoptCurrent(s)) return { ok: false, reason: 'HeroForge character/data/target parts changed.' };
     const x = current(s), a = s.display.atlas, r = s.m.resourceAtlas;
-    const out = { ok: true, build: BUILD, atlas: atlasSize(a), sameAtlas: a === r, adoptedGenerations: s.adoptions, allocations: {}, scale: {}, bakeSize: {}, usedTextureSize: {}, masks: {} };
+    const out = { ok: true, build: BUILD, atlas: atlasSize(a), sameAtlas: a === r, adoptedGenerations: s.adoptions, allocations: {}, scale: {}, bakeSize: {}, usedTextureSize: {}, nativePromoted: {}, masks: {} };
     if (!out.sameAtlas) return { ...out, ok: false, reason: 'Display/resource atlas objects differ.' };
     for (const k of TARGETS) {
       out.allocations[k] = allocation(a, k);
       out.scale[k] = s.d.atlasScale[k];
       out.bakeSize[k] = x.parts[k].bakeSize;
       out.usedTextureSize[k] = x.parts[k]._usedTextureSize;
-      if (Number(out.scale[k]) !== SCALE || Number(out.bakeSize[k]) !== BAKE || Number(out.usedTextureSize[k]) !== USED || !out.allocations[k] || out.allocations[k][0] < USED || out.allocations[k][1] < USED) return { ...out, ok: false, reason: `${k} high-resolution source/allocation verification failed.` };
+      const used = Number(out.usedTextureSize[k]);
+      out.nativePromoted[k] = used > USED;
+      if (Number(out.scale[k]) !== SCALE || Number(out.bakeSize[k]) !== BAKE || !Number.isFinite(used) || used < USED || used > BAKE || !out.allocations[k] || out.allocations[k][0] < USED || out.allocations[k][1] < USED || out.allocations[k][0] > BAKE || out.allocations[k][1] > BAKE) return { ...out, ok: false, reason: `${k} high-resolution source/allocation verification failed.` };
     }
     for (const k of BODIES) {
       const mat = x.meshes[k].bakeMaterials && x.meshes[k].bakeMaterials.color;
       const actual = mat && typeof mat.getUniform === 'function' ? mat.getUniform('masksMap') : null;
       out.masks[k] = { expected: texSize(s.masks[k]), actual: texSize(actual), overrideSame: x.meshes[k].masksMapOverride === s.masks[k] };
-      if (out.masks[k].actual[0] !== USED || out.masks[k].actual[1] !== USED) return { ...out, ok: false, reason: `${k} color-bake mask is not 1024px.` };
+      if (out.masks[k].expected[0] !== USED || out.masks[k].expected[1] !== USED || out.masks[k].actual[0] !== USED || out.masks[k].actual[1] !== USED || !out.masks[k].overrideSame) return { ...out, ok: false, reason: `${k} color-bake mask is not the pinned 1024px texture.` };
     }
     return out;
   }
