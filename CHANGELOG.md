@@ -1,5 +1,26 @@
 # Changelog
 
+## HFC-2026-09-12-023 — Add canonical texture investigation checkpoint
+
+Date: 2026-09-12
+
+### Summary
+
+Adds a durable cross-chat checkpoint for the active Blood Moon texture/material investigation so future continuation chats do not repeat already-completed probes or silently reopen ruled-out theories.
+
+The checkpoint records the current good-resolution/no-poop baseline, binding `DO NOT REPEAT` exclusions, the newly mapped meteor-hammer family, corrected Nova 3 channel assignments, current paint/palette coherence findings, and the next allowed investigation direction around exact visible patch mapping and renderer-generation reconciliation.
+
+### Runtime behavior changed
+
+None. Documentation-only update. No HeroForge runtime state, standalone script, Witch Dock code, `/legacy/`, or bundle patch changed.
+
+### Touched files
+
+- `docs/investigations/INV-0004-current-state-2026-09-12.md`
+- `CHANGELOG.md`
+
+---
+
 ## HFC-2026-09-11-022 — Replace 8192² texture fallback with validated rectangular atlas ladder
 
 Date: 2026-09-11
