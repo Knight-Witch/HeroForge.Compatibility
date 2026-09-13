@@ -2,8 +2,8 @@
 
 **Updated:** 2026-09-12  
 **Active feature:** `rendering.texture-quality`  
-**Current task:** promote validated native-reconcile standalone behavior into Witch Dock Dev for integrated testing.  
-**Runtime posture:** old Protected 2048 standalone OFF; Lob High Res Decals OFF; standalone alpha.3 is the canonical validated reference. Stable remains untouched.
+**Current task:** promote the fully validated native-reconcile implementation from Witch Dock Dev into public Stable, then run a final Stable smoke.  
+**Runtime posture:** old Protected 2048 standalone OFF; Lob High Res Decals OFF; standalone alpha.3 and Witch Dock Dev v0.1.0 both validated. Stable promotion was explicitly authorized by Amanda in chat on 2026-09-12.
 
 ## Minimum continuation set
 
@@ -17,37 +17,42 @@
 
 ### Blood Moon
 
-Alpha.2 from a fresh native potato baseline passed both runtime and visual validation:
-
-- native coherent atlas `4096x4096`;
-- scale `4/4/4`;
-- bodyLower/bodyUpper/face allocations `1024x1024`;
-- `bakeSize=2048`, `_usedTextureSize=1024`;
-- actual body color-bake masks were the exact pinned valid 1024 textures;
-- expected native display/modded generation replacement was adopted;
-- Amanda confirmed excellent body texture, sharp decals, no poop, and correct Discus / Celestial Circlet / Short Crown Horn channels.
+Native reconcile produced a coherent `4096x4096` atlas, target allocations `1024x1024`, `bakeSize=2048`, used `1024`, exact real pinned 1024 body masks, and correct accessory channels. Amanda confirmed excellent body texture, sharp decals, no poop, and correct Discus / Celestial Circlet / Short Crown Horn channels.
 
 Bridge evidence: #1727.
 
 ### D4
 
-D4 was the body-color/glyph acceptance figure. Fresh alpha.3 baseline was native `4096x4096`, BL/BU `1024 bake / 512 used`, face `1024 / 1024`, alpha OFF.
-
-One alpha.3 enable produced:
-
-- native coherent atlas `4096x4096`;
-- scale `4/4/4`;
-- BL/BU/face allocations `2048x2048` each;
-- `bakeSize=2048` and native-promoted `_usedTextureSize=2048` on all three targets;
-- actual bodyLower/bodyUpper color-bake masks remained the exact pinned `1024x1024` textures;
-- one expected native generation adoption;
-- alpha remained ON with no script error.
-
-Amanda visually confirmed D4 looks perfect: body color/paint and glyph channel correct, body/face sharp, decals correct, no poop/corruption, and no obvious wrong accessory material/color/emissive channels.
+D4 validated the body color/glyph path. Native reconcile produced coherent `4096x4096`, BL/BU/face `2048x2048` allocations with native-promoted used `2048`, exact real pinned 1024 body masks, and correct visual body paint/glyph behavior.
 
 Bridge evidence: #1732/#1733.
 
-**Disposition:** standalone acceptance gate CLOSED / PASS.
+## Witch Dock Dev integration — PASS
+
+Dev service/UI v0.1.0 preserved the validated architecture and passed integrated live validation.
+
+### D4
+
+- clean reload: service/UI loaded once, service OFF/inert, standalone global absent;
+- one enable: native coherent `4096x4096`, target allocations/used `2048`, exact pinned 1024 masks, one expected generation adoption, no error;
+- Amanda visually confirmed body color/glyph, body/face, decals, and material/color/emissive channels all correct;
+- controlled disable removed all owned target scale and mask overrides and rebuilt natively;
+- OFF -> ON repeated successfully.
+
+Bridge evidence: #1735, #1737, #1738, #1739, #1740.
+
+### Blood Moon
+
+- clean reload: native `4096x4096`, no scale or mask overrides, standalone absent;
+- one enable: native coherent `4096x4096`, target allocations/used `1024`, exact pinned 1024 body masks, one expected generation adoption, no error;
+- resource scan found zero fallback/broken resources across 16 Discus, 2 Short Crown Horn, and 3 Celestial Circlet instances;
+- Amanda confirmed the integrated result still looks correct;
+- an ordinary native `CK.character.refresh()` while ON remained verified and adopted the replacement generation;
+- non-invasive integration smoke found exactly one loaded `/gated/booth.js`, BT/bootstrap present, and Texture Quality service/UI present with no duplicate Booth runtime introduced.
+
+Bridge evidence: #1741, #1742, #1744, #1745, #1746.
+
+**Disposition:** Witch Dock Dev acceptance gate CLOSED / PASS at `Knight-Witch/KnightWitch.Heroforge` Dev head `c8f8000d9562dbc315dc867af655358177e18d54`.
 
 ## Validated architecture
 
@@ -55,23 +60,25 @@ Keep only source-side quality policy and let HeroForge own generation:
 
 - `atlasScale.bodyLower/bodyUpper/face = 4`;
 - seed `bakeSize = 2048`;
-- seed `_usedTextureSize = 1024` as a minimum, while allowing native promotion through 2048;
-- hard-pin bodyLower/bodyUpper to real 1024 masks and verify those exact textures remain the actual color-bake `masksMap` inputs;
+- seed `_usedTextureSize = 1024` as a minimum, allowing native promotion through 2048;
+- hard-pin bodyLower/bodyUpper to real 1024 masks and verify those exact textures remain actual color-bake `masksMap` inputs;
 - use native `data.change({}) → modded.change/buildAtlas → character.refresh/update → display.change/update` reconciliation;
 - adopt expected replacement display/modded generations while requiring character/data/target-part identity to remain stable.
 
 Do **not** reintroduce custom `CK.Atlas` construction, buildAtlas wrapping, direct atlas assignment, giant-atlas forcing, or an automatic ownership watcher.
 
-## Next gate — Witch Dock Dev
+## Stable promotion gate — AUTHORIZED
 
-Port the validated alpha.3 behavior as a Dev-only Witch Dock service plus UI adapter. Requirements:
+Amanda explicitly approved Stable promotion after full Dev validation.
 
-- off by default at runtime; loading the module must not mutate HeroForge;
-- preserve alpha.3 enable/disable/rollback behavior;
-- no runtime dependency on HeroForge.Compatibility or HF-Chat-Bridge;
-- provide runtime diagnostics sufficient to confirm atlas, allocations, used sizes, native promotion, masks, generation adoption, and errors;
-- integrated live validation must cover Blood Moon and D4 or an equivalent body-color/glyph figure;
-- standalone alpha.3 remains canonical until Dev integration passes.
+Promotion requirements:
+
+- promote only the validated Texture Quality service/UI and exact manifest/module registration required for Stable;
+- do not merge unrelated WITCH_DEV_UI work;
+- preserve service behavior and versioned module identity unless Stable path naming requires a mechanical URL change;
+- update Stable durable docs/changelog/preflight in the same committed promotion;
+- run a clean Stable smoke with the public userscript after promotion;
+- if Stable smoke exposes a regression, stop and repair in Dev rather than broadening the public patch.
 
 ## Binding DO-NOT-REPEAT
 
@@ -80,7 +87,6 @@ Do not return to persistent protected-atlas ownership, giant-atlas forcing, gene
 ## Promotion state
 
 - v0.1.5: historical experimental reference only;
-- v0.2.0-alpha.2: Blood Moon runtime + visual PASS;
-- v0.2.0-alpha.3: D4 runtime + body-color/glyph visual PASS; current validated standalone reference;
-- Witch Dock Dev: next stage;
-- Stable: untouched.
+- standalone v0.2.0-alpha.3: PASS;
+- Witch Dock Dev v0.1.0: integrated runtime + visual + lifecycle + refresh/topology smoke PASS;
+- Stable: promotion authorized; implementation/smoke next.

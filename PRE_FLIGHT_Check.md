@@ -10,42 +10,53 @@ Before material committed work:
 4. Identify material conflict/rollback risks.
 5. Define the narrow validation required for the change.
 
-## PFC-2026-09-12-028 — Standalone acceptance checkpoint before Witch Dock Dev promotion
+## PFC-2026-09-12-029 — Witch Dock Dev acceptance before Stable promotion
 
-**Scope:** close the native-reconcile standalone acceptance gate after alpha.3 passed D4 and record the exact behavior that must be preserved in Witch Dock Dev.
+**Scope:** close the integrated Dev gate for `rendering.texture-quality`, refresh the branch router, and authorize the next stage only after explicit user approval.
 
-**Reviewed:** `PROJECT_CONTRACT.md`; branch `ACTIVE_CONTEXT.md`; `docs/policies/FEATURE_LIFECYCLE_TESTING_RELEASE.md`; alpha.3 standalone source; Blood Moon pass #1727; D4 baseline #1732; D4 alpha.3 enable/readback #1733; Amanda's visual confirmations on both figures.
+**Reviewed:** `PROJECT_CONTRACT.md`; stale branch `ACTIVE_CONTEXT.md`; validated standalone alpha.3 architecture; Witch Dock Dev integration results; D4 lifecycle evidence #1735/#1737/#1738/#1739/#1740; Blood Moon integrated evidence #1741/#1742/#1744/#1745/#1746; Amanda's visual confirmations on both figures.
 
-**Confirmed before this checkpoint:**
+**Confirmed D4 Dev behavior:**
 
-- Blood Moon alpha.2: native coherent 4096 atlas, scale 4, 1024 allocations, bake 2048, used 1024, exact pinned 1024 body masks, no script error, visually excellent body/decals, no poop, and correct accessory channels;
-- D4 alpha.3 baseline: native 4096 atlas, BL/BU bake 1024 used 512, face bake 1024 used 1024, alpha OFF;
-- D4 alpha.3 enable: one native generation adoption, native coherent 4096 atlas, scale 4, BL/BU/face 2048 allocations, bake 2048, native-promoted used 2048 on all three targets, exact pinned 1024 body masks, alpha ON, no script error;
-- Amanda confirmed D4 body color/paint and glyph channel are correct, body/face and decals are sharp, no poop/corruption, and no wrong accessory channels.
+- clean load: service/UI v0.1.0 loaded once, service OFF/inert, standalone global absent;
+- enable: native coherent 4096 atlas, target allocations/used 2048, exact pinned 1024 body masks, one expected generation adoption, no error;
+- visual: historical body color/glyph path correct, body/face and decals sharp, no poop/corruption, no wrong material/color/emissive channels;
+- disable: target scale overrides and body mask overrides absent afterward, native 4096 rebuild, scheduler idle;
+- repeat OFF -> ON: PASS;
+- native OFF rebuild recalculated used sizes to 1024/1024/1024 rather than exact initial 512/512/1024; exact transient native used-size restoration is not claimed.
 
-**Disposition:** standalone validation PASS. Alpha.3 becomes the canonical source behavior for the Dev integration stage.
+**Confirmed Blood Moon Dev behavior:**
 
-**Dev promotion requirements:**
+- clean load: native 4096 atlas, no feature-owned scale/mask overrides, standalone absent;
+- enable: native coherent 4096 atlas, target allocations/used 1024, exact pinned 1024 body masks, one expected generation adoption, no error;
+- targeted scan: zero broken/fallback resources across 16 Discus, 2 Short Crown Horn, 3 Celestial Circlet instances;
+- visual: body/decal quality, no poop, and accessory color/material/emissive channels all correct;
+- ordinary native `CK.character.refresh()` while ON: service remained enabled and verified after adopting the replacement generation;
+- topology smoke: exactly one loaded `/gated/booth.js`; BT/bootstrap present; Texture Quality service/UI present; no duplicate Booth runtime introduced.
 
-- off by default after load; loading the Dev module must not mutate HeroForge;
-- preserve alpha.3 source policy, native reconcile, generation adoption, exact pinned-mask checks, rollback, and stale-character safety;
-- no custom atlas construction, buildAtlas wrapper, direct atlas assignment, or ownership watcher;
-- no runtime dependency on HeroForge.Compatibility or HF-Chat-Bridge;
-- integrated Dev UI should expose explicit enable/disable plus useful diagnostics without changing existing Witch Dock tools;
-- module versions/manifest identities must be registered and cache-keyed per Witch Dock module-versioning rules;
-- Stable remains untouched until integrated Dev runtime + human visual acceptance.
+**Disposition:** Witch Dock Dev acceptance PASS at Dev head `c8f8000d9562dbc315dc867af655358177e18d54`.
 
-**Conflict risks:** Witch Dock Dev already contains Booth/media/decal compatibility modules. Texture-quality integration must not wrap or replace their HeroForge lifecycle surfaces, must not auto-enable itself, and must keep failures isolated to this feature.
+**Stable promotion decision:** Amanda explicitly said “go for it” after the completed Dev gate. Stable promotion is therefore authorized.
 
-**Validation next:** static syntax/manifest/module-identity audit, then live Dev load with feature OFF, one controlled enable on Blood Moon and D4/equivalent body-glyph case, one disable/restore check, and normal Witch Dock/Booth smoke as relevant.
+**Stable promotion requirements:**
 
-**Runtime behavior changed by this checkpoint:** no. Public Stable unchanged.
+- do not merge the whole Dev branch;
+- promote only the validated Texture Quality service/UI, exact required Stable manifest registration/URLs, and durable Stable docs;
+- preserve v0.1.0 service/UI behavior unless a mechanical branch-path/cache-key adjustment is required;
+- inspect current Stable head first so unrelated public changes are not overwritten;
+- run syntax/manifest/version identity checks before moving the Stable ref;
+- after public promotion, perform a clean Stable load and narrow live smoke through HF-Chat-Bridge;
+- if the Stable smoke fails, stop public expansion and repair in Dev.
+
+**Conflict risks:** WITCH_DEV_UI contains unrelated Booth/media/decal work that must not be merged wholesale. Stable manifest may differ from Dev, so only the Texture Quality entries should be added against the current public file. Existing public module versions and loaders should remain unchanged unless strictly required by this feature.
+
+**Runtime behavior changed by this checkpoint:** no. This is a Compatibility documentation/router update only; public Stable remains unchanged until the separate Stable commit.
 
 ---
 
-## PFC-2026-09-12-027 — Alpha.3 native-promotion verifier correction after D4 probe
+## PFC-2026-09-12-028 — Standalone acceptance checkpoint before Witch Dock Dev promotion
 
-Alpha.3 changed 1024 from an exact used-size requirement to the minimum protected source size while retaining a 2048 ceiling and exact pinned-1024 body color-mask verification. Subsequent D4 runtime + visual validation passed; superseded by PFC-028.
+Standalone validation PASS on Blood Moon and D4; alpha.3 became the canonical Dev source. Superseded by PFC-029 for release progression.
 
 ---
 
