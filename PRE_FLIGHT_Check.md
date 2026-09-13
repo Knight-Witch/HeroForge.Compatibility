@@ -10,52 +10,42 @@ Before material committed work:
 4. Identify material conflict/rollback risks.
 5. Define the narrow validation required for the change.
 
-## PFC-2026-09-12-027 — Alpha.3 native-promotion verifier correction after D4 probe
+## PFC-2026-09-12-028 — Standalone acceptance checkpoint before Witch Dock Dev promotion
 
-**Scope:** correct alpha.2's quality verifier after D4 proved HeroForge can legitimately promote `_usedTextureSize` and packed allocation above the 1024 seed during native reconciliation.
+**Scope:** close the native-reconcile standalone acceptance gate after alpha.3 passed D4 and record the exact behavior that must be preserved in Witch Dock Dev.
 
-**Reviewed:** `PROJECT_CONTRACT.md`; branch `ACTIVE_CONTEXT.md`; native-reconcile standalone source; current native-reconcile investigation supplement; Blood Moon alpha.2 runtime pass #1727; D4 baseline #1729; D4 alpha.2 enable/readback #1730/#1731.
+**Reviewed:** `PROJECT_CONTRACT.md`; branch `ACTIVE_CONTEXT.md`; `docs/policies/FEATURE_LIFECYCLE_TESTING_RELEASE.md`; alpha.3 standalone source; Blood Moon pass #1727; D4 baseline #1732; D4 alpha.3 enable/readback #1733; Amanda's visual confirmations on both figures.
 
-**Confirmed before edit:**
+**Confirmed before this checkpoint:**
 
-- Blood Moon alpha.2 remained ON after one expected native generation adoption and reproduced the accepted 4096 atlas / scale 4 / 1024 allocations / bake 2048 / used 1024 / pinned 1024-mask state; Amanda visually reconfirmed it looks perfect;
-- D4 native baseline differs from Blood Moon: BL/BU used 512, face used 1024, with no body mask overrides;
-- on one D4 alpha.2 enable, HeroForge promoted bodyLower to used 2048 with a 2048x2048 allocation while scale remained 4 and bakeSize 2048;
-- alpha.2 rejected that generation only because `verify()` required `usedTextureSize === 1024`;
-- the failure path rolled back and left alpha OFF with an idle scheduler and no stale mask overrides;
-- no D4 visual verdict was taken from that rejected transient generation.
+- Blood Moon alpha.2: native coherent 4096 atlas, scale 4, 1024 allocations, bake 2048, used 1024, exact pinned 1024 body masks, no script error, visually excellent body/decals, no poop, and correct accessory channels;
+- D4 alpha.3 baseline: native 4096 atlas, BL/BU bake 1024 used 512, face bake 1024 used 1024, alpha OFF;
+- D4 alpha.3 enable: one native generation adoption, native coherent 4096 atlas, scale 4, BL/BU/face 2048 allocations, bake 2048, native-promoted used 2048 on all three targets, exact pinned 1024 body masks, alpha ON, no script error;
+- Amanda confirmed D4 body color/paint and glyph channel are correct, body/face and decals are sharp, no poop/corruption, and no wrong accessory channels.
 
-**Target change:** advance standalone to `0.2.0-alpha.3`; keep 1024 as the seeded/minimum source size but accept native promotion through the 2048 bake ceiling.
+**Disposition:** standalone validation PASS. Alpha.3 becomes the canonical source behavior for the Dev integration stage.
 
-**Safety tightening:** bodyLower/bodyUpper verification must still prove the actual color-bake `masksMap` is exactly the pinned valid 1024 override object. This prevents native source-size promotion from silently reopening the known nonexistent-2048-mask corruption path.
+**Dev promotion requirements:**
 
-**Architecture constraints preserved:**
+- off by default after load; loading the Dev module must not mutate HeroForge;
+- preserve alpha.3 source policy, native reconcile, generation adoption, exact pinned-mask checks, rollback, and stale-character safety;
+- no custom atlas construction, buildAtlas wrapper, direct atlas assignment, or ownership watcher;
+- no runtime dependency on HeroForge.Compatibility or HF-Chat-Bridge;
+- integrated Dev UI should expose explicit enable/disable plus useful diagnostics without changing existing Witch Dock tools;
+- module versions/manifest identities must be registered and cache-keyed per Witch Dock module-versioning rules;
+- Stable remains untouched until integrated Dev runtime + human visual acceptance.
 
-- no custom `CK.Atlas` construction;
-- no buildAtlas replacement/wrapper;
-- no direct `display.atlas` / `resourceAtlas` assignment;
-- no automatic ownership watcher;
-- character/data/target-part identity remains the stale-session safety boundary;
-- scale remains 4 and bakeSize remains 2048;
-- actual body masks remain hard-pinned/verified at 1024.
+**Conflict risks:** Witch Dock Dev already contains Booth/media/decal compatibility modules. Texture-quality integration must not wrap or replace their HeroForge lifecycle surfaces, must not auto-enable itself, and must keep failures isolated to this feature.
 
-**Required live validation after commit:**
+**Validation next:** static syntax/manifest/module-identity audit, then live Dev load with feature OFF, one controlled enable on Blood Moon and D4/equivalent body-glyph case, one disable/restore check, and normal Witch Dock/Booth smoke as relevant.
 
-1. update/reload alpha.3 on D4 so it starts OFF;
-2. capture baseline and run exactly one enable;
-3. verify native promotion is accepted only if allocations/source sizes remain within 1024..2048 and pinned 1024 masks survive as actual color-bake inputs;
-4. Amanda visually checks D4 body color/glyph correctness, body/face quality, decals, accessory channels, and no poop/corruption;
-5. do not promote to Witch Dock Dev before D4 passes.
-
-**Rollback:** v0.1.5 and alpha.2 history remain intact. D4 is not autosaved by HeroForge; failure path retains snapshot restore + native rebuild behavior.
-
-**Public impact:** none. Witch Dock Dev and Stable unchanged.
+**Runtime behavior changed by this checkpoint:** no. Public Stable unchanged.
 
 ---
 
-## PFC-2026-09-12-026 — Alpha.2 native-generation adoption after Blood Moon live pass
+## PFC-2026-09-12-027 — Alpha.3 native-promotion verifier correction after D4 probe
 
-Alpha.2 changed the stale-session boundary to adopt native display/modded replacement generations while preserving character/data/target-part identity checks. Subsequent Blood Moon retest passed; D4's native-promotion verifier case is superseded by PFC-027.
+Alpha.3 changed 1024 from an exact used-size requirement to the minimum protected source size while retaining a 2048 ceiling and exact pinned-1024 body color-mask verification. Subsequent D4 runtime + visual validation passed; superseded by PFC-028.
 
 ---
 

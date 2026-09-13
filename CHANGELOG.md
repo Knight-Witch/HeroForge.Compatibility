@@ -2,56 +2,41 @@
 
 This is a **rolling current changelog**. Older verbose entries remain durable in Git history and should be fetched only when relevant.
 
-## HFC-2026-09-12-030 — Accept native source-size promotion for D4 alpha validation
+## HFC-2026-09-12-031 — Close standalone texture-quality acceptance gate
 
 **Date:** 2026-09-12
 
 ### Summary
 
-Blood Moon alpha.2 retest passed both runtime and visual acceptance. D4 then exposed a distinct native behavior: after reconciliation HeroForge promoted bodyLower to `_usedTextureSize=2048` with a `2048x2048` packed allocation. Alpha.2 falsely rejected that generation because its verifier required `_usedTextureSize === 1024` exactly.
+`rendering.texture-quality` native-reconcile standalone validation is complete. Blood Moon passed the accessory-channel / atlas-pressure case and D4 passed the historically sensitive body color/glyph case.
 
-### Confirmed live evidence
+### Blood Moon acceptance
 
-Blood Moon alpha.2, Bridge #1727:
+Alpha.2 remained ON after adopting one native HeroForge generation and produced native coherent `4096x4096` output with scale `4/4/4`, target allocations `1024x1024`, bakeSize `2048`, used `1024`, and exact pinned 1024 body masks. Amanda visually confirmed excellent body/decal quality, no poop, and correct Discus / Celestial Circlet / Short Crown Horn channels. Bridge #1727.
 
-- alpha stayed ON after one expected native generation adoption;
-- native coherent atlas `4096x4096`;
-- scale `4/4/4`;
-- BL/BU/face `1024x1024` each;
-- bakeSize `2048`, used `1024`;
-- actual body color-bake masks remained the pinned valid 1024 textures;
-- Amanda visually confirmed excellent body/decal quality, no poop, and correct accessory channels.
+### D4 acceptance
 
-D4 native baseline, Bridge #1729:
+Alpha.3 started from native `4096x4096` with BL/BU used `512/512`, face used `1024`, then one enable produced native coherent `4096x4096` with scale `4/4/4`, BL/BU/face allocations `2048x2048`, bakeSize `2048`, native-promoted used `2048` on all three targets, and exact pinned 1024 body color-bake masks. Amanda visually confirmed body color/paint and glyph correctness, sharp body/face and decals, no poop/corruption, and no wrong accessory channels. Bridge #1732/#1733.
 
-- atlas `4096x4096`;
-- BL/BU bakeSize `1024`, used `512/512`;
-- face bakeSize `1024`, used `1024`;
-- no body mask overrides.
+### Disposition
 
-D4 alpha.2 attempt, Bridge #1730/#1731:
+Standalone acceptance PASS. Alpha.3 is the canonical validated reference for Witch Dock Dev promotion.
 
-- one native generation was adopted;
-- bodyLower reached scale `4`, bakeSize `2048`, allocation `2048x2048`, used `2048`;
-- alpha.2 rejected only the exact-1024 verifier condition and then rolled back cleanly.
+### Architecture retained
 
-### Code change
-
-Advanced `rendering-texture-quality-native-reconcile.user.js` to `0.2.0-alpha.3`.
-
-Alpha.3 keeps 1024 as the seeded/minimum protected source size but accepts native promotion through the 2048 bake ceiling. It also tightens body-mask verification: the actual color-bake `masksMap` must remain the exact pinned valid 1024 override object.
-
-### Architecture unchanged
-
-No custom `CK.Atlas`, no buildAtlas wrapper/replacement, no direct display/resource atlas assignment, and no automatic ownership watcher.
+No custom `CK.Atlas`, no buildAtlas wrapper/replacement, no direct atlas assignment, no persistent ownership watcher. 1024 is the seeded/minimum source size; HeroForge may natively promote through the 2048 bake ceiling while body masks remain exact real 1024 inputs.
 
 ### Next gate
 
-Reload/update alpha.3 on D4, run one enable, then Amanda visually validates the body color/glyph channel plus body/face quality, decals, accessory channels, and absence of poop/corruption. Do not promote to Witch Dock Dev before this passes.
+Port this behavior into Witch Dock Dev as an off-by-default runtime service plus UI adapter, then run integrated regression before any Stable promotion.
 
-### Public impact
+**Runtime behavior changed by this documentation checkpoint:** no. Public Stable remains unchanged.
 
-Standalone experimental branch only. Witch Dock Dev and Stable unchanged.
+---
+
+## HFC-2026-09-12-030 — Accept native source-size promotion for D4 alpha validation
+
+Alpha.3 corrected alpha.2's exact-1024 verifier false-negative by accepting native source/allocation promotion through 2048 while tightening exact pinned-1024 body-mask verification.
 
 ---
 
@@ -61,12 +46,6 @@ Blood Moon alpha.1 produced the correct native high-resolution generation and Am
 
 ---
 
-## HFC-2026-09-12-028 — Add native-reconcile texture alpha
-
-Added the parallel native-reconcile standalone after tracing the native data/modded/build/display lifecycle.
-
----
-
 ## Historical entries
 
-Detailed HFC-2026-09-12-027 and earlier entries remain in Git history. Use the investigation/evidence ledger or Git history when older detail is material.
+Detailed HFC-2026-09-12-028 and earlier entries remain in Git history. Use the investigation/evidence ledger or Git history when older detail is material.

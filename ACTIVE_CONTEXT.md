@@ -2,82 +2,76 @@
 
 **Updated:** 2026-09-12  
 **Active feature:** `rendering.texture-quality`  
-**Current task:** validate `0.2.0-alpha.3` on D4 specifically for the historical body color/glyph channel, after Blood Moon alpha.2 passed  
-**Runtime posture:** old Protected 2048 standalone OFF; Lob High Res Decals OFF; native-reconcile standalone only.
+**Current task:** promote validated native-reconcile standalone behavior into Witch Dock Dev for integrated testing.  
+**Runtime posture:** old Protected 2048 standalone OFF; Lob High Res Decals OFF; standalone alpha.3 is the canonical validated reference. Stable remains untouched.
 
 ## Minimum continuation set
 
 1. `PROJECT_CONTRACT.md`
 2. this file
 3. `docs/investigations/INV-0004-current-state-2026-09-12.md`
-4. `docs/investigations/INV-0004-evidence-ledger.md`
-5. `docs/investigations/INV-0004-native-reconcile-alpha-2026-09-12.md`
+4. `docs/investigations/INV-0004-native-reconcile-alpha-2026-09-12.md`
+5. `docs/investigations/INV-0004-standalone-acceptance-2026-09-12.md`
 
-## Blood Moon acceptance — PASS
+## Standalone acceptance — PASS
 
-Alpha.2 was retested from a fresh native potato Blood Moon baseline. Bridge #1727 confirmed:
+### Blood Moon
 
-- alpha remained ON after one expected native generation adoption;
+Alpha.2 from a fresh native potato baseline passed both runtime and visual validation:
+
 - native coherent atlas `4096x4096`;
 - scale `4/4/4`;
-- bodyLower/bodyUpper/face allocations `1024x1024` each;
-- `bakeSize=2048` and `_usedTextureSize=1024` on all targets;
-- bodyLower/bodyUpper actual color-bake masks were the pinned valid 1024 textures;
-- no script error.
+- bodyLower/bodyUpper/face allocations `1024x1024`;
+- `bakeSize=2048`, `_usedTextureSize=1024`;
+- actual body color-bake masks were the exact pinned valid 1024 textures;
+- expected native display/modded generation replacement was adopted;
+- Amanda confirmed excellent body texture, sharp decals, no poop, and correct Discus / Celestial Circlet / Short Crown Horn channels.
 
-Amanda visually reconfirmed Blood Moon: body and decals look excellent, no poop, and Discus / Celestial Circlet / Short Crown Horn channels are correct.
+Bridge evidence: #1727.
 
-**Disposition:** standalone architecture + alpha.2 generation-adoption bookkeeping PASS on Blood Moon.
+### D4
 
-## D4 baseline and alpha.2 result
+D4 was the body-color/glyph acceptance figure. Fresh alpha.3 baseline was native `4096x4096`, BL/BU `1024 bake / 512 used`, face `1024 / 1024`, alpha OFF.
 
-D4 was then loaded and hard-reloaded so alpha started OFF.
+One alpha.3 enable produced:
 
-Confirmed native baseline, Bridge #1729:
+- native coherent atlas `4096x4096`;
+- scale `4/4/4`;
+- BL/BU/face allocations `2048x2048` each;
+- `bakeSize=2048` and native-promoted `_usedTextureSize=2048` on all three targets;
+- actual bodyLower/bodyUpper color-bake masks remained the exact pinned `1024x1024` textures;
+- one expected native generation adoption;
+- alpha remained ON with no script error.
 
-- alpha.2 OFF / idle;
-- atlas `4096x4096`;
-- bodyLower `bakeSize=1024`, `_usedTextureSize=512`;
-- bodyUpper `bakeSize=1024`, `_usedTextureSize=512`;
-- face `bakeSize=1024`, `_usedTextureSize=1024`;
-- no bodyLower/bodyUpper `masksMapOverride`.
+Amanda visually confirmed D4 looks perfect: body color/paint and glyph channel correct, body/face sharp, decals correct, no poop/corruption, and no obvious wrong accessory material/color/emissive channels.
 
-One alpha.2 enable, Bridge #1730, adopted one native generation and produced at least:
+Bridge evidence: #1732/#1733.
 
-- atlas `4096x4096`, display/resource atlas coherent;
-- bodyLower scale `4`, bakeSize `2048`;
-- bodyLower allocation `2048x2048`;
-- bodyLower `_usedTextureSize=2048`.
+**Disposition:** standalone acceptance gate CLOSED / PASS.
 
-Alpha.2 then rejected the generation because its verifier incorrectly required `_usedTextureSize === 1024` exactly. It rolled back through the existing failure path. Readback #1731 showed alpha OFF, scheduler idle, target bake/used values returned to a native stable state, and no stale mask overrides remained.
+## Validated architecture
 
-**Important:** this was a verifier false-negative, not a D4 visual failure. No maintained conclusion about D4 body color/glyph correctness has been made yet.
+Keep only source-side quality policy and let HeroForge own generation:
 
-## Alpha.3 correction
+- `atlasScale.bodyLower/bodyUpper/face = 4`;
+- seed `bakeSize = 2048`;
+- seed `_usedTextureSize = 1024` as a minimum, while allowing native promotion through 2048;
+- hard-pin bodyLower/bodyUpper to real 1024 masks and verify those exact textures remain the actual color-bake `masksMap` inputs;
+- use native `data.change({}) → modded.change/buildAtlas → character.refresh/update → display.change/update` reconciliation;
+- adopt expected replacement display/modded generations while requiring character/data/target-part identity to remain stable.
 
-`0.2.0-alpha.3` changes only the quality-verification contract:
+Do **not** reintroduce custom `CK.Atlas` construction, buildAtlas wrapping, direct atlas assignment, giant-atlas forcing, or an automatic ownership watcher.
 
-- still seeds `_usedTextureSize=1024` before native reconciliation;
-- treats 1024 as the minimum protected source size, not a hard ceiling;
-- accepts HeroForge native promotion up to the `bakeSize=2048` ceiling;
-- records per-target `nativePromoted` state;
-- still requires scale `4`, bakeSize `2048`, and allocations between 1024 and 2048;
-- still hard-pins bodyLower/bodyUpper masks to real 1024 textures;
-- now additionally requires the actual body color-bake `masksMap` to be that exact pinned 1024 override object.
+## Next gate — Witch Dock Dev
 
-No custom atlas creation, buildAtlas wrapper, direct atlas assignment, or ownership watcher was added.
+Port the validated alpha.3 behavior as a Dev-only Witch Dock service plus UI adapter. Requirements:
 
-## Why D4 is the remaining gate
-
-Blood Moon does not expose the historical body color/glyph failure as clearly as D4. D4 must visually pass:
-
-- body color/glyph channel correctness;
-- body/face resolution;
-- decal quality;
-- no poop/corruption;
-- normal accessory channels.
-
-Do not promote to Witch Dock Dev until D4 passes this check.
+- off by default at runtime; loading the module must not mutate HeroForge;
+- preserve alpha.3 enable/disable/rollback behavior;
+- no runtime dependency on HeroForge.Compatibility or HF-Chat-Bridge;
+- provide runtime diagnostics sufficient to confirm atlas, allocations, used sizes, native promotion, masks, generation adoption, and errors;
+- integrated live validation must cover Blood Moon and D4 or an equivalent body-color/glyph figure;
+- standalone alpha.3 remains canonical until Dev integration passes.
 
 ## Binding DO-NOT-REPEAT
 
@@ -86,7 +80,7 @@ Do not return to persistent protected-atlas ownership, giant-atlas forcing, gene
 ## Promotion state
 
 - v0.1.5: historical experimental reference only;
-- v0.2.0-alpha.2: Blood Moon runtime + visual PASS; D4 verifier false-negative because native promoted bodyLower to 2048;
-- v0.2.0-alpha.3: current standalone candidate, pending D4 runtime + visual validation;
-- Witch Dock Dev unchanged;
-- Stable unchanged.
+- v0.2.0-alpha.2: Blood Moon runtime + visual PASS;
+- v0.2.0-alpha.3: D4 runtime + body-color/glyph visual PASS; current validated standalone reference;
+- Witch Dock Dev: next stage;
+- Stable: untouched.
