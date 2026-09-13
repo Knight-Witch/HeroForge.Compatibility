@@ -2,8 +2,8 @@
 
 **Updated:** 2026-09-12  
 **Active feature:** `rendering.texture-quality`  
-**Current task:** promote the fully validated native-reconcile implementation from Witch Dock Dev into public Stable, then run a final Stable smoke.  
-**Runtime posture:** old Protected 2048 standalone OFF; Lob High Res Decals OFF; standalone alpha.3 and Witch Dock Dev v0.1.0 both validated. Stable promotion was explicitly authorized by Amanda in chat on 2026-09-12.
+**Current task:** public Stable v0.1.0 release is complete and validated; next optional follow-up is persistent user preference with fresh safe per-figure reconciliation.  
+**Runtime posture:** old Protected 2048 standalone OFF; Lob High Res Decals OFF; standalone alpha.3, Witch Dock Dev v0.1.0, and public Stable v0.1.0 are all validated.
 
 ## Minimum continuation set
 
@@ -54,6 +54,33 @@ Bridge evidence: #1741, #1742, #1744, #1745, #1746.
 
 **Disposition:** Witch Dock Dev acceptance gate CLOSED / PASS at `Knight-Witch/KnightWitch.Heroforge` Dev head `c8f8000d9562dbc315dc867af655358177e18d54`.
 
+## Public Stable — PASS / RELEASE CLOSED
+
+Public `Witch_Scripts` promotion commit: `4bb0cc9ff18b7d797ead8d16f7a63032250616cf`.
+Final Stable documentation closeout: `c93485d741fe9d1801b0f6924b7204a8d922792c`.
+
+Clean Stable load with Dev/standalone disabled confirmed:
+
+- public service/UI v0.1.0 loaded and started OFF/inert;
+- no target scale or body mask overrides before enable;
+- Blood Moon native baseline `4096x4096`, BL/BU `1024 bake / 512 used`, face `1024 / 1024`;
+- exactly one Booth runtime with BT/bootstrap intact.
+
+One controlled Stable enable confirmed:
+
+- service ON, no error, `lastVerification.ok=true`;
+- one expected native generation adoption;
+- coherent native `4096x4096` atlas;
+- target allocations/used `1024/1024/1024`;
+- exact pinned `1024x1024` body color-bake masks;
+- scheduler idle.
+
+Final Stable accessory scan found zero broken/fallback resource sets across 16 Discus, 2 Short Crown Horn, and 3 Celestial Circlet instances. Amanda visually confirmed the public Stable result looks great.
+
+Bridge evidence: #1747, #1748, #1750.
+
+**Disposition:** public Stable v0.1.0 acceptance gate CLOSED / PASS.
+
 ## Validated architecture
 
 Keep only source-side quality policy and let HeroForge own generation:
@@ -67,18 +94,11 @@ Keep only source-side quality policy and let HeroForge own generation:
 
 Do **not** reintroduce custom `CK.Atlas` construction, buildAtlas wrapping, direct atlas assignment, giant-atlas forcing, or an automatic ownership watcher.
 
-## Stable promotion gate — AUTHORIZED
+## Current persistence behavior / next optional enhancement
 
-Amanda explicitly approved Stable promotion after full Dev validation.
+Stable v0.1.0 intentionally starts OFF on every page load and turns OFF when HeroForge changes to a different figure. The UI polls `service.refresh()` every 250 ms; `handleStaleFigure()` discards stale session snapshots on character/data replacement and requires a fresh enable for the new figure. A normal renderer refresh on the same character can remain ON and adopt replacement display/modded generations.
 
-Promotion requirements:
-
-- promote only the validated Texture Quality service/UI and exact manifest/module registration required for Stable;
-- do not merge unrelated WITCH_DEV_UI work;
-- preserve service behavior and versioned module identity unless Stable path naming requires a mechanical URL change;
-- update Stable durable docs/changelog/preflight in the same committed promotion;
-- run a clean Stable smoke with the public userscript after promotion;
-- if Stable smoke exposes a regression, stop and repair in Dev rather than broadening the public patch.
+If persistence is implemented next, persist only the user's desired ON/OFF preference. Every new page/figure must create a fresh safe session and reconcile against the current character; never carry per-figure snapshots across character boundaries. This change must go Standalone/Dev-first or Dev-first with explicit lifecycle validation before another Stable update.
 
 ## Binding DO-NOT-REPEAT
 
@@ -88,5 +108,6 @@ Do not return to persistent protected-atlas ownership, giant-atlas forcing, gene
 
 - v0.1.5: historical experimental reference only;
 - standalone v0.2.0-alpha.3: PASS;
-- Witch Dock Dev v0.1.0: integrated runtime + visual + lifecycle + refresh/topology smoke PASS;
-- Stable: promotion authorized; implementation/smoke next.
+- Witch Dock Dev v0.1.0: PASS;
+- public Stable v0.1.0: PASS / validated;
+- next work, if desired: persistent user preference with fresh per-figure safe reconcile.

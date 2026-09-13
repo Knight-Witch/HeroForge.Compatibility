@@ -2,37 +2,41 @@
 
 This is a **rolling current changelog**. Older verbose entries remain durable in Git history and should be fetched only when relevant.
 
-## HFC-2026-09-12-032 — Close Witch Dock Dev acceptance and authorize Stable promotion
+## HFC-2026-09-12-033 — Close public Stable texture-quality release
 
 **Date:** 2026-09-12
 
 ### Summary
 
-The `rendering.texture-quality` native-reconcile architecture passed full Witch Dock Dev integration validation on both complementary acceptance figures and survived lifecycle/refresh/topology smoke. Amanda then explicitly authorized public Stable promotion.
+Public Stable Texture Quality v0.1.0 passed the final clean Stable runtime and visual smoke. The release gate is closed.
 
-### D4 integrated acceptance
+### Stable validation
 
-Witch Dock Dev v0.1.0 loaded inert/OFF with the standalone absent, then one enable produced native coherent `4096x4096`, target allocations/used `2048`, exact pinned 1024 body masks, one expected generation adoption, and no error. Amanda confirmed body color/paint and historical glyph behavior correct, sharp body/face/decals, no poop/corruption, and no wrong material/color/emissive channels.
+Public `Witch_Scripts` promotion commit `4bb0cc9ff18b7d797ead8d16f7a63032250616cf` loaded with Witch Dock Dev disabled and the standalone Texture Quality script absent.
 
-Controlled disable removed all feature-owned target scale/mask overrides and rebuilt natively; a subsequent OFF -> ON cycle passed again. HeroForge recalculated OFF-generation used sizes to `1024/1024/1024` rather than the initial `512/512/1024`, which is recorded as native recalculation because owned overrides were absent.
+Bridge #1747 confirmed the public service/UI loaded, started OFF/inert, left Blood Moon at a native coherent `4096x4096` baseline with BL/BU `used=512/512`, face `used=1024`, no target scale overrides, no body mask overrides, scheduler idle, and exactly one Booth runtime with BT/bootstrap present.
 
-Bridge evidence: #1735, #1737, #1738, #1739, #1740.
+Bridge #1748 confirmed one controlled Stable enable resolved true, stayed ON with no error, adopted one expected native generation, verified coherent `4096x4096`, target allocations/used `1024/1024/1024`, exact pinned 1024 body masks, and scheduler idle.
 
-### Blood Moon integrated acceptance
+Bridge #1750 found zero broken/fallback resource sets across 16 Discus, 2 Short Crown Horn, and 3 Celestial Circlet instances while retaining exactly one Booth runtime. Amanda visually confirmed the public result looks great.
 
-Clean Dev reload showed native `4096x4096` with no feature-owned scale or mask overrides. One enable produced native coherent `4096x4096`, target allocations/used `1024`, exact pinned 1024 body masks, one expected generation adoption, and no error.
+### Persistence behavior recorded
 
-A targeted resource scan found zero fallback/broken resources across 16 Discus, 2 Short Crown Horn, and 3 Celestial Circlet instances. Amanda visually confirmed the integrated result looked correct. A normal native `CK.character.refresh()` while ON remained verified, and a non-invasive integration topology smoke found exactly one loaded `/gated/booth.js` with BT/bootstrap intact and no duplicate Booth runtime.
-
-Bridge evidence: #1741, #1742, #1744, #1745, #1746.
+Stable v0.1.0 intentionally does not persist enabled state across page reloads or figure changes. Same-character renderer refreshes can remain ON; character/data replacement clears stale session bookkeeping OFF. A future persistent preference should store only desired ON/OFF and create a fresh safe reconcile session per page/figure.
 
 ### Disposition
 
-Witch Dock Dev acceptance PASS at `Knight-Witch/KnightWitch.Heroforge` Dev head `c8f8000d9562dbc315dc867af655358177e18d54`.
+Public Stable v0.1.0 acceptance PASS / CLOSED. Stable closeout docs are recorded at `Knight-Witch/KnightWitch.Heroforge` commit `c93485d741fe9d1801b0f6924b7204a8d922792c`.
 
-Amanda explicitly approved Stable promotion. Next action is a narrow Stable-only promotion of the validated Texture Quality service/UI and required manifest/docs changes, followed by a final public Stable smoke.
+**Runtime behavior changed by this Compatibility checkpoint:** no.
 
-**Runtime behavior changed by this documentation checkpoint:** no. Public Stable is not changed by this Compatibility docs commit.
+---
+
+## HFC-2026-09-12-032 — Close Witch Dock Dev acceptance and authorize Stable promotion
+
+**Date:** 2026-09-12
+
+The `rendering.texture-quality` native-reconcile architecture passed full Witch Dock Dev integration validation on D4 and Blood Moon, including lifecycle, native refresh, accessory-resource, and Booth-topology smoke. Amanda explicitly authorized Stable promotion.
 
 ---
 
